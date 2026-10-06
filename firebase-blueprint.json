@@ -1,0 +1,131 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Authenticated user personal account record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Display name of user" },
+        "lastActive": { "type": "number", "description": "Epoch timestamp of last activity" }
+      },
+      "required": ["uid"]
+    },
+    "Wallet": {
+      "title": "Wallet Entity",
+      "description": "User financial account or wallet (cash, bank, MFS, credit)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Wallet UUID" },
+        "workspaceId": { "type": "string", "description": "Associated workspace" },
+        "name": { "type": "string", "description": "Wallet title or label" },
+        "type": { "type": "string", "description": "Wallet type (CASH, BANK, MFS, CREDIT)" },
+        "institutionId": { "type": "string", "description": "Bank or MFS institution identifier" },
+        "accountNumber": { "type": "string", "description": "Optional account mask" },
+        "balance": { "type": "number", "description": "Current balance" },
+        "creditLimit": { "type": "number", "description": "Credit limit if credit card" },
+        "currencyCode": { "type": "string", "description": "Currency code e.g. BDT" },
+        "colorHex": { "type": "string", "description": "Display color hex code" },
+        "note": { "type": "string", "description": "Additional user notes" },
+        "updatedAt": { "type": "number", "description": "Last updated epoch timestamp" }
+      },
+      "required": ["id", "name", "type"]
+    },
+    "Transaction": {
+      "title": "Transaction Entity",
+      "description": "Financial income, expense, or transfer transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Transaction UUID" },
+        "workspaceId": { "type": "string", "description": "Associated workspace" },
+        "walletId": { "type": "string", "description": "Origin wallet ID" },
+        "toWalletId": { "type": "string", "description": "Destination wallet ID for transfers" },
+        "type": { "type": "string", "description": "INCOME, EXPENSE, or TRANSFER" },
+        "amount": { "type": "number", "description": "Transaction amount in primary currency" },
+        "fee": { "type": "number", "description": "Transfer or payment fee" },
+        "category": { "type": "string", "description": "Transaction category" },
+        "note": { "type": "string", "description": "User note or description" },
+        "dateMillis": { "type": "number", "description": "Transaction date epoch timestamp" }
+      },
+      "required": ["id", "walletId", "type", "amount"]
+    },
+    "Asset": {
+      "title": "Asset Entity",
+      "description": "Physical or digital investment asset (Gold, Silver, FDR, Stock, Crypto)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Asset UUID" },
+        "workspaceId": { "type": "string", "description": "Associated workspace" },
+        "name": { "type": "string", "description": "Asset title" },
+        "category": { "type": "string", "description": "Asset category" },
+        "quantity": { "type": "number", "description": "Asset quantity" },
+        "unit": { "type": "string", "description": "Unit of measurement" },
+        "buyPrice": { "type": "number", "description": "Purchase cost" },
+        "currentPrice": { "type": "number", "description": "Current market valuation" },
+        "dateMillis": { "type": "number", "description": "Acquisition date" }
+      },
+      "required": ["id", "name", "category", "quantity", "buyPrice"]
+    },
+    "Debt": {
+      "title": "Debt / Dena-Paona Entity",
+      "description": "Payable (Dena) or Receivable (Paona) loan tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Debt UUID" },
+        "workspaceId": { "type": "string", "description": "Associated workspace" },
+        "walletId": { "type": "string", "description": "Linked wallet ID" },
+        "personName": { "type": "string", "description": "Counterparty person name" },
+        "phoneNumber": { "type": "string", "description": "Counterparty phone number" },
+        "amount": { "type": "number", "description": "Debt amount" },
+        "type": { "type": "string", "description": "DENA (payable) or PAONA (receivable)" },
+        "dueDateMillis": { "type": "number", "description": "Due date timestamp" },
+        "isSettled": { "type": "boolean", "description": "Settlement state" },
+        "note": { "type": "string", "description": "Notes" }
+      },
+      "required": ["id", "personName", "amount", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile document isolated to authenticated user"
+    },
+    "/users/{uid}/wallets/{walletId}": {
+      "schema": { "$ref": "#/entities/Wallet" },
+      "description": "Wallets owned by the authenticated user"
+    },
+    "/users/{uid}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Financial transactions recorded by the user"
+    },
+    "/users/{uid}/assets/{assetId}": {
+      "schema": { "$ref": "#/entities/Asset" },
+      "description": "Asset investments owned by the user"
+    },
+    "/users/{uid}/debts/{debtId}": {
+      "schema": { "$ref": "#/entities/Debt" },
+      "description": "Receivables and payables tracked by the user"
+    },
+    "/users/{uid}/budgets/{budgetId}": {
+      "schema": "object",
+      "description": "Category budget plans for the user"
+    },
+    "/users/{uid}/goals/{goalId}": {
+      "schema": "object",
+      "description": "Target savings goals for the user"
+    },
+    "/users/{uid}/bills/{billId}": {
+      "schema": "object",
+      "description": "Recurring utility bills and subscriptions"
+    },
+    "/users/{uid}/ledger/{entryId}": {
+      "schema": "object",
+      "description": "Customer credit ledger entries"
+    },
+    "/users/{uid}/profile/{profileId}": {
+      "schema": "object",
+      "description": "User profile metadata"
+    }
+  }
+}

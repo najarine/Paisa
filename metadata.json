@@ -1,0 +1,8 @@
+{
+  "name": "Remix Paisa Main Remix",
+  "description": "Smart Financial Command Center \u0026 Islamic Wealth Management for mobile users with offline-first wallets, analytics, and biometric security.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
