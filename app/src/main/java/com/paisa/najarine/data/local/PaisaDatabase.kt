@@ -22,6 +22,7 @@ import java.util.UUID
         DebtEntity::class,
         CustomerLedgerEntity::class,
         MessEntryEntity::class,
+        BazarItemEntity::class,
         AssetEntity::class,
         PrayerLogEntity::class,
         QazaPrayerEntity::class,
@@ -29,7 +30,7 @@ import java.util.UUID
         HourlyHadithEntity::class,
         HourlyQuranEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class PaisaDatabase : RoomDatabase() {
@@ -44,6 +45,7 @@ abstract class PaisaDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun customerLedgerDao(): CustomerLedgerDao
     abstract fun messDao(): MessDao
+    abstract fun bazarDao(): BazarDao
     abstract fun assetDao(): AssetDao
     abstract fun prayerLogDao(): PrayerLogDao
     abstract fun qazaPrayerDao(): QazaPrayerDao

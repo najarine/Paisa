@@ -13,6 +13,8 @@ import com.paisa.najarine.data.remote.CryptoRateService
 import com.paisa.najarine.data.remote.HadithApiService
 import com.paisa.najarine.data.repository.*
 import com.paisa.najarine.security.BiometricAuthManager
+import com.paisa.najarine.sync.CloudBackupManager
+import com.paisa.najarine.sync.CloudBackupMetadata
 import com.paisa.najarine.sync.FirestoreSyncManager
 import com.paisa.najarine.ui.screens.accounting.HabitUi
 import com.paisa.najarine.ui.screens.accounting.InvoiceItemUi
@@ -42,6 +44,16 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     val securityManager = BiometricAuthManager(application)
     val authManager = AuthManager(application)
     val syncManager = FirestoreSyncManager(application, database)
+    val backupManager = CloudBackupManager(application, database)
+
+    val latestBackupMetadata = MutableStateFlow<CloudBackupMetadata?>(null)
+    val isBackupOperating = MutableStateFlow(false)
+
+    fun refreshBackupMetadata() {
+        viewModelScope.launch {
+            latestBackupMetadata.value = backupManager.getLatestBackupMetadata()
+        }
+    }
 
     private val cryptoService = CryptoRateService()
     private val hadithService = HadithApiService()
@@ -86,6 +98,14 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
 
     val assets: StateFlow<List<AssetEntity>> = activeWorkspaceId.flatMapLatest { id ->
         financialToolsRepo.getAssets(id)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val messEntries: StateFlow<List<MessEntryEntity>> = activeWorkspaceId.flatMapLatest { id ->
+        financialToolsRepo.getMessEntries(id)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val bazarItems: StateFlow<List<BazarItemEntity>> = activeWorkspaceId.flatMapLatest { id ->
+        financialToolsRepo.getBazarItems(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Live Crypto Rates
@@ -164,9 +184,11 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                 when (state) {
                     is AuthState.Success -> {
                         val uid = state.user.uid
+                        com.paisa.najarine.analytics.PaisaAnalytics.setUserId(uid)
                         syncManager.initializeUserAccount(uid, state.user.email, state.user.displayName)
                     }
                     is AuthState.Idle, is AuthState.Cancelled, is AuthState.Error, is AuthState.Timeout -> {
+                        com.paisa.najarine.analytics.PaisaAnalytics.setUserId(null)
                         syncManager.stopAllListeners()
                     }
                     else -> {}
@@ -635,6 +657,98 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteTask(id: String) {
         tasks.value = tasks.value.filter { it.id != id }
+    }
+
+    // Mess Management
+    fun saveMessEntry(entry: MessEntryEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.saveMessEntry(entry)
+        }
+    }
+
+    fun deleteMessEntry(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.deleteMessEntry(id)
+        }
+    }
+
+    // Bazar & Grocery Shopping Management
+    fun saveBazarItem(item: BazarItemEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.saveBazarItem(item)
+        }
+    }
+
+    fun saveBazarItems(items: List<BazarItemEntity>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.saveBazarItems(items)
+        }
+    }
+
+    fun updateBazarItem(item: BazarItemEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.updateBazarItem(item)
+        }
+    }
+
+    fun toggleBazarItemChecked(id: String, isChecked: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.toggleBazarItemChecked(id, isChecked)
+        }
+    }
+
+    fun deleteBazarItem(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.deleteBazarItem(id)
+        }
+    }
+
+    fun clearCheckedBazarItems() {
+        viewModelScope.launch(Dispatchers.IO) {
+            financialToolsRepo.clearCheckedBazarItems(activeWorkspaceId.value)
+        }
+    }
+
+    fun createExpenseFromBazar(
+        amount: Double,
+        walletId: String,
+        note: String,
+        isMessBazar: Boolean = false,
+        buyerMemberName: String = ""
+    ) {
+        if (amount <= 0.0) return
+        viewModelScope.launch(Dispatchers.IO) {
+            if (walletId.isNotBlank()) {
+                database.walletDao().adjustBalance(walletId, -amount)
+            }
+            val tx = TransactionEntity(
+                id = UUID.randomUUID().toString(),
+                workspaceId = activeWorkspaceId.value,
+                walletId = walletId,
+                type = "EXPENSE",
+                amount = amount,
+                category = "Groceries / Bazar",
+                note = note.ifBlank { if (isMessBazar) "মেস বাজার খরচ ($buyerMemberName)" else "বাজার সদাই খরচ" },
+                dateMillis = System.currentTimeMillis()
+            )
+            database.transactionDao().insertTransaction(tx)
+            syncManager.autoSyncTransaction(tx)
+
+            if (isMessBazar && buyerMemberName.isNotBlank()) {
+                val messEntry = MessEntryEntity(
+                    id = UUID.randomUUID().toString(),
+                    workspaceId = activeWorkspaceId.value,
+                    memberName = buyerMemberName,
+                    mealsCount = 0.0,
+                    depositAmount = 0.0,
+                    bazarExpense = amount,
+                    fixedExpenseShare = 0.0,
+                    dateMillis = System.currentTimeMillis(),
+                    note = note.ifBlank { "বাজার সদাই কেনাকাটা" }
+                )
+                financialToolsRepo.saveMessEntry(messEntry)
+            }
+        }
     }
 
     fun addHabit(habit: HabitUi) {

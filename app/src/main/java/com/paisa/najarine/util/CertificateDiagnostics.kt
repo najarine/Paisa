@@ -12,7 +12,7 @@ import java.util.Locale
 
 object CertificateDiagnostics {
 
-    const val REGISTERED_FIREBASE_SHA1 = "E7:0A:A4:01:72:90:8F:C5:39:FB:9E:3D:9C:2D:AC:6D:E3:BF:53:C2"
+    const val REGISTERED_FIREBASE_SHA1 = "BF:4E:06:ED:31:E0:52:EA:92:55:3B:56:84:42:D7:75:CF:9F:1F:3A"
     const val FIREBASE_PROJECT_ID = "paisa-finance-bd"
     const val FIREBASE_ANDROID_APP_ID = "1:366887012350:android:c5bf15e6613031773962af"
 

@@ -9,7 +9,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.paisa.najarine.R
 
-// Google Font: Alkatra (Bangla font support)
+// Google Font: Alkatra (Primary Bengali font)
 val AlkatraFontFamily = FontFamily(
     Font(R.font.alkatra, FontWeight.Normal),
     Font(R.font.alkatra, FontWeight.Medium),
@@ -17,16 +17,16 @@ val AlkatraFontFamily = FontFamily(
     Font(R.font.alkatra, FontWeight.Bold)
 )
 
-// Google Font: Josefin Sans (English & numbers)
+// Google Font: Josefin Sans (Secondary styling font)
 val JosefinSansFontFamily = FontFamily(
     Font(R.font.josefin_sans, FontWeight.Normal),
     Font(R.font.josefin_sans, FontWeight.Bold)
 )
 
-// Material 3 Typography utilizing Alkatra for Bangla content and Josefin Sans for English & numbers
+// Material 3 Typography using Google Alkatra as the primary default font for Bengali text
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = JosefinSansFontFamily,
+        fontFamily = AlkatraFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 34.sp,
         lineHeight = 40.sp,
@@ -34,7 +34,7 @@ val Typography = Typography(
         color = Color.Unspecified
     ),
     displayMedium = TextStyle(
-        fontFamily = JosefinSansFontFamily,
+        fontFamily = AlkatraFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 34.sp,
@@ -42,21 +42,21 @@ val Typography = Typography(
         color = Color.Unspecified
     ),
     displaySmall = TextStyle(
-        fontFamily = JosefinSansFontFamily,
+        fontFamily = AlkatraFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 30.sp,
         color = Color.Unspecified
     ),
     headlineLarge = TextStyle(
-        fontFamily = JosefinSansFontFamily,
+        fontFamily = AlkatraFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 30.sp,
         color = Color.Unspecified
     ),
     headlineMedium = TextStyle(
-        fontFamily = JosefinSansFontFamily,
+        fontFamily = AlkatraFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 26.sp,

@@ -201,17 +201,60 @@ fun DenaPaonaScreen(
 
                                 if (!debt.isSettled) {
                                     Spacer(modifier = Modifier.height(10.dp))
-                                    OutlinedButton(
-                                        onClick = {
-                                            viewModel.settleDebt(debt, wallets.firstOrNull()?.id ?: "")
-                                            Toast.makeText(context, "হিসাব নিষ্পত্তি (Settled) হিসেবে সম্পন্ন হয়েছে!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("নিষ্পত্তি / পরিশোধ সম্পন্ন চিহ্নিত করুন")
+                                    if (!isPaona) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    val payoffGoal = com.paisa.najarine.data.local.GoalVaultEntity(
+                                                        id = UUID.randomUUID().toString(),
+                                                        workspaceId = viewModel.activeWorkspaceId.value,
+                                                        name = "[ঋণ পরিশোধ] ${debt.personName} এর ঋণ পরিশোধ",
+                                                        targetAmount = debt.amount,
+                                                        currentAmount = 0.0,
+                                                        targetDateMillis = debt.dueDateMillis,
+                                                        colorHex = "#EF4444"
+                                                    )
+                                                    viewModel.addGoal(payoffGoal)
+                                                    Toast.makeText(context, "Debt Payoff লক্ষ্য সফলভাবে তৈরি হয়েছে!", Toast.LENGTH_SHORT).show()
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                                            ) {
+                                                Icon(Icons.Default.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("পরিশোধের লক্ষ্য যুক্ত করুন", fontSize = 12.sp)
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = {
+                                                    viewModel.settleDebt(debt, wallets.firstOrNull()?.id ?: "")
+                                                    Toast.makeText(context, "হিসাব নিষ্পত্তি সম্পন্ন হয়েছে!", Toast.LENGTH_SHORT).show()
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("নিষ্পত্তি চিহ্নিত করুন", fontSize = 12.sp)
+                                            }
+                                        }
+                                    } else {
+                                        OutlinedButton(
+                                            onClick = {
+                                                viewModel.settleDebt(debt, wallets.firstOrNull()?.id ?: "")
+                                                Toast.makeText(context, "হিসাব নিষ্পত্তি (Settled) হিসেবে সম্পন্ন হয়েছে!", Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("পাওনা আদায় সম্পন্ন চিহ্নিত করুন")
+                                        }
                                     }
                                 }
                             }

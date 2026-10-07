@@ -22,10 +22,12 @@ class MainActivity : FragmentActivity() {
         pendingTargetScreen.value = intent?.getStringExtra("EXTRA_TARGET_SCREEN")
 
         // Initialize Services
+        com.paisa.najarine.analytics.PaisaAnalytics.initialize(this)
         com.paisa.najarine.notification.AdhanPreferences.init(this)
         com.paisa.najarine.notification.PaisaNotificationManager.createNotificationChannels(this)
         com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(this)
         com.paisa.najarine.notification.HourlyIslamicScheduler.triggerImmediateSync(this)
+        com.paisa.najarine.notification.AutoZakatScheduler.schedulePeriodicZakatCheck(this)
 
         setContent {
             MyApplicationTheme {

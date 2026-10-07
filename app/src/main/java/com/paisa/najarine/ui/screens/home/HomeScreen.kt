@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.paisa.najarine.data.local.WalletEntity
 import com.paisa.najarine.ui.PaisaViewModel
 import com.paisa.najarine.ui.components.BankMfsLogo
+import com.paisa.najarine.ui.components.DebtPayoffWidget
 import com.paisa.najarine.ui.theme.*
 import java.text.NumberFormat
 import java.util.Locale
@@ -51,12 +52,17 @@ fun HomeScreen(
     onNavigateToCryptoAssets: () -> Unit = {},
     onNavigateToCustomerLedger: () -> Unit = {},
     onNavigateToProjectInvoice: () -> Unit = {},
+    onNavigateToMessManager: () -> Unit = {},
+    onNavigateToBazarShodai: () -> Unit = {},
+    onNavigateToCurrencyConverter: () -> Unit = {},
     onNavigateToMasterSettings: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val wallets by viewModel.wallets.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
+    val debts by viewModel.debts.collectAsState()
+    val goals by viewModel.goals.collectAsState()
     val prayerTimings by viewModel.prayerTimings.collectAsState()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
 
@@ -253,6 +259,18 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
+        // 2. Debt Payoff & Liabilities Progress Dashboard Widget
+        item {
+            DebtPayoffWidget(
+                debts = debts,
+                goals = goals,
+                wallets = wallets,
+                transactions = transactions,
+                onNavigateToDebtGoals = onNavigateToSavingsGoals,
+                onNavigateToDenaPaona = onNavigateToDenaPaona
+            )
         }
 
         // 3. Category Filter Chips (All (5), Cash, Banks, MFS / Mobile, Cards)
@@ -500,6 +518,9 @@ fun HomeScreen(
                         Triple("শেয়ার ও স্টক মার্কেট", Icons.Default.ShowChart, onNavigateToStockMarket),
                         Triple("ডিজিটাল ক্রিপ্টো", Icons.Default.CurrencyBitcoin, onNavigateToCryptoAssets),
                         Triple("কাস্টমার বাকি খাতা", Icons.Default.BusinessCenter, onNavigateToCustomerLedger),
+                        Triple("মেস ও হোস্টেল ম্যানেজার", Icons.Default.Restaurant, onNavigateToMessManager),
+                        Triple("বাজার সদাই তালিকা", Icons.Default.ShoppingCart, onNavigateToBazarShodai),
+                        Triple("মুদ্রা রূপান্তর ও ফরেক্স", Icons.Default.CurrencyExchange, onNavigateToCurrencyConverter),
                         Triple("প্রজেক্ট ইনভয়েস", Icons.Default.Receipt, onNavigateToProjectInvoice),
                         Triple("মাস্টার সেটিংস", Icons.Default.Settings, onNavigateToMasterSettings)
                     )

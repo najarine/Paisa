@@ -72,7 +72,10 @@ enum class AppScreen {
     CRYPTO_ASSETS,
     CUSTOMER_LEDGER,
     PROJECT_INVOICE,
-    TASK_HABIT
+    TASK_HABIT,
+    MESS_MANAGER,
+    BAZAR_SHODAI,
+    CURRENCY_CONVERTER
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -353,6 +356,9 @@ fun PaisaApp(
                     onNavigateToCryptoAssets = { navigateTo(AppScreen.CRYPTO_ASSETS) },
                     onNavigateToCustomerLedger = { navigateTo(AppScreen.CUSTOMER_LEDGER) },
                     onNavigateToProjectInvoice = { navigateTo(AppScreen.PROJECT_INVOICE) },
+                    onNavigateToMessManager = { navigateTo(AppScreen.MESS_MANAGER) },
+                    onNavigateToBazarShodai = { navigateTo(AppScreen.BAZAR_SHODAI) },
+                    onNavigateToCurrencyConverter = { navigateTo(AppScreen.CURRENCY_CONVERTER) },
                     onNavigateToMasterSettings = { navigateTo(AppScreen.MASTER_SETTINGS) },
                     onSearchClick = { showSearchDialog = true }
                 )
@@ -386,6 +392,9 @@ fun PaisaApp(
                     onNavigateToCryptoAssets = { navigateTo(AppScreen.CRYPTO_ASSETS) },
                     onNavigateToCustomerLedger = { navigateTo(AppScreen.CUSTOMER_LEDGER) },
                     onNavigateToProjectInvoice = { navigateTo(AppScreen.PROJECT_INVOICE) },
+                    onNavigateToMessManager = { navigateTo(AppScreen.MESS_MANAGER) },
+                    onNavigateToBazarShodai = { navigateTo(AppScreen.BAZAR_SHODAI) },
+                    onNavigateToCurrencyConverter = { navigateTo(AppScreen.CURRENCY_CONVERTER) },
                     onNavigateToTaskHabit = { navigateTo(AppScreen.TASK_HABIT) },
                     onNavigateToUserProfile = { navigateTo(AppScreen.USER_PROFILE) },
                     onOpenSyncCenter = { navigateTo(AppScreen.SYNC_CENTER) },
@@ -501,6 +510,19 @@ fun PaisaApp(
                     onBackClick = { goBack() }
                 )
                 AppScreen.TASK_HABIT -> TaskHabitScreen(
+                    viewModel = viewModel,
+                    onBackClick = { goBack() }
+                )
+                AppScreen.MESS_MANAGER -> MessManagerScreen(
+                    viewModel = viewModel,
+                    onBackClick = { goBack() },
+                    onNavigateToBazarShodai = { navigateTo(AppScreen.BAZAR_SHODAI) }
+                )
+                AppScreen.BAZAR_SHODAI -> BazarShodaiScreen(
+                    viewModel = viewModel,
+                    onBackClick = { goBack() }
+                )
+                AppScreen.CURRENCY_CONVERTER -> CurrencyConverterScreen(
                     viewModel = viewModel,
                     onBackClick = { goBack() }
                 )

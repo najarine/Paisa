@@ -38,6 +38,9 @@ fun MoreAndAnalyticsScreen(
     onNavigateToCryptoAssets: () -> Unit = {},
     onNavigateToCustomerLedger: () -> Unit = {},
     onNavigateToProjectInvoice: () -> Unit = {},
+    onNavigateToMessManager: () -> Unit = {},
+    onNavigateToBazarShodai: () -> Unit = {},
+    onNavigateToCurrencyConverter: () -> Unit = {},
     onNavigateToTaskHabit: () -> Unit = {},
     onNavigateToUserProfile: () -> Unit = {},
     onOpenSyncCenter: () -> Unit = {},
@@ -338,6 +341,12 @@ fun MoreAndAnalyticsScreen(
                     icon = Icons.Default.CurrencyBitcoin,
                     onClick = onNavigateToCryptoAssets
                 )
+                HubActionItem(
+                    title = "মুদ্রা রূপান্তর ও ফরেক্স (Currency Converter)",
+                    subtitle = "লাইভ আন্তর্জাতিক এক্সচেঞ্জ রেট ও দ্রুত লেনদেন কনভার্সন",
+                    icon = Icons.Default.CurrencyExchange,
+                    onClick = onNavigateToCurrencyConverter
+                )
             }
         }
 
@@ -355,6 +364,18 @@ fun MoreAndAnalyticsScreen(
                     subtitle = "কাস্টমারের বাকি ও জমার ডিজিটাল হিসাব",
                     icon = Icons.Default.BusinessCenter,
                     onClick = onNavigateToCustomerLedger
+                )
+                HubActionItem(
+                    title = "মেস ও হোস্টেল মিল ম্যানেজার",
+                    subtitle = "সদস্য মিল শিট, বাজার খরচ ও মিল রেট হিসাব",
+                    icon = Icons.Default.Restaurant,
+                    onClick = onNavigateToMessManager
+                )
+                HubActionItem(
+                    title = "বাজার সদাই তালিকা (Bazar & Grocery)",
+                    subtitle = "সদাই চেকলিস্ট, দাম ও মেস বাজার পরিকল্পনা",
+                    icon = Icons.Default.ShoppingCart,
+                    onClick = onNavigateToBazarShodai
                 )
                 HubActionItem(
                     title = "প্রজেক্ট ও ইনভয়েস জেনারেশন",

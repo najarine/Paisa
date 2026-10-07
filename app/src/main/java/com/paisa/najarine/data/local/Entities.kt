@@ -128,8 +128,26 @@ data class MessEntryEntity(
     val mealsCount: Double = 0.0,
     val depositAmount: Double = 0.0,
     val bazarExpense: Double = 0.0,
+    val fixedExpenseShare: Double = 0.0,
     val dateMillis: Long = System.currentTimeMillis(),
     val note: String = ""
+)
+
+@Entity(tableName = "bazar_shodai_items")
+data class BazarItemEntity(
+    @PrimaryKey val id: String,
+    val workspaceId: String,
+    val name: String,
+    val category: String, // চাল ও ডাল, মাছ ও মাংস, শাকসবজি, তেল ও মসলা, ডিম ও দুধ, ফলমূল, বেকারি ও স্ন্যাকস, টয়লেট্রিজ, অন্যান্য
+    val quantity: Double = 1.0,
+    val unit: String = "কেজি", // কেজি, গ্রাম, লিটার, পিস, ডজন, প্যাকেট, আঁটি
+    val estimatedPrice: Double = 0.0,
+    val actualPrice: Double = 0.0,
+    val isChecked: Boolean = false,
+    val isMessItem: Boolean = false,
+    val assignedMemberName: String = "",
+    val note: String = "",
+    val createdAtMillis: Long = System.currentTimeMillis()
 )
 
 @Entity(tableName = "assets")

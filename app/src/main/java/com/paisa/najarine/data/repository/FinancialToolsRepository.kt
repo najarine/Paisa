@@ -75,6 +75,28 @@ class FinancialToolsRepository(private val database: PaisaDatabase) {
     suspend fun deleteMessEntry(id: String) =
         database.messDao().deleteEntry(id)
 
+    // Bazar / Shodai Manager
+    fun getBazarItems(workspaceId: String): Flow<List<BazarItemEntity>> =
+        database.bazarDao().getBazarItems(workspaceId)
+
+    suspend fun saveBazarItem(item: BazarItemEntity) =
+        database.bazarDao().insertBazarItem(item)
+
+    suspend fun saveBazarItems(items: List<BazarItemEntity>) =
+        database.bazarDao().insertBazarItems(items)
+
+    suspend fun updateBazarItem(item: BazarItemEntity) =
+        database.bazarDao().updateBazarItem(item)
+
+    suspend fun toggleBazarItemChecked(id: String, isChecked: Boolean) =
+        database.bazarDao().toggleChecked(id, isChecked)
+
+    suspend fun deleteBazarItem(id: String) =
+        database.bazarDao().deleteBazarItem(id)
+
+    suspend fun clearCheckedBazarItems(workspaceId: String) =
+        database.bazarDao().clearCheckedItems(workspaceId)
+
     // Assets
     fun getAssets(workspaceId: String): Flow<List<AssetEntity>> =
         database.assetDao().getAssets(workspaceId)

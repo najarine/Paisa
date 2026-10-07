@@ -339,103 +339,22 @@ fun DetailedFinancialAnalyticsScreen(
                 }
             }
 
-            // 3. CATEGORY-WISE EXPENSE BREAKDOWN
+            // 3. MONTHLY SPENDING TRENDS (LINE CHART OVER PAST SIX MONTHS)
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                    border = CardDefaults.outlinedCardBorder()
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "ক্যাটাগরি অনুযায়ী ব্যয় বিশ্লেষণ",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = PaisaTextPrimary
-                            )
-                            Text(
-                                text = "${categoryExpenses.size} টি খাত",
-                                fontSize = 12.sp,
-                                color = PaisaTextSecondary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        if (categoryExpenses.isEmpty()) {
-                            Text(
-                                text = "এই সময়ের মধ্যে কোনো ব্যয়ের লেনদেন পাওয়া যায়নি।",
-                                fontSize = 13.sp,
-                                color = PaisaTextSecondary,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
-                        } else {
-                            categoryExpenses.forEach { (catName, catTotal, colorHex) ->
-                                val pct = if (totalExpense > 0) (catTotal / totalExpense) else 0.0
-                                val parsedColor = try {
-                                    Color(android.graphics.Color.parseColor(colorHex))
-                                } catch (_: Exception) {
-                                    PaisaTealPrimary
-                                }
-
-                                Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(10.dp)
-                                                    .clip(CircleShape)
-                                                    .background(parsedColor)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(text = catName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = PaisaTextPrimary)
-                                        }
-
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = "৳${currencyFormat.format(catTotal)}",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color = PaisaTextPrimary
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = String.format(Locale.US, "(%.1f%%)", pct * 100),
-                                                fontSize = 11.sp,
-                                                color = PaisaTextSecondary
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    LinearProgressIndicator(
-                                        progress = { pct.toFloat().coerceIn(0f, 1f) },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(6.dp)
-                                            .clip(RoundedCornerShape(3.dp)),
-                                        color = parsedColor,
-                                        trackColor = PaisaSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                MonthlySpendingTrendsSection(
+                    transactions = transactions
+                )
             }
 
-            // 4. LIQUIDITY, EMERGENCY RUNWAY & DEBT RATIO
+            // 4. MONTHLY BREAKDOWN OF SPENDING BY CATEGORY (RECHARTS-INSPIRED VISUALIZATION)
+            item {
+                MonthlyCategoryBreakdownSection(
+                    transactions = transactions,
+                    categories = categories
+                )
+            }
+
+            // 5. LIQUIDITY, EMERGENCY RUNWAY & DEBT RATIO
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -494,7 +413,7 @@ fun DetailedFinancialAnalyticsScreen(
                 }
             }
 
-            // 5. ACTIONABLE FINANCIAL RECOMMENDATIONS
+            // 6. ACTIONABLE FINANCIAL RECOMMENDATIONS
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

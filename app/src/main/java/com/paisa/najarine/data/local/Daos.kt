@@ -155,6 +155,30 @@ interface MessDao {
 }
 
 @Dao
+interface BazarDao {
+    @Query("SELECT * FROM bazar_shodai_items WHERE workspaceId = :workspaceId ORDER BY isChecked ASC, createdAtMillis DESC")
+    fun getBazarItems(workspaceId: String): Flow<List<BazarItemEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBazarItem(item: BazarItemEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBazarItems(items: List<BazarItemEntity>)
+
+    @Update
+    suspend fun updateBazarItem(item: BazarItemEntity)
+
+    @Query("UPDATE bazar_shodai_items SET isChecked = :isChecked WHERE id = :id")
+    suspend fun toggleChecked(id: String, isChecked: Boolean)
+
+    @Query("DELETE FROM bazar_shodai_items WHERE id = :id")
+    suspend fun deleteBazarItem(id: String)
+
+    @Query("DELETE FROM bazar_shodai_items WHERE workspaceId = :workspaceId AND isChecked = 1")
+    suspend fun clearCheckedItems(workspaceId: String)
+}
+
+@Dao
 interface AssetDao {
     @Query("SELECT * FROM assets WHERE workspaceId = :workspaceId ORDER BY dateMillis DESC")
     fun getAssets(workspaceId: String): Flow<List<AssetEntity>>
