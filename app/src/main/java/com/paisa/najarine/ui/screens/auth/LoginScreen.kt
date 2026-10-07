@@ -26,6 +26,7 @@ fun LoginScreen(
     authState: AuthState,
     onSignInClick: () -> Unit,
     onCancelLoading: () -> Unit,
+    onNavigateToDiagnostics: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -197,6 +198,15 @@ fun LoginScreen(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = PaisaTextPrimary
                                     )
+                                    if (authState.rawException?.contains("28444") == true || authState.message.contains("28444")) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "টিপস: Google Cloud / Firebase এ নতুন ক্লায়েন্ট আইডি সিঙ্ক হতে সাধারণত ২-৫ মিনিট সময় লাগে। নতুন APK ইনস্টল করে কিছুক্ষণ পর আবার চেষ্টা করুন।",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontSize = 11.sp,
+                                            color = PaisaTextSecondary
+                                        )
+                                    }
                                 }
                             }
 
@@ -213,6 +223,20 @@ fun LoginScreen(
                                 Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text("Google দিয়ে পুনরায় চেষ্টা করুন", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            OutlinedButton(
+                                onClick = onNavigateToDiagnostics,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("সার্টিফিকেট ও ক্লায়েন্ট ডায়াগনস্টিকস দেখুন", fontSize = 12.sp)
                             }
                         }
 

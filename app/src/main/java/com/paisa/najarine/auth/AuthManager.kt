@@ -107,12 +107,29 @@ class AuthManager(private val context: Context) {
         _authState.value = AuthState.SigningIn
 
         val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-        val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(signInOption)
+            .build()
 
         scope.launch {
             try {
                 _authState.value = AuthState.GoogleAccountSelector
-                val result = credentialManager.getCredential(activity, request)
+                val result = try {
+                    credentialManager.getCredential(activity, request)
+                } catch (e: Exception) {
+                    if (e is GetCredentialCancellationException) throw e
+                    Log.w("Auth", "Primary GetSignInWithGoogleOption request failed, attempting GetGoogleIdOption fallback: ${e.message}")
+                    val fallbackGoogleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(clientId)
+                        .setAutoSelectEnabled(false)
+                        .build()
+                    val fallbackRequest = GetCredentialRequest.Builder()
+                        .addCredentialOption(fallbackGoogleIdOption)
+                        .build()
+                    credentialManager.getCredential(activity, fallbackRequest)
+                }
+
                 val credential = result.credential
                 if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                     _authState.value = AuthState.AuthenticatingWithFirebase
@@ -148,9 +165,13 @@ class AuthManager(private val context: Context) {
                 _authState.value = AuthState.Idle
             } catch (e: Exception) {
                 Log.e("Auth", "Google Sign-In failed", e)
-                val isConfigIssue = e.message?.contains("10") == true || e.message?.contains("12500") == true
+                val isConfigIssue = e.message?.contains("10") == true || e.message?.contains("12500") == true || e.message?.contains("28444") == true
                 CertificateDiagnostics.recordAuthException(e.javaClass.name, e.message ?: "Unknown", "EXCEPTION")
-                val errorMsg = e.localizedMessage ?: "Sign-in failed. Please verify network and Google account."
+                val errorMsg = if (e.message?.contains("28444") == true) {
+                    "Google কনসোলে নতুন ক্লায়েন্ট আইডি সিঙ্ক হতে ২-৫ মিনিট সময় নেয়। অনুগ্রহ করে নতুন APK ইনস্টল করে কিছুক্ষণ পর আবার চেষ্টা করুন।"
+                } else {
+                    e.localizedMessage ?: "Sign-in failed. Please verify network and Google account."
+                }
                 _authState.value = AuthState.Error(
                     title = "Authentication Failure",
                     message = errorMsg,

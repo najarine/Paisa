@@ -204,7 +204,8 @@ fun PaisaApp(
             LoginScreen(
                 authState = authState,
                 onSignInClick = { viewModel.signInWithGoogle(activity) },
-                onCancelLoading = { viewModel.resetAuthState() }
+                onCancelLoading = { viewModel.resetAuthState() },
+                onNavigateToDiagnostics = { navigateTo(AppScreen.DIAGNOSTICS) }
             )
         }
         return
