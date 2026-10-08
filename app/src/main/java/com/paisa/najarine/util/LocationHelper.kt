@@ -166,24 +166,15 @@ object LocationHelper {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun resolveCityAndCountry(context: Context, lat: Double, lon: Double): Pair<String, String> {
         return try {
             val geocoder = Geocoder(context, Locale.getDefault())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Async geocoder supported
-                val addresses = geocoder.getFromLocation(lat, lon, 1)
-                val addr = addresses?.firstOrNull()
-                val city = addr?.locality ?: addr?.subAdminArea ?: addr?.adminArea ?: ""
-                val country = addr?.countryName ?: ""
-                Pair(city, country)
-            } else {
-                @Suppress("DEPRECATION")
-                val addresses = geocoder.getFromLocation(lat, lon, 1)
-                val addr = addresses?.firstOrNull()
-                val city = addr?.locality ?: addr?.subAdminArea ?: addr?.adminArea ?: ""
-                val country = addr?.countryName ?: ""
-                Pair(city, country)
-            }
+            val addresses = geocoder.getFromLocation(lat, lon, 1)
+            val addr = addresses?.firstOrNull()
+            val city = addr?.locality ?: addr?.subAdminArea ?: addr?.adminArea ?: ""
+            val country = addr?.countryName ?: ""
+            Pair(city, country)
         } catch (_: Exception) {
             Pair("", "")
         }

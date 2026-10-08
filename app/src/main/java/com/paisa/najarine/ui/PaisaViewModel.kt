@@ -20,6 +20,7 @@ import com.paisa.najarine.ui.screens.accounting.HabitUi
 import com.paisa.najarine.ui.screens.accounting.InvoiceItemUi
 import com.paisa.najarine.ui.screens.accounting.TaskUi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -34,6 +35,7 @@ private data class ExtendedAccountingInputs(
     val cryptoRates: Map<String, CryptoRate>
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PaisaViewModel(application: Application) : AndroidViewModel(application) {
 
     val database = PaisaDatabase.getDatabase(application)
