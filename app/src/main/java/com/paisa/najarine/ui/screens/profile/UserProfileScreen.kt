@@ -261,7 +261,7 @@ fun UserProfileScreen(
                 onValueChange = { bioNote = it },
                 label = { Text("ব্যক্তিগত নোট বা লক্ষ্য") },
                 placeholder = { Text("আপনার আর্থিক দর্শন বা সংকল্প লিখুন...") },
-                leadingIcon = { Icon(Icons.Default.Notes, contentDescription = null) },
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null) },
                 minLines = 3,
                 maxLines = 5,
                 modifier = Modifier.fillMaxWidth()
@@ -310,7 +310,7 @@ fun UserProfileScreen(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("অ্যাকাউন্ট থেকে লগআউট / সাইন আউট করুন", fontWeight = FontWeight.Bold)
             }
@@ -318,7 +318,7 @@ fun UserProfileScreen(
             if (showSignOutDialog) {
                 AlertDialog(
                     onDismissRequest = { showSignOutDialog = false },
-                    icon = { Icon(Icons.Default.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     title = { Text("সাইন আউট নিশ্চিতকরণ", fontWeight = FontWeight.Bold) },
                     text = { Text("আপনার সংরক্ষিত ডাটা ক্লাউডে নিরাপদে রয়েছে। আপনি কি নিশ্চিত যে অ্যাকাউন্ট থেকে সাইন আউট করতে চান?") },
                     confirmButton = {

@@ -554,7 +554,7 @@ fun DebtPayoffWidget(
                 ) {
                     Icon(Icons.Default.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Payoff লক্ষ্যসমূহ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("পরিশোধের লক্ষ্যসমূহ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
 
                 OutlinedButton(

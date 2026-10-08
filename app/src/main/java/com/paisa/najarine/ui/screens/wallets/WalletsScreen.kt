@@ -52,8 +52,8 @@ fun WalletsScreen(
                 containerColor = PaisaTealPrimary,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                icon = { Icon(Icons.Default.Add, contentDescription = "Add Wallet") },
-                text = { Text("Add Wallet / Bank", fontWeight = FontWeight.SemiBold) }
+                icon = { Icon(Icons.Default.Add, contentDescription = "ওয়ালেট যোগ করুন") },
+                text = { Text("ওয়ালেট / ব্যাংক যোগ করুন", fontWeight = FontWeight.SemiBold) }
             )
         }
     ) { padding ->
@@ -68,13 +68,13 @@ fun WalletsScreen(
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Wealth Hub & Wallets",
+                        text = "সম্পদ ও ওয়ালেট হাব",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = PaisaTextPrimary
                     )
                     Text(
-                        text = "Deterministic operational source of truth for where your money is held.",
+                        text = "আপনার টাকা কোথায় জমা আছে তার সঠিক হিসাব ও পরিচালনা কেন্দ্র।",
                         style = MaterialTheme.typography.bodyMedium,
                         color = PaisaTextSecondary
                     )
@@ -87,13 +87,13 @@ fun WalletsScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         WalletStatChip(
-                            title = "Liquid Assets",
+                            title = "লিকুইড সম্পদ",
                             amount = "৳ ${String.format(Locale.US, "%,.0f", totalAssets)}",
                             tint = PaisaIncomeGreen,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
-                            title = "Liabilities",
+                            title = "দায় ও দেনা",
                             amount = "৳ ${String.format(Locale.US, "%,.0f", totalLiabilities)}",
                             tint = PaisaExpenseRed,
                             modifier = Modifier.weight(1f)
@@ -107,13 +107,13 @@ fun WalletsScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         WalletStatChip(
-                            title = "Banks Balance",
+                            title = "ব্যাংক ব্যালেন্স",
                             amount = "৳ ${String.format(Locale.US, "%,.0f", bankTotal)}",
                             tint = PaisaTransferBlue,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
-                            title = "MFS Total",
+                            title = "মোবাইল ব্যাংকিং (MFS)",
                             amount = "৳ ${String.format(Locale.US, "%,.0f", mfsTotal)}",
                             tint = Color(0xFFE2136E), // bKash magenta accent
                             modifier = Modifier.weight(1f)
@@ -132,7 +132,7 @@ fun WalletsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "All Wallets (${wallets.size})",
+                        text = "সকল ওয়ালেট (${wallets.size})",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = PaisaTextPrimary
@@ -143,9 +143,9 @@ fun WalletsScreen(
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Icon(Icons.Default.SyncAlt, contentDescription = "Transfer", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.SyncAlt, contentDescription = "স্থানান্তর", modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Transfer", fontSize = 12.sp)
+                        Text("স্থানান্তর", fontSize = 12.sp)
                     }
                 }
             }
@@ -159,7 +159,7 @@ fun WalletsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No wallets found. Tap '+ Add Wallet / Bank' below to configure bKash, Nagad, Islami Bank, or Cash.",
+                            text = "কোনো ওয়ালেট পাওয়া যায়নি। বিকাশ, নগদ, ইসলামী ব্যাংক বা ক্যাশ ওয়ালেট সেটআপ করতে নিচের '+ ওয়ালেট / ব্যাংক যোগ করুন' বাটনে চাপুন।",
                             style = MaterialTheme.typography.bodyMedium,
                             color = PaisaTextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -381,7 +381,7 @@ fun AddWalletDialog(
                 // Category Selector Tabs
                 item {
                     Text(
-                        text = "Account Category",
+                        text = "অ্যাকাউন্টের ধরন",
                         style = MaterialTheme.typography.labelMedium,
                         color = PaisaTextSecondary
                     )
@@ -391,10 +391,10 @@ fun AddWalletDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         listOf(
-                            FinancialInstitutionType.MFS to "MFS",
-                            FinancialInstitutionType.BANK to "Bank",
-                            FinancialInstitutionType.CARD to "Card",
-                            FinancialInstitutionType.CASH to "Cash"
+                            FinancialInstitutionType.MFS to "মোবাইল ব্যাংকিং",
+                            FinancialInstitutionType.BANK to "ব্যাংক",
+                            FinancialInstitutionType.CARD to "কার্ড",
+                            FinancialInstitutionType.CASH to "নগদ"
                         ).forEach { (cat, label) ->
                             FilterChip(
                                 selected = selectedCategory == cat,
@@ -479,7 +479,7 @@ fun AddWalletDialog(
                     OutlinedTextField(
                         value = walletName,
                         onValueChange = { walletName = it },
-                        label = { Text("Display Name") },
+                        label = { Text("ওয়ালেটের নাম") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -491,8 +491,8 @@ fun AddWalletDialog(
                     OutlinedTextField(
                         value = accountNumber,
                         onValueChange = { accountNumber = it },
-                        label = { Text("Account No / Phone (optional)") },
-                        placeholder = { Text("e.g. 017xx-xxxxxx or 2050-xxx") },
+                        label = { Text("হিসাব নম্বর / ফোন (ঐচ্ছিক)") },
+                        placeholder = { Text("যেমন: 017xx-xxxxxx বা 2050-xxx") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -504,7 +504,7 @@ fun AddWalletDialog(
                     OutlinedTextField(
                         value = balanceText,
                         onValueChange = { balanceText = it },
-                        label = { Text("Starting Balance (৳)") },
+                        label = { Text("প্রাথমিক ব্যালেন্স (৳)") },
                         placeholder = { Text("0.00") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -518,8 +518,8 @@ fun AddWalletDialog(
                         OutlinedTextField(
                             value = creditLimitText,
                             onValueChange = { creditLimitText = it },
-                            label = { Text("Credit Card Limit (৳)") },
-                            placeholder = { Text("e.g. 100000") },
+                            label = { Text("ক্রেডিট কার্ডের লিমিট (৳)") },
+                            placeholder = { Text("যেমন: 100000") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             singleLine = true
@@ -537,8 +537,8 @@ fun AddWalletDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Exclude from Total Net Worth", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                            Text("For non-liquid, escrow, or collateral accounts", style = MaterialTheme.typography.labelSmall, color = PaisaTextSecondary)
+                            Text("মোট নিট সম্পদ থেকে বাদ দিন", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text("অ-লিকুইড, জামানত বা বন্ধকী অ্যাকাউন্টের জন্য", style = MaterialTheme.typography.labelSmall, color = PaisaTextSecondary)
                         }
                         Switch(
                             checked = isExcludedFromTotal,
@@ -574,12 +574,12 @@ fun AddWalletDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = PaisaTealPrimary),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Save Wallet")
+                Text("ওয়ালেট সংরক্ষণ করুন")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("বাতিল")
             }
         }
     )
@@ -605,21 +605,21 @@ fun WalletDetailDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DetailRow(label = "Current Balance", value = "৳ ${String.format(Locale.US, "%,.2f", wallet.balance)}")
+                DetailRow(label = "বর্তমান ব্যালেন্স", value = "৳ ${String.format(Locale.US, "%,.2f", wallet.balance)}")
                 if (wallet.accountNumber.isNotEmpty()) {
-                    DetailRow(label = "Account / Number", value = wallet.accountNumber)
+                    DetailRow(label = "অ্যাকাউন্ট / ফোন নম্বর", value = wallet.accountNumber)
                 }
                 if (wallet.creditLimit > 0) {
-                    DetailRow(label = "Credit Limit", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit)}")
-                    DetailRow(label = "Available Credit", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}")
+                    DetailRow(label = "ক্রেডিট লিমিট", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit)}")
+                    DetailRow(label = "অবশিষ্ট ব্যবহারযোগ্য ক্রেডিট", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}")
                 }
-                DetailRow(label = "Currency", value = wallet.currencyCode)
-                DetailRow(label = "Net Worth Inclusion", value = if (wallet.isExcludedFromTotal) "Excluded" else "Included")
+                DetailRow(label = "মুদ্রা", value = wallet.currencyCode)
+                DetailRow(label = "নিট সম্পদে অন্তর্ভুক্তি", value = if (wallet.isExcludedFromTotal) "অন্তর্ভুক্ত নয়" else "অন্তর্ভুক্ত")
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text("বন্ধ করুন")
             }
         },
         dismissButton = {
@@ -627,7 +627,7 @@ fun WalletDetailDialog(
                 onClick = onDelete,
                 colors = ButtonDefaults.textButtonColors(contentColor = PaisaExpenseRed)
             ) {
-                Text("Delete Wallet")
+                Text("ওয়ালেট মুছে ফেলুন")
             }
         }
     )

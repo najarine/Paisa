@@ -7,6 +7,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -260,13 +265,13 @@ fun MoreAndAnalyticsScreen(
             HubSectionContainer(
                 title = "হিসাব ও খতিয়ান (Ledger & Planning)",
                 description = "বাজেট, সঞ্চয় লক্ষ্য, রিকারিং বিল ও দেনা-পাওনা ট্র্যাকিং",
-                icon = Icons.Default.ReceiptLong,
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
                 accentColor = PaisaTealPrimary
             ) {
                 HubActionItem(
                     title = "সব লেনদেন (সকল হিসাব)",
                     subtitle = "আয়, ব্যয়, ট্রান্সফার ও ফিল্টার তালিকা",
-                    icon = Icons.Default.ListAlt,
+                    icon = Icons.AutoMirrored.Filled.ListAlt,
                     onClick = onNavigateToTransactions
                 )
                 HubActionItem(
@@ -314,7 +319,7 @@ fun MoreAndAnalyticsScreen(
             HubSectionContainer(
                 title = "সম্পদ ও বিনিয়োগ (Assets Portfolio)",
                 description = "ফিক্সড ডিপোজিট, স্বর্ণ, শেয়ার বাজার ও ক্রিপ্টো সম্পদ",
-                icon = Icons.Default.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
                 accentColor = Color(0xFF0284C7)
             ) {
                 HubActionItem(
@@ -332,7 +337,7 @@ fun MoreAndAnalyticsScreen(
                 HubActionItem(
                     title = "শেয়ার বাজার বিনিয়োগ (Stock Market)",
                     subtitle = "ডিএসই পোর্টফোলিও ও মিউচুয়াল ফান্ড",
-                    icon = Icons.Default.ShowChart,
+                    icon = Icons.AutoMirrored.Filled.ShowChart,
                     onClick = onNavigateToStockMarket
                 )
                 HubActionItem(
@@ -446,7 +451,7 @@ fun MoreAndAnalyticsScreen(
                 HubActionItem(
                     title = "পবিত্র আল-কুরআন (১১৪টি সূরা)",
                     subtitle = "সূরাভিত্তিক পূর্ণাঙ্গ পাঠাগার, অর্থ ও তিলাওয়াত",
-                    icon = Icons.Default.MenuBook,
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
                     onClick = onNavigateToQuran
                 )
                 HubActionItem(

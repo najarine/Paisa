@@ -59,12 +59,12 @@ fun ProjectInvoiceScreen(
                 title = { Text("প্রজেক্ট ও ইনভয়েস জেনারেশন", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showCreateDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Create Invoice")
+                        Icon(Icons.Default.Add, contentDescription = "ইনভয়েস তৈরি করুন")
                     }
                 }
             )
@@ -74,7 +74,7 @@ fun ProjectInvoiceScreen(
                 onClick = { showCreateDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Create Invoice")
+                Icon(Icons.Default.Add, contentDescription = "ইনভয়েস তৈরি করুন")
             }
         }
     ) { padding ->
@@ -215,7 +215,7 @@ fun ProjectInvoiceScreen(
                                         }
 
                                         IconButton(onClick = { viewModel.deleteInvoice(inv.id) }) {
-                                            Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = Color.Gray)
+                                            Icon(Icons.Default.DeleteOutline, contentDescription = "মুছে ফেলুন", tint = Color.Gray)
                                         }
                                     }
                                 }

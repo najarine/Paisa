@@ -91,19 +91,19 @@ fun StockMarketScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = { refreshMarketData() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = PaisaTealPrimary)
+                        Icon(Icons.Default.Refresh, contentDescription = "রিফ্রেশ করুন", tint = PaisaTealPrimary)
                     }
                     IconButton(onClick = {
                         prefilledTicker = ""
                         prefilledPrice = ""
                         showAddDialog = true
                     }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Stock")
+                        Icon(Icons.Default.Add, contentDescription = "স্টক যোগ করুন")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -119,7 +119,7 @@ fun StockMarketScreen(
                     },
                     containerColor = Color(0xFF2563EB)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = "যোগ করুন", tint = Color.White)
                 }
             }
         }

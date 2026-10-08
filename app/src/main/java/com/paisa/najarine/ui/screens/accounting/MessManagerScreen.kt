@@ -127,7 +127,7 @@ fun MessManagerScreen(
     }
 
     val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale("bn", "BD")).apply {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
             maximumFractionDigits = 0
         }
     }
@@ -147,12 +147,12 @@ fun MessManagerScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToBazarShodai) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Bazar List", tint = PaisaTealPrimary)
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "বাজারের তালিকা", tint = PaisaTealPrimary)
                     }
 
                     IconButton(onClick = {
@@ -176,7 +176,7 @@ fun MessManagerScreen(
                         clipboard.setPrimaryClip(ClipData.newPlainText("Mess Report", report))
                         Toast.makeText(context, "মেস রিপোর্ট কপি করা হয়েছে!", Toast.LENGTH_SHORT).show()
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share", tint = PaisaTealPrimary)
+                        Icon(Icons.Default.Share, contentDescription = "শেয়ার করুন", tint = PaisaTealPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -196,7 +196,7 @@ fun MessManagerScreen(
                 containerColor = PaisaTealPrimary,
                 modifier = Modifier.testTag("add_mess_entry_fab")
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "যোগ করুন", tint = Color.White)
             }
         }
     ) { padding ->
@@ -560,7 +560,7 @@ private fun MessEntryCard(
     onDelete: () -> Unit
 ) {
     val dateStr = remember(entry.dateMillis) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale("bn", "BD")).format(Date(entry.dateMillis))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.forLanguageTag("bn-BD")).format(Date(entry.dateMillis))
     }
 
     Card(

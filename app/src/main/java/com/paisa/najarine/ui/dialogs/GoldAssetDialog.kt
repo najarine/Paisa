@@ -81,7 +81,7 @@ fun GoldAssetDialog(
             ) {
                 Text("স্বর্ণ ও রৌপ্য সম্পদ (Gold & Silver)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 IconButton(onClick = fetchLivePrice) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh Rate", tint = PaisaTealPrimary)
+                    Icon(Icons.Default.Refresh, contentDescription = "রিফ্রেশ করুন", tint = PaisaTealPrimary)
                 }
             }
         },

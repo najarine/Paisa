@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -177,6 +178,10 @@ fun PaisaApp(
     }
 
     LaunchedEffect(Unit) {
+        // Load last known location immediately
+        viewModel.loadSavedLocationOnStart(context)
+        viewModel.detectLocationAndRefreshPrayerTimings(context)
+
         // Auto-schedule exact prayer alarms if Adhan toggle is active
         try {
             val timings = viewModel.prayerTimings.value ?: viewModel.islamicRepo.getOfflinePrayerTimings("Hanafi")
@@ -270,8 +275,8 @@ fun PaisaApp(
                     NavigationBarItem(
                         selected = currentScreen == AppScreen.HOME,
                         onClick = { navigateTo(AppScreen.HOME) },
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                        label = { Text("Home", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.HOME) FontWeight.Bold else FontWeight.Normal) },
+                        icon = { Icon(Icons.Default.Home, contentDescription = "হোম") },
+                        label = { Text("হোম", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.HOME) FontWeight.Bold else FontWeight.Normal) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PaisaTealPrimary,
                             selectedTextColor = PaisaTealPrimary,
@@ -282,8 +287,8 @@ fun PaisaApp(
                     NavigationBarItem(
                         selected = currentScreen == AppScreen.WALLETS,
                         onClick = { navigateTo(AppScreen.WALLETS) },
-                        icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Wallets") },
-                        label = { Text("Wallets", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.WALLETS) FontWeight.Bold else FontWeight.Normal) },
+                        icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "ওয়ালেট") },
+                        label = { Text("ওয়ালেট", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.WALLETS) FontWeight.Bold else FontWeight.Normal) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PaisaTealPrimary,
                             selectedTextColor = PaisaTealPrimary,
@@ -294,8 +299,8 @@ fun PaisaApp(
                     NavigationBarItem(
                         selected = currentScreen == AppScreen.TRANSACTIONS,
                         onClick = { navigateTo(AppScreen.TRANSACTIONS) },
-                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Transactions") },
-                        label = { Text("Ledger", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.TRANSACTIONS) FontWeight.Bold else FontWeight.Normal) },
+                        icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "লেনদেন") },
+                        label = { Text("লেনদেন", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.TRANSACTIONS) FontWeight.Bold else FontWeight.Normal) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PaisaTealPrimary,
                             selectedTextColor = PaisaTealPrimary,
@@ -306,8 +311,8 @@ fun PaisaApp(
                     NavigationBarItem(
                         selected = currentScreen == AppScreen.ISLAMIC,
                         onClick = { navigateTo(AppScreen.ISLAMIC) },
-                        icon = { Icon(Icons.Default.Mosque, contentDescription = "Islamic") },
-                        label = { Text("Islamic", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.ISLAMIC) FontWeight.Bold else FontWeight.Normal) },
+                        icon = { Icon(Icons.Default.Mosque, contentDescription = "ইসলামিক") },
+                        label = { Text("ইসলামিক", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.ISLAMIC) FontWeight.Bold else FontWeight.Normal) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PaisaTealPrimary,
                             selectedTextColor = PaisaTealPrimary,
@@ -318,8 +323,8 @@ fun PaisaApp(
                     NavigationBarItem(
                         selected = currentScreen == AppScreen.TOOLS,
                         onClick = { navigateTo(AppScreen.TOOLS) },
-                        icon = { Icon(Icons.Default.Widgets, contentDescription = "Tools") },
-                        label = { Text("Tools", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.TOOLS) FontWeight.Bold else FontWeight.Normal) },
+                        icon = { Icon(Icons.Default.Widgets, contentDescription = "টুলস") },
+                        label = { Text("টুলস", fontSize = 11.sp, fontWeight = if (currentScreen == AppScreen.TOOLS) FontWeight.Bold else FontWeight.Normal) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PaisaTealPrimary,
                             selectedTextColor = PaisaTealPrimary,

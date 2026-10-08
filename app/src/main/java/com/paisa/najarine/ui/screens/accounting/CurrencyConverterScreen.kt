@@ -77,7 +77,7 @@ fun CurrencyConverterScreen(
     var allRatesMap by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
 
     val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale("bn", "BD")).apply {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
             maximumFractionDigits = 2
         }
     }
@@ -93,7 +93,7 @@ fun CurrencyConverterScreen(
                     amount = amount
                 )
                 conversionResult = res
-                val timeStr = SimpleDateFormat("hh:mm:ss a", Locale("bn", "BD")).format(Date(res.timestampMillis))
+                val timeStr = SimpleDateFormat("hh:mm:ss a", Locale.forLanguageTag("bn-BD")).format(Date(res.timestampMillis))
                 lastUpdatedText = "সর্বশেষ আপডেট: $timeStr"
             } catch (_: Exception) {
             } finally {

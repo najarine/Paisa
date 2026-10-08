@@ -51,12 +51,12 @@ fun FdrDpsShonchoyScreen(
                 title = { Text("এফডিআর, ডিপিএস ও সঞ্চয়পত্র", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Investment")
+                        Icon(Icons.Default.Add, contentDescription = "বিনিয়োগ যোগ করুন")
                     }
                 }
             )
@@ -66,7 +66,7 @@ fun FdrDpsShonchoyScreen(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+                Icon(Icons.Default.Add, contentDescription = "যোগ করুন")
             }
         }
     ) { padding ->

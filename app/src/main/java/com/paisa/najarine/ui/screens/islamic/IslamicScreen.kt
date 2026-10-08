@@ -103,7 +103,7 @@ fun IslamicScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "ISLAMIC TODAY",
+                            text = "আজকের ইসলামিক সময়সূচী",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFD97706), // Gold/Amber
@@ -179,6 +179,118 @@ fun IslamicScreen(
             }
         }
 
+        // Fasting / Roja (সেহরি ও ইফতার) Card based on GPS Location
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                border = CardDefaults.outlinedCardBorder()
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "🌙",
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "রোজা, সেহরি ও ইফতারের সময়সূচী",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = PaisaTextPrimary
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFEF3C7)
+                        ) {
+                            Text(
+                                text = "GPS অটো-আপডেট",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFB45309),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "অবস্থান: ${userLocation?.displayName ?: "ঢাকা, বাংলাদেশ"} • ${timings.hijriDateFormatted}",
+                        fontSize = 12.sp,
+                        color = PaisaTextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Sehri Time Box
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("🌅 সেহরির শেষ সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(timings.sehriEnds, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF065F46))
+                                Text("ফজরের আগে শেষ", fontSize = 10.sp, color = Color(0xFF059669))
+                            }
+                        }
+
+                        // Iftar Time Box
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("🌇 ইফতারের সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2410C))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(timings.iftarTime, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+                                Text("মাগরিবের আযানে", fontSize = 10.sp, color = Color(0xFFEA580C))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Fasting Niyyat Preview
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(PaisaBackground)
+                            .padding(10.dp)
+                    ) {
+                        Column {
+                            Text("🤲 রোজার নিয়ত (নালিশ):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
+                            Text("“নাওয়াইতু আন আসুমা গাদাম মিন শাহরি রামাদান...” (হে আল্লাহ! আমি আগামীকাল রোজা রাখার নিয়ত করলাম)", fontSize = 11.sp, color = PaisaTextSecondary)
+                        }
+                    }
+                }
+            }
+        }
+
         // Section Title: Islamic Modules
         item {
             Text(
@@ -200,8 +312,8 @@ fun IslamicScreen(
             ) {
                 // Prayer & Adhan Module (Yellow Bell)
                 ModuleLargeCard(
-                    title = "Prayer & Adhan",
-                    banglaSub = "নামাজ ও আযান",
+                    title = "নামাজ ও আযান",
+                    banglaSub = "বিজ্ঞপ্তি ও অডিও",
                     icon = Icons.Default.NotificationsActive,
                     iconBg = Color(0xFFFEF3C7),
                     iconTint = Color(0xFFD97706),
@@ -211,8 +323,8 @@ fun IslamicScreen(
 
                 // Qibla Compass Module (Green Compass)
                 ModuleLargeCard(
-                    title = "Qibla Compass",
-                    banglaSub = "কিবলা কম্পাস",
+                    title = "কিবলা কম্পাস",
+                    banglaSub = "দিক নির্ণয়",
                     icon = Icons.Default.Explore,
                     iconBg = Color(0xFFD1FAE5),
                     iconTint = Color(0xFF047857),
@@ -233,7 +345,7 @@ fun IslamicScreen(
             ) {
                 // Al-Quran
                 ModuleSmallCard(
-                    title = "Al-Quran",
+                    title = "আল-কুরআন",
                     icon = Icons.AutoMirrored.Filled.MenuBook,
                     iconBg = Color(0xFFD1FAE5),
                     iconTint = Color(0xFF059669),
@@ -243,7 +355,7 @@ fun IslamicScreen(
 
                 // Daily Hadith
                 ModuleSmallCard(
-                    title = "Daily Hadith",
+                    title = "প্রতিদিনের হাদিস",
                     icon = Icons.Default.AutoStories,
                     iconBg = Color(0xFFE0F2FE),
                     iconTint = Color(0xFF0284C7),
@@ -253,7 +365,7 @@ fun IslamicScreen(
 
                 // Zakat & Fitrah
                 ModuleSmallCard(
-                    title = "Zakat & Fitrah",
+                    title = "যাকাত ও ফিতরা",
                     icon = Icons.Default.Calculate,
                     iconBg = Color(0xFFFFEDD5),
                     iconTint = Color(0xFFEA580C),
@@ -364,7 +476,7 @@ fun IslamicScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "HOURLY HADITH — $hadithSource",
+                            text = "প্রতি ঘণ্টার হাদিস — $hadithSource",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF047857),

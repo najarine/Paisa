@@ -13,6 +13,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -241,6 +244,83 @@ fun AdhanPrayerTimesScreen(
                 }
             }
 
+            // 1.1 FASTING (SEHRI & IFTAR) CARD BASED ON GPS LOCATION
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = CardDefaults.outlinedCardBorder()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🌙", fontSize = 18.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("আজকের সেহরি ও ইফতার (GPS সময়)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFFEF3C7)
+                            ) {
+                                Text(
+                                    text = timings.hijriDateFormatted,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFB45309),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Sehri
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("🌅 সেহরির শেষ সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(timings.sehriEnds, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF065F46))
+                                    Text("ফজরের পূর্বমুহূর্ত", fontSize = 10.sp, color = Color(0xFF059669))
+                                }
+                            }
+
+                            // Iftar
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("🌇 ইফতারের সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2410C))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(timings.iftarTime, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+                                    Text("মাগরিবের ওয়াক্তে", fontSize = 10.sp, color = Color(0xFFEA580C))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // 2. PRIMARY PRAYER PUSH NOTIFICATIONS & ADHAN TOGGLE CARD (WorkManager Powered)
             item {
                 Card(
@@ -347,7 +427,7 @@ fun AdhanPrayerTimesScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = if (isAdhanEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                        imageVector = if (isAdhanEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                                         contentDescription = null,
                                         tint = if (isAdhanEnabled) Color.White else PaisaTextSecondary,
                                         modifier = Modifier.size(22.dp)
@@ -458,7 +538,7 @@ fun AdhanPrayerTimesScreen(
                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Send,
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
                                         tint = PaisaTealPrimary
@@ -966,7 +1046,7 @@ fun AdhanPrayerTimesScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.VolumeUp,
+                                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                                                 contentDescription = null,
                                                 tint = if (isSelected) Color.White else PaisaTealPrimary,
                                                 modifier = Modifier.size(18.dp)

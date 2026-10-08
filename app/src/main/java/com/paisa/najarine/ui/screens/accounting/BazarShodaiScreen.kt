@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -146,7 +147,7 @@ fun BazarShodaiScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
@@ -167,7 +168,7 @@ fun BazarShodaiScreen(
                         clipboard.setPrimaryClip(ClipData.newPlainText("Bazar List", text))
                         Toast.makeText(context, "বাজার তালিকা কপি করা হয়েছে!", Toast.LENGTH_SHORT).show()
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share", tint = PaisaTealPrimary)
+                        Icon(Icons.Default.Share, contentDescription = "শেয়ার করুন", tint = PaisaTealPrimary)
                     }
 
                     IconButton(onClick = {
@@ -177,7 +178,7 @@ fun BazarShodaiScreen(
                             Toast.makeText(context, "খরচে রূপান্তর করার মতো কেনা সদাই নেই", Toast.LENGTH_SHORT).show()
                         }
                     }) {
-                        Icon(Icons.Default.ReceiptLong, contentDescription = "Convert to Expense", tint = Color(0xFF047857))
+                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "খরচে রূপান্তর করুন", tint = Color(0xFF047857))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -192,7 +193,7 @@ fun BazarShodaiScreen(
                 containerColor = PaisaTealPrimary,
                 modifier = Modifier.testTag("add_bazar_item_fab")
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Item", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "আইটেম যোগ করুন", tint = Color.White)
             }
         }
     ) { padding ->

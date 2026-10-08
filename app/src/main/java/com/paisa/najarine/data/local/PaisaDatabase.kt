@@ -62,12 +62,36 @@ abstract class PaisaDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: PaisaDatabase? = null
 
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Ensure all standard tables exist safely with IF NOT EXISTS
+                db.execSQL("CREATE TABLE IF NOT EXISTS workspaces (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL, currencyCode TEXT NOT NULL, currencySymbol TEXT NOT NULL, createdAt INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS wallets (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL, institutionId TEXT NOT NULL, accountNumber TEXT NOT NULL, balance REAL NOT NULL, creditLimit REAL NOT NULL, currencyCode TEXT NOT NULL, colorHex TEXT NOT NULL, isExcludedFromTotal INTEGER NOT NULL, note TEXT NOT NULL, updatedAt INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, walletId TEXT NOT NULL, toWalletId TEXT, type TEXT NOT NULL, amount REAL NOT NULL, fee REAL NOT NULL, category TEXT NOT NULL, note TEXT NOT NULL, dateMillis INTEGER NOT NULL, tags TEXT NOT NULL, receiptImageUri TEXT, isDraft INTEGER NOT NULL, isAiGenerated INTEGER NOT NULL, confirmedByUser INTEGER NOT NULL, updatedAt INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL, iconName TEXT NOT NULL, colorHex TEXT NOT NULL, isDefault INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS budgets (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, categoryName TEXT NOT NULL, amountLimit REAL NOT NULL, period TEXT NOT NULL, month INTEGER NOT NULL, year INTEGER NOT NULL)")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add any missing auxiliary tables or columns for v2 to v3 safely
+                db.execSQL("CREATE TABLE IF NOT EXISTS goals_vaults (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, name TEXT NOT NULL, targetAmount REAL NOT NULL, currentAmount REAL NOT NULL, targetDateMillis INTEGER NOT NULL, colorHex TEXT NOT NULL, isCompleted INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS bills_subscriptions (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, walletId TEXT NOT NULL, name TEXT NOT NULL, amount REAL NOT NULL, cycle TEXT NOT NULL, nextDueDateMillis INTEGER NOT NULL, isPaid INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS debts_dena_pona (id TEXT PRIMARY KEY NOT NULL, workspaceId TEXT NOT NULL, walletId TEXT NOT NULL, personName TEXT NOT NULL, phoneNumber TEXT NOT NULL, amount REAL NOT NULL, type TEXT NOT NULL, dueDateMillis INTEGER NOT NULL, isSettled INTEGER NOT NULL, note TEXT NOT NULL)")
+            }
+        }
+
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Add updatedAt to transactions if not existing
-                db.execSQL("ALTER TABLE transactions ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                try {
+                    db.execSQL("ALTER TABLE transactions ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
                 // Backfill existing rows with dateMillis
-                db.execSQL("UPDATE transactions SET updatedAt = dateMillis WHERE updatedAt = 0")
+                try {
+                    db.execSQL("UPDATE transactions SET updatedAt = dateMillis WHERE updatedAt = 0")
+                } catch (_: Exception) {}
                 // Create sync outbox table for durable offline mutations
                 db.execSQL(
                     """
@@ -102,8 +126,7 @@ abstract class PaisaDatabase : RoomDatabase() {
                     PaisaDatabase::class.java,
                     "paisa_financial_db"
                 )
-                    .addMigrations(MIGRATION_3_4)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance

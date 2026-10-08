@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -73,21 +74,21 @@ fun HomeScreen(
     val totalInvestments = totalAssetSummary.totalInvestments
     val totalReceivables = totalAssetSummary.totalReceivables
 
-    var selectedFilterCategory by remember { mutableStateOf("All") }
-    val filterCategories = listOf("All", "Cash", "Banks", "MFS / Mobile", "Cards")
+    var selectedFilterCategory by remember { mutableStateOf("সকল") }
+    val filterCategories = listOf("সকল", "ক্যাশ", "ব্যাংক", "বিকাশ/নগদ", "কার্ড")
 
     val filteredWallets = remember(wallets, selectedFilterCategory) {
         when (selectedFilterCategory) {
-            "Cash" -> wallets.filter { it.type == "CASH" }
-            "Banks" -> wallets.filter { it.type == "BANK" }
-            "MFS / Mobile" -> wallets.filter { it.type == "MFS" }
-            "Cards" -> wallets.filter { it.type == "CARD" }
+            "ক্যাশ" -> wallets.filter { it.type == "CASH" }
+            "ব্যাংক" -> wallets.filter { it.type == "BANK" }
+            "বিকাশ/নগদ" -> wallets.filter { it.type == "MFS" }
+            "কার্ড" -> wallets.filter { it.type == "CARD" }
             else -> wallets
         }
     }
 
     val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale("bn", "BD")).apply {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
             maximumFractionDigits = 0
         }
     }
@@ -129,7 +130,7 @@ fun HomeScreen(
                             color = Color(0xFFF3F4F6)
                         ) {
                             Text(
-                                text = "Active Wallets (${wallets.size})",
+                                text = "সক্রিয় ওয়ালেট (${wallets.size})",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = PaisaTextPrimary,
@@ -283,7 +284,7 @@ fun HomeScreen(
             ) {
                 items(filterCategories) { cat ->
                     val isSelected = selectedFilterCategory == cat
-                    val countLabel = if (cat == "All") " (${wallets.size})" else ""
+                    val countLabel = if (cat == "সকল") " (${wallets.size})" else ""
                     val bg = if (isSelected) Color(0xFF14532D) else Color(0xFFF3F4F6)
                     val textCol = if (isSelected) Color.White else PaisaTextPrimary
 
@@ -515,7 +516,7 @@ fun HomeScreen(
                         Triple("ক্রেডিট কার্ড ও EMI", Icons.Default.CreditCard, onNavigateToCreditCardEmi),
                         Triple("FDR ও সঞ্চয়পত্র", Icons.Default.AccountBalance, onNavigateToFdrDpsShonchoy),
                         Triple("স্বর্ণ ও রৌপ্য সম্পদ", Icons.Default.MonetizationOn, onNavigateToGoldSilver),
-                        Triple("শেয়ার ও স্টক মার্কেট", Icons.Default.ShowChart, onNavigateToStockMarket),
+                        Triple("শেয়ার ও স্টক মার্কেট", Icons.AutoMirrored.Filled.ShowChart, onNavigateToStockMarket),
                         Triple("ডিজিটাল ক্রিপ্টো", Icons.Default.CurrencyBitcoin, onNavigateToCryptoAssets),
                         Triple("কাস্টমার বাকি খাতা", Icons.Default.BusinessCenter, onNavigateToCustomerLedger),
                         Triple("মেস ও হোস্টেল ম্যানেজার", Icons.Default.Restaurant, onNavigateToMessManager),

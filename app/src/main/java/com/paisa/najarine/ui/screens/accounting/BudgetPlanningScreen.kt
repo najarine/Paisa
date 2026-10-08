@@ -62,12 +62,12 @@ fun BudgetPlanningScreen(
                 title = { Text("বাজেট পরিকল্পনা (Budgeting)", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Budget")
+                        Icon(Icons.Default.Add, contentDescription = "বাজেট যোগ করুন")
                     }
                 }
             )
@@ -77,7 +77,7 @@ fun BudgetPlanningScreen(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Budget")
+                Icon(Icons.Default.Add, contentDescription = "বাজেট যোগ করুন")
             }
         }
     ) { padding ->

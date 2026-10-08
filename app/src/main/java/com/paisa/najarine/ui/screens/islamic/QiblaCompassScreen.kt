@@ -124,6 +124,21 @@ fun QiblaCompassScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            viewModel.detectLocationAndRefreshPrayerTimings(context) { msg ->
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        if (isDetectingLocation) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = PaisaTealPrimary)
+                        } else {
+                            Icon(Icons.Default.MyLocation, contentDescription = "GPS রিফ্রেশ", tint = PaisaTealPrimary)
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
             )
         }

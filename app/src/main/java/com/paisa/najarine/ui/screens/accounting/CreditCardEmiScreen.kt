@@ -49,12 +49,12 @@ fun CreditCardEmiScreen(
                 title = { Text("ক্রেডিট কার্ড ও ইএমআই (Card & EMI)", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showAddCardDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Card")
+                        Icon(Icons.Default.Add, contentDescription = "কার্ড যোগ করুন")
                     }
                 }
             )
@@ -64,7 +64,7 @@ fun CreditCardEmiScreen(
                 onClick = { showAddCardDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.AddCard, contentDescription = "Add Card")
+                Icon(Icons.Default.AddCard, contentDescription = "কার্ড যোগ করুন")
             }
         }
     ) { padding ->

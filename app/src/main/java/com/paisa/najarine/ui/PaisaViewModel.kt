@@ -742,6 +742,27 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Islamic & Prayer Times
+    fun loadSavedLocationOnStart(context: android.content.Context) {
+        viewModelScope.launch {
+            try {
+                val savedCoords = com.paisa.najarine.notification.AdhanPreferences.getLastKnownCoordinates(context)
+                if (savedCoords != null) {
+                    val (lat, lon, name) = savedCoords
+                    userLocation.value = com.paisa.najarine.util.UserLocationInfo(
+                        latitude = lat,
+                        longitude = lon,
+                        cityName = name,
+                        countryName = "",
+                        displayName = name
+                    )
+                    val currentMadhab = com.paisa.najarine.notification.AdhanPreferences.getSelectedMadhab(context)
+                    val timings = islamicRepo.getPrayerTimingsByCoordinates(lat, lon, madhab = currentMadhab)
+                    prayerTimings.value = timings
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     fun refreshPrayerTimings(madhab: String? = null) {
         viewModelScope.launch {
             try {

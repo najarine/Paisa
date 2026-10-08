@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -77,7 +78,7 @@ fun TransactionsScreen(
                         contentColor = PaisaTextPrimary,
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.ReceiptLong, contentDescription = "Receipt OCR Draft", modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "রসিদ ও সিআর ড্রাফট", modifier = Modifier.size(18.dp))
                     }
                     SmallFloatingActionButton(
                         onClick = { showVoiceDraftDialog = true },
@@ -85,7 +86,7 @@ fun TransactionsScreen(
                         contentColor = PaisaTextPrimary,
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice Draft", modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Mic, contentDescription = "ভয়েস ড্রাফট", modifier = Modifier.size(18.dp))
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
@@ -95,8 +96,8 @@ fun TransactionsScreen(
                     containerColor = PaisaTealPrimary,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(16.dp),
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Add Transaction") },
-                    text = { Text("+ Transaction", fontWeight = FontWeight.SemiBold) }
+                    icon = { Icon(Icons.Default.Add, contentDescription = "লেনদেন যোগ করুন") },
+                    text = { Text("+ লেনদেন যোগ করুন", fontWeight = FontWeight.SemiBold) }
                 )
             }
         }
@@ -128,12 +129,12 @@ fun TransactionsScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search transactions, notes, categories...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = PaisaTextSecondary) },
+                        placeholder = { Text("লেনদেন, নোট বা ক্যাটাগরি খুঁজুন...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "খুঁজুন", tint = PaisaTextSecondary) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                    Icon(Icons.Default.Close, contentDescription = "পরিষ্কার করুন")
                                 }
                             }
                         },
@@ -154,10 +155,10 @@ fun TransactionsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         listOf(
-                            "ALL" to "All",
-                            "EXPENSE" to "Expenses",
-                            "INCOME" to "Income",
-                            "TRANSFER" to "Transfers"
+                            "ALL" to "সবগুলো",
+                            "EXPENSE" to "ব্যয়",
+                            "INCOME" to "আয়",
+                            "TRANSFER" to "স্থানান্তর"
                         ).forEach { (key, label) ->
                             FilterChip(
                                 selected = selectedFilter == key,
@@ -175,7 +176,7 @@ fun TransactionsScreen(
                             FilterChip(
                                 selected = selectedWalletId == null,
                                 onClick = { selectedWalletId = null },
-                                label = { Text("All Accounts", fontSize = 11.sp) }
+                                label = { Text("সকল অ্যাকাউন্ট", fontSize = 11.sp) }
                             )
                         }
                         items(wallets) { w ->
@@ -206,7 +207,7 @@ fun TransactionsScreen(
                     ) {
                         Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("+ Expense", fontSize = 12.sp)
+                        Text("+ খরচ", fontSize = 12.sp)
                     }
 
                     Button(
@@ -217,7 +218,7 @@ fun TransactionsScreen(
                     ) {
                         Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("+ Income", fontSize = 12.sp)
+                        Text("+ আয়", fontSize = 12.sp)
                     }
 
                     Button(
@@ -228,7 +229,7 @@ fun TransactionsScreen(
                     ) {
                         Icon(Icons.Default.SyncAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Transfer", fontSize = 12.sp)
+                        Text("স্থানান্তর", fontSize = 12.sp)
                     }
                 }
             }
@@ -762,22 +763,22 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Expense Amount (৳)") },
-                    placeholder = { Text("e.g. 450") },
+                    label = { Text("খরচের পরিমাণ (৳)") },
+                    placeholder = { Text("যেমন: ৪৫০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 // Select Wallet with Logo Dropdown
-                Text("Deduct From Wallet / Bank", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
+                Text("যে ওয়ালেট / ব্যাংক থেকে খরচ হবে", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
                 ExposedDropdownMenuBox(
                     expanded = walletDropdownOpen,
                     onExpandedChange = { if (!isSubmitting) walletDropdownOpen = !walletDropdownOpen },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedWallet?.name ?: "Select Wallet",
+                        value = selectedWallet?.name ?: "ওয়ালেট নির্বাচন করুন",
                         onValueChange = {},
                         readOnly = true,
                         leadingIcon = {
@@ -817,9 +818,9 @@ fun AddExpenseDialog(
                 }
 
                 // Category Selector Chips
-                Text("Category", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
+                Text("ক্যাটাগরি", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val defaultCats = listOf("Food & Dining", "Groceries / Bazar", "Transport & Fuel", "Utility & Bills", "Health", "Shopping", "Charity")
+                    val defaultCats = listOf("খাবার ও রেস্তোরাঁ", "বাজার সদাই", "পরিবহন ও জ্বালানি", "বিল ও ইউটিলিটি", "স্বাস্থ্য ও চিকিৎসা", "শপিং ও জামাকাপড়", "সদকা ও দান")
                     items(defaultCats) { cat ->
                         FilterChip(
                             selected = selectedCategory == cat,
@@ -833,8 +834,8 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Note / Description") },
-                    placeholder = { Text("e.g. Bazar groceries") },
+                    label = { Text("নোট / বিবরণ") },
+                    placeholder = { Text("যেমন: কাঁচাবাজারের কেনাকাটা") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -844,7 +845,7 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = feeText,
                     onValueChange = { feeText = it },
-                    label = { Text("MFS / Gateway Fee (optional)") },
+                    label = { Text("MFS / গেটওয়ে ফি (ঐচ্ছিক)") },
                     placeholder = { Text("0.00") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -935,21 +936,21 @@ fun AddIncomeDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Income Amount (৳)") },
-                    placeholder = { Text("e.g. 50000") },
+                    label = { Text("আয়ের পরিমাণ (৳)") },
+                    placeholder = { Text("যেমন: ৫০০০০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                Text("Deposit To Wallet / Bank", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
+                Text("যে ওয়ালেট / ব্যাংকে জমা হবে", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
                 ExposedDropdownMenuBox(
                     expanded = walletDropdownOpen,
                     onExpandedChange = { if (!isSubmitting) walletDropdownOpen = !walletDropdownOpen },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedWallet?.name ?: "Select Wallet",
+                        value = selectedWallet?.name ?: "ওয়ালেট নির্বাচন করুন",
                         onValueChange = {},
                         readOnly = true,
                         leadingIcon = {
@@ -985,9 +986,9 @@ fun AddIncomeDialog(
                     }
                 }
 
-                Text("Income Category", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
+                Text("আয়ের ক্যাটাগরি", style = MaterialTheme.typography.labelMedium, color = PaisaTextSecondary)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val incomeCats = listOf("Salary & Income", "Freelance / Gig", "Business Profit", "Investment Returns", "Gift / Other")
+                    val incomeCats = listOf("বেতন ও আয়", "ফ্রিল্যান্সিং / গিগ", "ব্যবসার লাভ", "বিনিয়োগ রিটার্ন", "উপহার / অন্যান্য")
                     items(incomeCats) { cat ->
                         FilterChip(
                             selected = selectedCategory == cat,
@@ -1000,8 +1001,8 @@ fun AddIncomeDialog(
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Note / Description") },
-                    placeholder = { Text("e.g. October monthly salary") },
+                    label = { Text("নোট / বিবরণ") },
+                    placeholder = { Text("যেমন: মাসের বেতন") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -1054,12 +1055,12 @@ fun AddTransferDialog(
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
         title = {
-            Text("Transfer Between Wallets", fontWeight = FontWeight.Bold)
+            Text("ওয়ালেটের মধ্যে স্থানান্তর", fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Transfers update wallet balances and never count as income or expense.",
+                    text = "স্থানান্তরের ফলে কেবল ওয়ালেটের ব্যালেন্স পরিবর্তিত হয়, এটি আয় বা ব্যয় হিসেবে গণনায় আসে না।",
                     style = MaterialTheme.typography.labelSmall,
                     color = PaisaTransferBlue
                 )
@@ -1067,21 +1068,21 @@ fun AddTransferDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Transfer Amount (৳)") },
-                    placeholder = { Text("e.g. 5000") },
+                    label = { Text("স্থানান্তরের পরিমাণ (৳)") },
+                    placeholder = { Text("যেমন: ৫০০০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 // From Wallet
-                Text("From Source Wallet", style = MaterialTheme.typography.labelMedium)
+                Text("যে ওয়ালেট থেকে পাঠানো হবে", style = MaterialTheme.typography.labelMedium)
                 ExposedDropdownMenuBox(
                     expanded = fromOpen,
                     onExpandedChange = { if (!isSubmitting) fromOpen = !fromOpen }
                 ) {
                     OutlinedTextField(
-                        value = fromWallet?.name ?: "Select Source",
+                        value = fromWallet?.name ?: "উৎস ওয়ালেট নির্বাচন করুন",
                         onValueChange = {},
                         readOnly = true,
                         leadingIcon = {
@@ -1116,13 +1117,13 @@ fun AddTransferDialog(
                 }
 
                 // To Wallet
-                Text("To Destination Wallet", style = MaterialTheme.typography.labelMedium)
+                Text("যে ওয়ালেটে জমা হবে", style = MaterialTheme.typography.labelMedium)
                 ExposedDropdownMenuBox(
                     expanded = toOpen,
                     onExpandedChange = { if (!isSubmitting) toOpen = !toOpen }
                 ) {
                     OutlinedTextField(
-                        value = toWallet?.name ?: "Select Destination",
+                        value = toWallet?.name ?: "গন্তব্য ওয়ালেট নির্বাচন করুন",
                         onValueChange = {},
                         readOnly = true,
                         leadingIcon = {
@@ -1159,7 +1160,7 @@ fun AddTransferDialog(
                 OutlinedTextField(
                     value = feeText,
                     onValueChange = { feeText = it },
-                    label = { Text("Transfer Fee (e.g. bKash cashout / ATM fee)") },
+                    label = { Text("স্থানান্তর ফি (যেমন: ক্যাশআউট বা এটিএম ফি)") },
                     placeholder = { Text("0.00") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -1169,8 +1170,8 @@ fun AddTransferDialog(
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Note / Memo") },
-                    placeholder = { Text("e.g. Bank to bKash topup") },
+                    label = { Text("নোট / বিবরণ") },
+                    placeholder = { Text("যেমন: ব্যাংক থেকে বিকাশ টপ-আপ") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -1194,14 +1195,14 @@ fun AddTransferDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = PaisaTransferBlue),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (isSubmitting) "Processing..." else "Confirm Transfer")
+                Text(if (isSubmitting) "প্রসেস হচ্ছে..." else "স্থানান্তর নিশ্চিত করুন")
             }
         },
         dismissButton = {
             TextButton(
                 enabled = !isSubmitting,
                 onClick = onDismiss
-            ) { Text("Cancel") }
+            ) { Text("বাতিল") }
         }
     )
 }
@@ -1214,10 +1215,10 @@ fun VoiceDraftDialog(
     onDismiss: () -> Unit,
     onConfirmDraft: (walletId: String, amount: Double, type: String, category: String, note: String) -> Unit
 ) {
-    var rawSpeech by remember { mutableStateOf("Spent 350 taka for lunch with team from pocket cash") }
+    var rawSpeech by remember { mutableStateOf("টিমের সাথে দুপুরের খাবারে ক্যাশ থেকে ৩৫০ টাকা খরচ করেছি") }
     var parsedAmount by remember { mutableStateOf("350") }
-    var parsedCategory by remember { mutableStateOf("Food & Dining") }
-    var parsedNote by remember { mutableStateOf("Lunch with team") }
+    var parsedCategory by remember { mutableStateOf("খাবার ও রেস্তোরাঁ") }
+    var parsedNote by remember { mutableStateOf("টিমের সাথে দুপুরের খাবার") }
     var parsedType by remember { mutableStateOf("EXPENSE") }
     var selectedWalletId by remember { mutableStateOf(wallets.firstOrNull()?.id ?: "") }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -1226,15 +1227,15 @@ fun VoiceDraftDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice Entry", tint = PaisaTealPrimary)
+                Icon(Icons.Default.Mic, contentDescription = "ভয়েস এন্ট্রি", tint = PaisaTealPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Voice Entry Draft Review", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("ভয়েস এন্ট্রি ড্রাফট রিভিউ", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Raw audio transcription draft:",
+                    text = "ভয়েস থেকে রেকর্ডকৃত কাঁচা ড্রাফট:",
                     style = MaterialTheme.typography.labelSmall,
                     color = PaisaTextSecondary
                 )
@@ -1247,26 +1248,26 @@ fun VoiceDraftDialog(
 
                 HorizontalDivider()
 
-                Text("Parsed Structured Draft (Editable):", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text("শনাক্তকৃত ফিল্ডসমূহ (সম্পাদনাযোগ্য):", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
 
                 OutlinedTextField(
                     value = parsedAmount,
                     onValueChange = { parsedAmount = it },
-                    label = { Text("Amount (৳)") },
+                    label = { Text("পরিমাণ (৳)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = parsedCategory,
                     onValueChange = { parsedCategory = it },
-                    label = { Text("Category") },
+                    label = { Text("ক্যাটাগরি") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = parsedNote,
                     onValueChange = { parsedNote = it },
-                    label = { Text("Note / Description") },
+                    label = { Text("নোট / বিবরণ") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1284,14 +1285,14 @@ fun VoiceDraftDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PaisaTealPrimary)
             ) {
-                Text(if (isSubmitting) "Saving..." else "Confirm & Save to Room")
+                Text(if (isSubmitting) "সংরক্ষণ হচ্ছে..." else "নিশ্চিত করুন ও ডাটাবেসে সেভ করুন")
             }
         },
         dismissButton = {
             TextButton(
                 enabled = !isSubmitting,
                 onClick = onDismiss
-            ) { Text("Cancel") }
+            ) { Text("বাতিল") }
         }
     )
 }
@@ -1304,9 +1305,9 @@ fun ReceiptScanDraftDialog(
     onDismiss: () -> Unit,
     onConfirmDraft: (walletId: String, amount: Double, category: String, note: String) -> Unit
 ) {
-    var parsedMerchant by remember { mutableStateOf("Shwapno Superstore") }
+    var parsedMerchant by remember { mutableStateOf("স্বপ্ন সুপারশপ") }
     var parsedAmount by remember { mutableStateOf("2840") }
-    var parsedCategory by remember { mutableStateOf("Groceries / Bazar") }
+    var parsedCategory by remember { mutableStateOf("বাজার সদাই") }
     var selectedWalletId by remember { mutableStateOf(wallets.firstOrNull()?.id ?: "") }
     var isSubmitting by remember { mutableStateOf(false) }
 
@@ -1314,15 +1315,15 @@ fun ReceiptScanDraftDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ReceiptLong, contentDescription = "Receipt OCR", tint = PaisaTealPrimary)
+                Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "রসিদ ও সিআর", tint = PaisaTealPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Receipt Draft Review", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("মেমো / রসিদ ড্রাফট রিভিউ", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Review extracted fields before confirming to local database:",
+                    text = "লোকাল ডাটাবেসে সংরক্ষণের আগে স্ক্যানকৃত তথ্যগুলো মিলিয়ে নিন:",
                     style = MaterialTheme.typography.bodyMedium,
                     color = PaisaTextSecondary
                 )
@@ -1330,21 +1331,21 @@ fun ReceiptScanDraftDialog(
                 OutlinedTextField(
                     value = parsedMerchant,
                     onValueChange = { parsedMerchant = it },
-                    label = { Text("Merchant / Store") },
+                    label = { Text("দোকান / মার্চেন্টের নাম") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = parsedAmount,
                     onValueChange = { parsedAmount = it },
-                    label = { Text("Total Bill (৳)") },
+                    label = { Text("মোট বিল (৳)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = parsedCategory,
                     onValueChange = { parsedCategory = it },
-                    label = { Text("Category") },
+                    label = { Text("ক্যাটাগরি") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1362,14 +1363,14 @@ fun ReceiptScanDraftDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = PaisaTealPrimary)
             ) {
-                Text(if (isSubmitting) "Recording..." else "Confirm & Record")
+                Text(if (isSubmitting) "সংরক্ষণ হচ্ছে..." else "নিশ্চিত করুন ও সেভ করুন")
             }
         },
         dismissButton = {
             TextButton(
                 enabled = !isSubmitting,
                 onClick = onDismiss
-            ) { Text("Cancel") }
+            ) { Text("বাতিল") }
         }
     )
 }
@@ -1389,7 +1390,7 @@ fun TransactionDetailDialog(
         onDismissRequest = { if (!isDeleting) onDismiss() },
         title = {
             Text(
-                text = "${tx.type} Details",
+                text = "${if (tx.type == "INCOME") "আয়ের" else if (tx.type == "EXPENSE") "খরচের" else "স্থানান্তরের"} বিবরণ",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -1400,7 +1401,7 @@ fun TransactionDetailDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Amount", color = PaisaTextSecondary)
+                    Text("পরিমাণ", color = PaisaTextSecondary)
                     Text("৳ ${String.format(Locale.US, "%,.2f", tx.amount)}", fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
                 }
                 if (tx.fee > 0) {
@@ -1408,7 +1409,7 @@ fun TransactionDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Fee", color = PaisaTextSecondary)
+                        Text("ফি", color = PaisaTextSecondary)
                         Text("৳ ${String.format(Locale.US, "%,.2f", tx.fee)}", fontWeight = FontWeight.Medium)
                     }
                 }
@@ -1416,30 +1417,30 @@ fun TransactionDetailDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Wallet", color = PaisaTextSecondary)
-                    Text(sourceWallet?.name ?: "Unknown", fontWeight = FontWeight.SemiBold)
+                    Text("ওয়ালেট", color = PaisaTextSecondary)
+                    Text(sourceWallet?.name ?: "অজানা", fontWeight = FontWeight.SemiBold)
                 }
                 if (tx.toWalletId != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Destination", color = PaisaTextSecondary)
-                        Text(destWallet?.name ?: "Unknown", fontWeight = FontWeight.SemiBold)
+                        Text("গন্তব্য ওয়ালেট", color = PaisaTextSecondary)
+                        Text(destWallet?.name ?: "অজানা", fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Category", color = PaisaTextSecondary)
+                    Text("ক্যাটাগরি", color = PaisaTextSecondary)
                     Text(tx.category, fontWeight = FontWeight.Medium)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Date & Time", color = PaisaTextSecondary)
+                    Text("তারিখ ও সময়", color = PaisaTextSecondary)
                     Text(dateFormat.format(Date(tx.dateMillis)), fontSize = 12.sp)
                 }
                 if (tx.note.isNotEmpty()) {
@@ -1447,7 +1448,7 @@ fun TransactionDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Note", color = PaisaTextSecondary)
+                        Text("নোট", color = PaisaTextSecondary)
                         Text(tx.note, fontWeight = FontWeight.Medium)
                     }
                 }
@@ -1457,7 +1458,7 @@ fun TransactionDetailDialog(
             TextButton(
                 enabled = !isDeleting,
                 onClick = onDismiss
-            ) { Text("Close") }
+            ) { Text("বন্ধ করুন") }
         },
         dismissButton = {
             TextButton(
@@ -1469,7 +1470,7 @@ fun TransactionDetailDialog(
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = PaisaExpenseRed)
             ) {
-                Text(if (isDeleting) "Deleting..." else "Delete Transaction")
+                Text(if (isDeleting) "মুছে ফেলা হচ্ছে..." else "লেনদেন মুছে ফেলুন")
             }
         }
     )

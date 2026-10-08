@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -219,7 +221,7 @@ fun MonthlyCategoryBreakdownSection(
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale("bn", "BD")).apply {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
             maximumFractionDigits = 0
         }
     }

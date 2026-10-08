@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,7 +82,7 @@ fun MasterSettingsScreen(
             BanglaSettingItem("মাজহাব নির্বাচন", if (selectedMadhab == "Hanafi") "হানাফী (Hanafi) — আসর ২য় ছায়া" else "শাফেয়ী/মালেকি/হাম্বলি — আসর ১ম ছায়া", "ইসলামিক", Icons.Default.Mosque) {
                 showMadhabDialog = true
             },
-            BanglaSettingItem("আযান অডিও নির্বাচন", "যোহর, আসর, মাগরিব, ইশা ও ফজর আযান অডিও", "ইসলামিক", Icons.Default.VolumeUp) {},
+            BanglaSettingItem("আযান অডিও নির্বাচন", "যোহর, আসর, মাগরিব, ইশা ও ফজর আযান অডিও", "ইসলামিক", Icons.AutoMirrored.Filled.VolumeUp) {},
             BanglaSettingItem("ডেভেলপারকে সহায়তা করুন", "যোগাযোগ: najarine@gmail.com", "সহায়তা", Icons.Default.VolunteerActivism, onOpenSupportDeveloper)
         )
     }
@@ -105,7 +108,7 @@ fun MasterSettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "ফিরে যান")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -130,7 +133,7 @@ fun MasterSettingsScreen(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "পরিষ্কার করুন")
                             }
                         }
                     },
@@ -224,7 +227,7 @@ fun MasterSettingsScreen(
                                     onClick = { showLogoutConfirmDialog = true },
                                     colors = ButtonDefaults.textButtonColors(contentColor = PaisaExpenseRed)
                                 ) {
-                                    Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text("সাইন আউট")
                                 }
@@ -438,7 +441,7 @@ fun MasterSettingsScreen(
     if (showLogoutConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirmDialog = false },
-            icon = { Icon(Icons.Default.Logout, contentDescription = null, tint = PaisaExpenseRed) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = PaisaExpenseRed) },
             title = { Text("সাইন আউট নিশ্চিতকরণ", fontWeight = FontWeight.Bold) },
             text = {
                 Text(

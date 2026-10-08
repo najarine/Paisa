@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -72,12 +73,12 @@ fun DeveloperDiagnosticsScreen(
                             borderWidth = 1.dp
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text("Developer Diagnostics", fontWeight = FontWeight.Bold)
+                        Text("ডেভেলপার ডায়াগনস্টিকস", fontWeight = FontWeight.Bold)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -103,11 +104,11 @@ fun DeveloperDiagnosticsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Info, contentDescription = null, tint = PaisaTealDark)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Current Installed Build Certificate", fontWeight = FontWeight.Bold, color = PaisaTealDark)
+                            Text("বর্তমান ইনস্টলড বিল্ড সার্টিফিকেট", fontWeight = FontWeight.Bold, color = PaisaTealDark)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Use the fingerprint from the build you are configuring. A Play Store build can have a different signing certificate from a locally installed build.",
+                            text = "আপনার কনফিগার করা বিল্ডের ফিঙ্গারপ্রিন্ট ব্যবহার করুন। প্লে স্টোর বিল্ডের সাইনিং সার্টিফিকেট লোকাল বিল্ড থেকে ভিন্ন হতে পারে।",
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 12.sp,
                             color = PaisaOnTealContainer
@@ -125,18 +126,18 @@ fun DeveloperDiagnosticsScreen(
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Application & Certificate Fingerprints", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("অ্যাপ্লিকেশন ও সার্টিফিকেট ফিঙ্গারপ্রিন্ট", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
 
                         Spacer(modifier = Modifier.height(10.dp))
-                        DiagnosticTextItem(label = "Application ID", value = certInfo.packageName)
-                        DiagnosticTextItem(label = "Build Type", value = certInfo.buildType)
-                        DiagnosticTextItem(label = "Version", value = "${certInfo.versionName} (${certInfo.versionCode})")
+                        DiagnosticTextItem(label = "অ্যাপ আইডি", value = certInfo.packageName)
+                        DiagnosticTextItem(label = "বিল্ডের ধরণ", value = certInfo.buildType)
+                        DiagnosticTextItem(label = "ভার্সন", value = "${certInfo.versionName} (${certInfo.versionCode})")
 
                         Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Text("Current Installed Build SHA-1", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PaisaTextSecondary)
+                        Text("বর্তমান ইনস্টলড বিল্ড SHA-1", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PaisaTextSecondary)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = certInfo.sha1,
@@ -156,7 +157,7 @@ fun DeveloperDiagnosticsScreen(
                                 onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Paisa SHA-1", certInfo.sha1))
-                                    Toast.makeText(context, "SHA-1 copied to clipboard", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "SHA-1 ক্লিপবোর্ডে কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
@@ -164,7 +165,7 @@ fun DeveloperDiagnosticsScreen(
                             ) {
                                 Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Copy SHA-1", fontSize = 12.sp)
+                                Text("SHA-1 কপি করুন", fontSize = 12.sp)
                             }
 
                             OutlinedButton(
@@ -172,12 +173,12 @@ fun DeveloperDiagnosticsScreen(
                                     val dump = CertificateDiagnostics.getFullDiagnosticDump(context)
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Paisa Diagnostic Report", dump))
-                                    Toast.makeText(context, "Full diagnostic report copied", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "সম্পূর্ণ রিপোর্ট কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text("Copy Full Report", fontSize = 12.sp)
+                                Text("সম্পূর্ণ রিপোর্ট কপি করুন", fontSize = 12.sp)
                             }
                         }
 
@@ -193,7 +194,7 @@ fun DeveloperDiagnosticsScreen(
                                 Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = PaisaIncomeGreen, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Installed SHA-1 matches registered Firebase SHA-1", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PaisaIncomeGreen)
+                                    Text("ইনস্টলড SHA-1 ফায়ারবেসের সাথে মিলে গেছে", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PaisaIncomeGreen)
                                 }
                             }
                         } else {
@@ -206,11 +207,11 @@ fun DeveloperDiagnosticsScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Warning, contentDescription = null, tint = PaisaExpenseRed, modifier = Modifier.size(18.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("SHA-1 Mismatch with Firebase Console", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaExpenseRed)
+                                        Text("ফায়ারবেস কনসোলের সাথে SHA-1 অমিল", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaExpenseRed)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Firebase registered: ${certInfo.registeredSha1}\n\nIf Google Sign-In gives Code 10 / DEVELOPER_ERROR, copy the Installed Build SHA-1 above and add it to Firebase Console > Project Settings > Android Apps (com.paisa.najarine).",
+                                        text = "ফায়ারবেসে নিবন্ধিত: ${certInfo.registeredSha1}\n\nযদি গুগল সাইন-ইনে ত্রুটি দেখায়, তবে ওপরের ইনস্টলড SHA-1 কপি করে ফায়ারবেস কনসোলে যুক্ত করুন।",
                                         fontSize = 11.sp,
                                         color = PaisaTextPrimary
                                     )
@@ -220,7 +221,7 @@ fun DeveloperDiagnosticsScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        Text("Current Installed Build SHA-256", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PaisaTextSecondary)
+                        Text("বর্তমান ইনস্টলড বিল্ড SHA-256", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PaisaTextSecondary)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = certInfo.sha256,
@@ -239,7 +240,7 @@ fun DeveloperDiagnosticsScreen(
                             onClick = {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 clipboard.setPrimaryClip(ClipData.newPlainText("Paisa SHA-256", certInfo.sha256))
-                                Toast.makeText(context, "SHA-256 copied to clipboard", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "SHA-256 ক্লিপবোর্ডে কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
                             },
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
@@ -247,7 +248,7 @@ fun DeveloperDiagnosticsScreen(
                         ) {
                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy SHA-256", fontSize = 12.sp)
+                            Text("SHA-256 কপি করুন", fontSize = 12.sp)
                         }
                     }
                 }
@@ -262,23 +263,23 @@ fun DeveloperDiagnosticsScreen(
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Google Credential Manager Diagnostics", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("গুগল ক্রেডেনশিয়াল ম্যানেজার ডায়াগনস্টিকস", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        DiagnosticTextItem(label = "Web Client ID", value = CertificateDiagnostics.getWebClientId(context).take(28) + "...")
-                        DiagnosticTextItem(label = "Primary Option", value = "GetSignInWithGoogleOption + GetGoogleIdOption")
-                        DiagnosticTextItem(label = "First-time Accounts", value = "Supported (FilterByAuthorizedAccounts = false)")
-                        DiagnosticTextItem(label = "Fallback Flow", value = "Explicit Standalone GetSignInWithGoogleOption")
+                        DiagnosticTextItem(label = "ওয়েব ক্লায়েন্ট আইডি", value = CertificateDiagnostics.getWebClientId(context).take(28) + "...")
+                        DiagnosticTextItem(label = "প্রধান অপশন", value = "GetSignInWithGoogleOption + GetGoogleIdOption")
+                        DiagnosticTextItem(label = "প্রথমবারের অ্যাকাউন্টসমূহ", value = "সমর্থিত (FilterByAuthorizedAccounts = false)")
+                        DiagnosticTextItem(label = "ফলব্যাক ফ্লো", value = "স্ট্যান্ডঅ্যালোন GetSignInWithGoogleOption")
 
                         Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(10.dp))
 
                         if (CertificateDiagnostics.lastAuthExceptionClass != null) {
-                            Text("Last Credential Manager Exception", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PaisaExpenseRed)
+                            Text("সর্বশেষ ক্রেডেনশিয়াল ম্যানেজার ত্রুটি", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PaisaExpenseRed)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Class: ${CertificateDiagnostics.lastAuthExceptionClass}\nCode: ${CertificateDiagnostics.lastAuthErrorCode}\nMessage: ${CertificateDiagnostics.lastAuthExceptionMessage}",
+                                text = "ক্লাস: ${CertificateDiagnostics.lastAuthExceptionClass}\nকোড: ${CertificateDiagnostics.lastAuthErrorCode}\nমেসেজ: ${CertificateDiagnostics.lastAuthExceptionMessage}",
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 11.sp,
                                 color = PaisaTextPrimary,
@@ -291,10 +292,10 @@ fun DeveloperDiagnosticsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = PaisaIncomeGreen, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Last Login: ${CertificateDiagnostics.lastAuthSuccessEmail ?: "Success"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaIncomeGreen)
+                                Text("সর্বশেষ লগইন: ${CertificateDiagnostics.lastAuthSuccessEmail ?: "সফল"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaIncomeGreen)
                             }
                         } else {
-                            Text("No authentication exceptions recorded yet.", fontSize = 12.sp, color = PaisaTextSecondary)
+                            Text("এখনো কোনো অথেন্টিকেশন ত্রুটি রেকর্ড করা হয়নি।", fontSize = 12.sp, color = PaisaTextSecondary)
                         }
                     }
                 }
@@ -309,7 +310,7 @@ fun DeveloperDiagnosticsScreen(
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Firebase & System Status", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("ফায়ারবেস ও সিস্টেম স্ট্যাটাস", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(10.dp))
 
                         val authUser = FirebaseAuth.getInstance().currentUser
@@ -332,8 +333,8 @@ fun DeveloperDiagnosticsScreen(
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Notification & Adhan Verification Tests", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                        Text("Verify that notifications and sound channels trigger properly on this device:", style = MaterialTheme.typography.bodyMedium, color = PaisaTextSecondary)
+                        Text("নোটিফিকেশন ও আযান যাচাইকরণ টেস্ট", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("এই ডিভাইসে নোটিফিকেশন চ্যানেলগুলো সঠিকভাবে কাজ করছে কিনা তা পরীক্ষা করুন:", style = MaterialTheme.typography.bodyMedium, color = PaisaTextSecondary)
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -344,15 +345,15 @@ fun DeveloperDiagnosticsScreen(
                                         context = context,
                                         channelId = PaisaNotificationManager.CHANNEL_PRAYER,
                                         notificationId = 801,
-                                        title = "Fajr Adhan — الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
-                                        body = "Prayer is better than sleep. Time for Fajr prayer.",
+                                        title = "ফজরের আযান — الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
+                                        body = "ঘুম থেকে নামাজ উত্তম। ফজরের নামাজের সময় হয়েছে।",
                                         targetTab = 3
                                     )
-                                    Toast.makeText(context, "Fajr notification triggered", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "ফজরের নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp)
-                            ) { Text("Test Fajr", fontSize = 11.sp) }
+                            ) { Text("ফজর টেস্ট", fontSize = 11.sp) }
 
                             OutlinedButton(
                                 onClick = {
@@ -360,15 +361,15 @@ fun DeveloperDiagnosticsScreen(
                                         context = context,
                                         channelId = PaisaNotificationManager.CHANNEL_PRAYER,
                                         notificationId = 802,
-                                        title = "Dhuhr Adhan — حي على الصلاة",
-                                        body = "Time to pause work and offer Dhuhr prayer.",
+                                        title = "যোহরের আযান — حي على الصلاة",
+                                        body = "কাজ থামিয়ে যোহরের নামাজ আদায় করার সময় হয়েছে।",
                                         targetTab = 3
                                     )
-                                    Toast.makeText(context, "Dhuhr notification triggered", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "যোহরের নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp)
-                            ) { Text("Test Dhuhr", fontSize = 11.sp) }
+                            ) { Text("যোহর টেস্ট", fontSize = 11.sp) }
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
@@ -380,15 +381,15 @@ fun DeveloperDiagnosticsScreen(
                                         context = context,
                                         channelId = PaisaNotificationManager.CHANNEL_QURAN_HADITH,
                                         notificationId = 803,
-                                        title = "Daily Quranic Reflection",
-                                        body = "\"And whoever relies upon Allah - then He is sufficient for him.\" (Surah At-Talaq 65:3)",
+                                        title = "দৈনিক কুরআনিক উপদেশ",
+                                        body = "\"যে ব্যক্তি আল্লাহর ওপর ভরসা করে, তিনি তার জন্য যথেষ্ট।\" (সূরা আত-ত্বলাক ৬৫:৩)",
                                         targetTab = 3
                                     )
-                                    Toast.makeText(context, "Quran reminder triggered", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "কুরআন রিমাইন্ডার পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp)
-                            ) { Text("Test Quran", fontSize = 11.sp) }
+                            ) { Text("কুরআন টেস্ট", fontSize = 11.sp) }
 
                             OutlinedButton(
                                 onClick = {
@@ -396,15 +397,15 @@ fun DeveloperDiagnosticsScreen(
                                         context = context,
                                         channelId = PaisaNotificationManager.CHANNEL_COLLABORATION,
                                         notificationId = 804,
-                                        title = "Partner Workspace Invite",
-                                        body = "You have been invited to collaborate on Family Finance workspace.",
+                                        title = "ওয়ার্কস্পেস আমন্ত্রণ",
+                                        body = "আপনাকে ফ্যামিলি ফাইন্যান্স ওয়ার্কস্পেসে আমন্ত্রণ জানানো হয়েছে।",
                                         targetTab = 4
                                     )
-                                    Toast.makeText(context, "FCM invite test triggered", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "আমন্ত্রণ টেস্ট নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp)
-                            ) { Text("Test Collab", fontSize = 11.sp) }
+                            ) { Text("আমন্ত্রণ টেস্ট", fontSize = 11.sp) }
                         }
                     }
                 }

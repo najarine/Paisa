@@ -52,7 +52,7 @@ fun DetailedFinancialAnalyticsScreen(
     val timeframes = listOf("এই মাস", "গত ৩০ দিন", "চলতি বছর", "সকল সময়")
 
     val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale("bn", "BD")).apply {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
             maximumFractionDigits = 0
         }
     }

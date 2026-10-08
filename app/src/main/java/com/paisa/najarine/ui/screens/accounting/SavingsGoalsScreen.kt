@@ -91,7 +91,7 @@ fun SavingsGoalsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
@@ -99,7 +99,7 @@ fun SavingsGoalsScreen(
                         preselectedDebtForGoal = null
                         showAddDialog = true
                     }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Goal")
+                        Icon(Icons.Default.Add, contentDescription = "লক্ষ্য যোগ করুন")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)
@@ -113,7 +113,7 @@ fun SavingsGoalsScreen(
                 },
                 containerColor = if (selectedTab == 0) PaisaTealPrimary else PaisaExpenseRed
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Goal", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "লক্ষ্য যোগ করুন", tint = Color.White)
             }
         }
     ) { padding ->

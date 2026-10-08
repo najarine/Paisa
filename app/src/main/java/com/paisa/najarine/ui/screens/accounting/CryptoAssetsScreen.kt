@@ -107,7 +107,7 @@ fun CryptoAssetsScreen(
                         Surface(color = Color(0xFFFEF3C7), shape = RoundedCornerShape(10.dp)) {
                             Row(modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
-                                Text("Live API", style = MaterialTheme.typography.labelSmall, color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
+                                Text("লাইভ এপিআই", style = MaterialTheme.typography.labelSmall, color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
                             }
                         }
                     }

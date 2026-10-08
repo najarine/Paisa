@@ -206,9 +206,11 @@ class IslamicRepository(
         madhab: String = "Hanafi",
         method: Int = 1
     ): PrayerTimingsUi {
+        val effectiveMethod = if (method == 1) getAutoCalculationMethod(latitude, longitude) else method
+        val schoolCode = if (madhab.contains("Shafi", ignoreCase = true) || madhab.contains("শাফেয়ী", ignoreCase = true)) 0 else 1
+
         try {
-            val schoolCode = if (madhab.contains("Shafi", ignoreCase = true) || madhab.contains("শাফেয়ী", ignoreCase = true)) 0 else 1
-            val response = apiService.getTimingsByCoordinates(latitude = latitude, longitude = longitude, method = method, school = schoolCode)
+            val response = apiService.getTimingsByCoordinates(latitude = latitude, longitude = longitude, method = effectiveMethod, school = schoolCode)
             val timings = response.data?.timings
             if (timings != null) {
                 val fajrClean = cleanTime(timings["Fajr"] ?: timings["fajr"] ?: "05:00")
@@ -237,14 +239,14 @@ class IslamicRepository(
                     nextPrayerNameBn = nextNameBn,
                     nextPrayerTime = nextTime,
                     timeRemainingFormatted = remaining,
-                    hijriDateFormatted = "18 Shawwal 1447 AH",
+                    hijriDateFormatted = "১৮ শাওয়াল ১৪৪৭ হিজরী",
                     isOfflineCalculated = false
                 )
             }
         } catch (_: Exception) {
             // Ummah API failed, fallback to AlAdhan worldwide coordinates endpoint
             try {
-                val alAdhanUrl = "https://api.aladhan.com/v1/timings?latitude=$latitude&longitude=$longitude&method=$method"
+                val alAdhanUrl = "https://api.aladhan.com/v1/timings?latitude=$latitude&longitude=$longitude&method=$effectiveMethod&school=$schoolCode"
                 val client = okhttp3.OkHttpClient.Builder().connectTimeout(8, java.util.concurrent.TimeUnit.SECONDS).build()
                 val req = okhttp3.Request.Builder().url(alAdhanUrl).build()
                 val resp = client.newCall(req).execute()
@@ -254,6 +256,15 @@ class IslamicRepository(
                         val json = org.json.JSONObject(body)
                         val dataObj = json.optJSONObject("data")
                         val timingsObj = dataObj?.optJSONObject("timings")
+                        val dateObj = dataObj?.optJSONObject("date")
+                        val hijriObj = dateObj?.optJSONObject("hijri")
+
+                        val hijriDay = hijriObj?.optString("day", "18") ?: "18"
+                        val hijriMonthObj = hijriObj?.optJSONObject("month")
+                        val hijriMonth = hijriMonthObj?.optString("en", "Shawwal") ?: "Shawwal"
+                        val hijriYear = hijriObj?.optString("year", "1447") ?: "1447"
+                        val hijriFormatted = formatHijriInBangla(hijriDay, hijriMonth, hijriYear)
+
                         if (timingsObj != null) {
                             val fajr = cleanTime(timingsObj.optString("Fajr", "05:00"))
                             val sunrise = cleanTime(timingsObj.optString("Sunrise", "06:15"))
@@ -281,7 +292,7 @@ class IslamicRepository(
                                 nextPrayerNameBn = nextNameBn,
                                 nextPrayerTime = nextTime,
                                 timeRemainingFormatted = remaining,
-                                hijriDateFormatted = "18 Shawwal 1447 AH",
+                                hijriDateFormatted = hijriFormatted,
                                 isOfflineCalculated = false
                             )
                         }
@@ -290,8 +301,57 @@ class IslamicRepository(
             } catch (_: Exception) {}
         }
 
-        // Worldwide solar formula calculation
+        // Worldwide solar formula calculation fallback
         return calculateSolarPrayerTimingsWorldwide(latitude, longitude, madhab)
+    }
+
+    private fun getAutoCalculationMethod(lat: Double, lng: Double): Int {
+        return when {
+            // Saudi Arabia / Gulf / Middle East (Lat 12..33, Lng 34..60) -> Method 4 (Umm Al-Qura, Makkah)
+            lat in 12.0..33.0 && lng in 34.0..60.0 -> 4
+            // North America (Lat 15..75, Lng -170..-50) -> Method 2 (ISNA)
+            lat in 15.0..75.0 && lng in -170.0..-50.0 -> 2
+            // Turkey (Lat 36..42, Lng 26..45) -> Method 13 (Diyanet)
+            lat in 36.0..42.0 && lng in 26.0..45.0 -> 13
+            // Egypt / North Africa (Lat 15..35, Lng -20..35) -> Method 5 (Egyptian General Authority)
+            lat in 15.0..35.0 && lng in -20.0..35.0 -> 5
+            // South Asia BD, IN, PK (Lat 5..38, Lng 60..98) -> Method 1 (Karachi)
+            lat in 5.0..38.0 && lng in 60.0..98.0 -> 1
+            // Europe, UK, Far East, Rest of World -> Method 3 (Muslim World League)
+            else -> 3
+        }
+    }
+
+    private fun formatHijriInBangla(day: String, month: String, year: String): String {
+        val bnDay = convertToBanglaNumerals(day)
+        val bnYear = convertToBanglaNumerals(year)
+        val mNorm = month.lowercase(Locale.US)
+        val bnMonth = when {
+            mNorm.contains("muharram") -> "মহররম"
+            mNorm.contains("safar") -> "সফর"
+            mNorm.contains("rabi") && (mNorm.contains("1") || mNorm.contains("awwal")) -> "রবিউল আউয়াল"
+            mNorm.contains("rabi") -> "রবিউস সানি"
+            mNorm.contains("jumada") && (mNorm.contains("1") || mNorm.contains("awwal")) -> "জমাদিউল আউয়াল"
+            mNorm.contains("jumada") -> "জমাদিউস সানি"
+            mNorm.contains("rajab") -> "রজব"
+            mNorm.contains("sha") || mNorm.contains("ban") -> "শাবান"
+            mNorm.contains("ramadan") || mNorm.contains("ramzan") -> "রমজান"
+            mNorm.contains("shawwal") -> "শাওয়াল"
+            mNorm.contains("qi") || mNorm.contains("qadah") -> "জিলকদ"
+            mNorm.contains("hijjah") || mNorm.contains("hajj") -> "জিলহজ"
+            else -> month
+        }
+        return "$bnDay $bnMonth $bnYear হিজরী"
+    }
+
+    fun convertToBanglaNumerals(input: String): String {
+        val enDigits = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        val bnDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
+        var result = input
+        for (i in 0..9) {
+            result = result.replace(enDigits[i], bnDigits[i])
+        }
+        return result
     }
 
     fun calculateSolarPrayerTimingsWorldwide(latitude: Double, longitude: Double, madhab: String): PrayerTimingsUi {
