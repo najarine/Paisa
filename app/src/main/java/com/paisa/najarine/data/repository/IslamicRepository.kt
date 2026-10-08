@@ -16,6 +16,7 @@ import kotlin.math.*
 data class PrayerTimingsUi(
     val fajr: String,
     val sunrise: String,
+    val sunset: String = "",
     val dhuhr: String,
     val asr: String,
     val maghrib: String,
@@ -165,6 +166,8 @@ class IslamicRepository(
                 val asrClean = cleanTime(timings["Asr"] ?: timings["asr"] ?: "04:12")
                 val maghribClean = cleanTime(timings["Maghrib"] ?: timings["maghrib"] ?: "05:52")
                 val ishaClean = cleanTime(timings["Isha"] ?: timings["isha"] ?: "07:08")
+                val sunriseClean = cleanTime(timings["Sunrise"] ?: timings["sunrise"] ?: "05:45")
+                val sunsetClean = cleanTime(timings["Sunset"] ?: timings["sunset"] ?: maghribClean)
 
                 val (nextName, nextNameBn, nextTime, remaining) = calculateNextPrayerAndRemaining(
                     fajrClean, dhuhrClean, asrClean, maghribClean, ishaClean
@@ -174,7 +177,8 @@ class IslamicRepository(
 
                 return PrayerTimingsUi(
                     fajr = fajrClean,
-                    sunrise = cleanTime(timings["Sunrise"] ?: timings["sunrise"] ?: "05:45"),
+                    sunrise = sunriseClean,
+                    sunset = sunsetClean,
                     dhuhr = dhuhrClean,
                     asr = asrClean,
                     maghrib = maghribClean,
@@ -216,10 +220,13 @@ class IslamicRepository(
                 val (nextName, nextNameBn, nextTime, remaining) = calculateNextPrayerAndRemaining(
                     fajrClean, dhuhrClean, asrClean, maghribClean, ishaClean
                 )
+                val sunriseClean = cleanTime(timings["Sunrise"] ?: timings["sunrise"] ?: "06:15")
+                val sunsetClean = cleanTime(timings["Sunset"] ?: timings["sunset"] ?: maghribClean)
 
                 return PrayerTimingsUi(
                     fajr = fajrClean,
-                    sunrise = cleanTime(timings["Sunrise"] ?: timings["sunrise"] ?: "06:15"),
+                    sunrise = sunriseClean,
+                    sunset = sunsetClean,
                     dhuhr = dhuhrClean,
                     asr = asrClean,
                     maghrib = maghribClean,
@@ -250,6 +257,7 @@ class IslamicRepository(
                         if (timingsObj != null) {
                             val fajr = cleanTime(timingsObj.optString("Fajr", "05:00"))
                             val sunrise = cleanTime(timingsObj.optString("Sunrise", "06:15"))
+                            val sunset = cleanTime(timingsObj.optString("Sunset", timingsObj.optString("Maghrib", "18:00")))
                             val dhuhr = cleanTime(timingsObj.optString("Dhuhr", "12:00"))
                             val asr = cleanTime(timingsObj.optString("Asr", "15:30"))
                             val maghrib = cleanTime(timingsObj.optString("Maghrib", "18:00"))
@@ -262,6 +270,7 @@ class IslamicRepository(
                             return PrayerTimingsUi(
                                 fajr = fajr,
                                 sunrise = sunrise,
+                                sunset = sunset,
                                 dhuhr = dhuhr,
                                 asr = asr,
                                 maghrib = maghrib,
@@ -323,6 +332,7 @@ class IslamicRepository(
 
         val fajr = formatMinutes(noonMinutes - fajrAngle * 4)
         val sunrise = formatMinutes(noonMinutes - sunriseAngle * 4)
+        val sunset = formatMinutes(noonMinutes + sunriseAngle * 4)
         val dhuhr = formatMinutes(noonMinutes)
         val asr = formatMinutes(noonMinutes + asrAngle * 4)
         val maghrib = formatMinutes(noonMinutes + sunriseAngle * 4)
@@ -333,6 +343,7 @@ class IslamicRepository(
         return PrayerTimingsUi(
             fajr = fajr,
             sunrise = sunrise,
+            sunset = sunset,
             dhuhr = dhuhr,
             asr = asr,
             maghrib = maghrib,
@@ -358,6 +369,7 @@ class IslamicRepository(
         val isShafi = madhab.contains("Shafi", ignoreCase = true) || madhab.contains("শাফেয়ী", ignoreCase = true)
         val fajr = "04:46"
         val sunrise = "05:42"
+        val sunset = "05:52"
         val dhuhr = "11:58"
         val asr = if (isShafi) "03:25" else "04:12"
         val maghrib = "05:52"
@@ -368,6 +380,7 @@ class IslamicRepository(
         return PrayerTimingsUi(
             fajr = fajr,
             sunrise = sunrise,
+            sunset = sunset,
             dhuhr = dhuhr,
             asr = asr,
             maghrib = maghrib,

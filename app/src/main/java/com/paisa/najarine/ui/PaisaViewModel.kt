@@ -216,37 +216,34 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     // Wallets & Transactions Actions
     fun addWallet(wallet: WalletEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            database.walletDao().insertWallet(wallet)
-            syncManager.autoSyncWallet(wallet)
+            walletRepo.updateWallet(wallet)
+            syncManager.triggerImmediateSync()
         }
     }
 
     fun deleteWallet(walletId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            database.walletDao().deleteWallet(walletId)
-            syncManager.autoDeleteWallet(walletId)
+            walletRepo.deleteWallet(walletId)
+            syncManager.triggerImmediateSync()
         }
     }
 
     suspend fun ensureDefaultCashWallet(): WalletEntity {
-        val existing = database.walletDao().getWalletById("wallet_default_cash")
+        val existing = walletRepo.getWalletById("wallet_default_cash")
         if (existing != null) return existing
 
-        val defaultWallet = WalletEntity(
-            id = "wallet_default_cash",
+        val defaultWallet = walletRepo.createWallet(
             workspaceId = activeWorkspaceId.value,
             name = "ক্যাশ ওয়ালেট (Cash)",
             type = "CASH",
             institutionId = "cash",
             accountNumber = "",
-            balance = 0.0,
+            initialBalance = 0.0,
             currencyCode = "BDT",
             colorHex = "#0D9488",
-            note = "প্রাথমিক নগদ টাকা ও খরচের হিসাব",
-            updatedAt = System.currentTimeMillis()
+            note = "প্রাথমিক নগদ টাকা ও খরচের হিসাব"
         )
-        database.walletDao().insertWallet(defaultWallet)
-        syncManager.autoSyncWallet(defaultWallet)
+        syncManager.triggerImmediateSync()
         return defaultWallet
     }
 
@@ -282,48 +279,41 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         if (isDuplicateSubmission(dedupKey)) return
 
         viewModelScope.launch(Dispatchers.IO) {
-            val targetWalletId = if (walletId.isBlank() || database.walletDao().getWalletById(walletId) == null) {
+            val targetWalletId = if (walletId.isBlank() || walletRepo.getWalletById(walletId) == null) {
                 ensureDefaultCashWallet().id
             } else {
                 walletId
             }
 
-            val txId = UUID.randomUUID().toString()
-            val tx = TransactionEntity(
-                id = txId,
-                workspaceId = activeWorkspaceId.value,
-                walletId = targetWalletId,
-                toWalletId = toWalletId,
-                type = type,
-                amount = amount,
-                fee = fee,
-                category = category,
-                note = note,
-                dateMillis = System.currentTimeMillis()
-            )
-            database.transactionDao().insertTransaction(tx)
-
-            // Adjust Wallet Balances
             when (type) {
-                "INCOME" -> database.walletDao().adjustBalance(targetWalletId, amount)
-                "EXPENSE" -> database.walletDao().adjustBalance(targetWalletId, -(amount + fee))
+                "INCOME" -> transactionRepo.recordIncome(
+                    workspaceId = activeWorkspaceId.value,
+                    walletId = targetWalletId,
+                    amount = amount,
+                    category = category,
+                    note = note
+                )
+                "EXPENSE" -> transactionRepo.recordExpense(
+                    workspaceId = activeWorkspaceId.value,
+                    walletId = targetWalletId,
+                    amount = amount,
+                    category = category,
+                    fee = fee,
+                    note = note
+                )
                 "TRANSFER" -> {
-                    database.walletDao().adjustBalance(targetWalletId, -(amount + fee))
-                    toWalletId?.let { database.walletDao().adjustBalance(it, amount) }
+                    val destId = toWalletId ?: ensureDefaultCashWallet().id
+                    transactionRepo.recordTransfer(
+                        workspaceId = activeWorkspaceId.value,
+                        sourceWalletId = targetWalletId,
+                        destinationWalletId = destId,
+                        amount = amount,
+                        fee = fee,
+                        note = note
+                    )
                 }
             }
-
-            // Sync updated wallet(s) directly to Firestore
-            database.walletDao().getWalletById(targetWalletId)?.let {
-                syncManager.autoSyncWallet(it)
-            }
-            if (type == "TRANSFER" && toWalletId != null) {
-                database.walletDao().getWalletById(toWalletId)?.let {
-                    syncManager.autoSyncWallet(it)
-                }
-            }
-
-            syncManager.autoSyncTransaction(tx)
+            syncManager.triggerImmediateSync()
         }
     }
 
@@ -350,43 +340,25 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         initialBalance: Double = balance
     ) {
         val finalBalance = if (balance != 0.0) balance else initialBalance
-        addWallet(
-            WalletEntity(
-                id = UUID.randomUUID().toString(),
+        viewModelScope.launch(Dispatchers.IO) {
+            walletRepo.createWallet(
                 workspaceId = activeWorkspaceId.value,
                 name = name,
                 type = type,
                 institutionId = institutionId,
                 accountNumber = accountNumber,
-                balance = finalBalance,
+                initialBalance = finalBalance,
                 creditLimit = creditLimit,
                 isExcludedFromTotal = isExcludedFromTotal
             )
-        )
+            syncManager.triggerImmediateSync()
+        }
     }
 
     fun deleteTransaction(tx: TransactionEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            database.transactionDao().deleteTransaction(tx.id)
-            // Revert Wallet Balances
-            when (tx.type) {
-                "INCOME" -> database.walletDao().adjustBalance(tx.walletId, -tx.amount)
-                "EXPENSE" -> database.walletDao().adjustBalance(tx.walletId, tx.amount + tx.fee)
-                "TRANSFER" -> {
-                    database.walletDao().adjustBalance(tx.walletId, tx.amount + tx.fee)
-                    tx.toWalletId?.let { database.walletDao().adjustBalance(it, -tx.amount) }
-                }
-            }
-            // Sync updated wallet balances to Firestore
-            database.walletDao().getWalletById(tx.walletId)?.let {
-                syncManager.autoSyncWallet(it)
-            }
-            if (tx.type == "TRANSFER" && tx.toWalletId != null) {
-                database.walletDao().getWalletById(tx.toWalletId)?.let {
-                    syncManager.autoSyncWallet(it)
-                }
-            }
-            syncManager.autoDeleteTransaction(tx.id)
+            transactionRepo.deleteTransaction(tx)
+            syncManager.triggerImmediateSync()
         }
     }
 
@@ -793,8 +765,20 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                 val loc = com.paisa.najarine.util.LocationHelper.getCurrentLocation(context)
                 if (loc != null) {
                     userLocation.value = loc
+                    com.paisa.najarine.notification.AdhanPreferences.saveLastKnownLocation(
+                        context,
+                        loc.latitude,
+                        loc.longitude,
+                        loc.displayName
+                    )
                     val timings = islamicRepo.getPrayerTimingsByCoordinates(loc.latitude, loc.longitude, madhab = currentMadhab)
                     prayerTimings.value = timings
+                    // Schedule WorkManager push notifications based on user's detected location
+                    com.paisa.najarine.notification.PrayerNotificationWorker.schedulePrayerAlertWorkers(
+                        context = context,
+                        timings = timings,
+                        locationName = loc.displayName
+                    )
                     onComplete("অবস্থান শনাক্ত হয়েছে: ${loc.displayName}")
                 } else {
                     onComplete("অবস্থান শনাক্ত করা যায়নি, ডিফল্ট সময় গণনা ব্যবহার করা হচ্ছে।")

@@ -366,6 +366,7 @@ fun MasterSettingsScreen(
                             selectedMadhab = "Hanafi"
                             com.paisa.najarine.notification.AdhanPreferences.setSelectedMadhab(context, "Hanafi")
                             viewModel.refreshPrayerTimings("Hanafi")
+                            com.paisa.najarine.notification.PrayerNotificationWorker.triggerImmediateCalculation(context)
                             showMadhabDialog = false
                             Toast.makeText(context, "হানাফী মাজহাব নির্ধারিত হয়েছে (আসর ২য় ছায়া)", Toast.LENGTH_SHORT).show()
                         }
@@ -401,6 +402,7 @@ fun MasterSettingsScreen(
                             selectedMadhab = "Shafi"
                             com.paisa.najarine.notification.AdhanPreferences.setSelectedMadhab(context, "Shafi")
                             viewModel.refreshPrayerTimings("Shafi")
+                            com.paisa.najarine.notification.PrayerNotificationWorker.triggerImmediateCalculation(context)
                             showMadhabDialog = false
                             Toast.makeText(context, "শাফেয়ী/মালেকী/হাম্বলী নির্ধারিত হয়েছে (আসর ১ম ছায়া)", Toast.LENGTH_SHORT).show()
                         }

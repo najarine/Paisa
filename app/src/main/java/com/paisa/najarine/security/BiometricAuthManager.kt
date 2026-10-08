@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,7 @@ class BiometricAuthManager(private val context: Context) {
     }
 
     fun setSecurityEnabled(enabled: Boolean) {
-        sharedPrefs.edit().putBoolean("security_lock_enabled", enabled).apply()
+        sharedPrefs.edit { putBoolean("security_lock_enabled", enabled) }
         if (!enabled) {
             _isUnlocked.value = true
         }
@@ -33,7 +34,7 @@ class BiometricAuthManager(private val context: Context) {
     }
 
     fun setStoredPin(pin: String) {
-        sharedPrefs.edit().putString("security_pin", pin).apply()
+        sharedPrefs.edit { putString("security_pin", pin) }
     }
 
     fun canAuthenticateWithBiometrics(): Boolean {

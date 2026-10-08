@@ -8,6 +8,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import com.paisa.najarine.R
 import com.paisa.najarine.util.CertificateDiagnostics
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -76,6 +77,7 @@ class AuthManager(private val context: Context) {
         }
     }
 
+    @android.annotation.SuppressLint("DiscouragedApi")
     fun getWebClientId(): String {
         return try {
             context.getString(R.string.default_web_client_id)
@@ -163,6 +165,16 @@ class AuthManager(private val context: Context) {
             } catch (e: GetCredentialCancellationException) {
                 Log.w("Auth", "Google Sign-In flow cancelled or dismissed: ${e.message}", e)
                 _authState.value = AuthState.Idle
+            } catch (e: NoCredentialException) {
+                Log.w("Auth", "No Google account credentials found on device: ${e.message}", e)
+                val errorMsg = "ডিভাইসে কোনো গুগল একাউন্ট পাওয়া যায়নি। অনুগ্রহ করে সেটিংসে গিয়ে ফোনে একটি গুগল একাউন্ট যোগ করুন।"
+                _authState.value = AuthState.Error(
+                    title = "Google একাউন্ট পাওয়া যায়নি",
+                    message = errorMsg,
+                    errorCode = "NO_CREDENTIAL",
+                    isConfigIssue = false
+                )
+                onError(errorMsg)
             } catch (e: Exception) {
                 Log.e("Auth", "Google Sign-In failed", e)
                 val isConfigIssue = e.message?.contains("10") == true || e.message?.contains("12500") == true || e.message?.contains("28444") == true
@@ -221,6 +233,8 @@ class AuthManager(private val context: Context) {
                         onSuccess(user)
                     }
                 }
+            } catch (_: NoCredentialException) {
+                // No stored credentials for auto sign-in
             } catch (_: Exception) {
                 // Background silent auto sign-in was unable to resolve stored token
             }

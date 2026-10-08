@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,9 +29,11 @@ import java.util.UUID
         QazaPrayerEntity::class,
         ZakatRecordEntity::class,
         HourlyHadithEntity::class,
-        HourlyQuranEntity::class
+        HourlyQuranEntity::class,
+        SyncOutboxEntity::class,
+        TombstoneEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class PaisaDatabase : RoomDatabase() {
@@ -52,10 +55,45 @@ abstract class PaisaDatabase : RoomDatabase() {
     abstract fun zakatDao(): ZakatDao
     abstract fun hourlyHadithDao(): HourlyHadithDao
     abstract fun hourlyQuranDao(): HourlyQuranDao
+    abstract fun syncOutboxDao(): SyncOutboxDao
+    abstract fun tombstoneDao(): TombstoneDao
 
     companion object {
         @Volatile
         private var INSTANCE: PaisaDatabase? = null
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add updatedAt to transactions if not existing
+                db.execSQL("ALTER TABLE transactions ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                // Backfill existing rows with dateMillis
+                db.execSQL("UPDATE transactions SET updatedAt = dateMillis WHERE updatedAt = 0")
+                // Create sync outbox table for durable offline mutations
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS sync_outbox (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        entityType TEXT NOT NULL,
+                        entityId TEXT NOT NULL,
+                        action TEXT NOT NULL,
+                        payload TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        retryCount INTEGER NOT NULL DEFAULT 0
+                    )
+                    """.trimIndent()
+                )
+                // Create tombstones table to protect deleted records from cloud resurrection
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS sync_tombstones (
+                        entityId TEXT PRIMARY KEY NOT NULL,
+                        entityType TEXT NOT NULL,
+                        deletedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
 
         fun getDatabase(context: Context): PaisaDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -64,6 +102,7 @@ abstract class PaisaDatabase : RoomDatabase() {
                     PaisaDatabase::class.java,
                     "paisa_financial_db"
                 )
+                    .addMigrations(MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .addCallback(DatabaseCallback())
                     .build()

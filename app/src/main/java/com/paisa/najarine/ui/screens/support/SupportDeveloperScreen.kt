@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.net.toUri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -555,7 +556,7 @@ fun SupportDeveloperScreen(
                     actionLabel = "লিংক খুলুন",
                     onAction = {
                         try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/najarine"))
+                            val intent = Intent(Intent.ACTION_VIEW, "https://buymeacoffee.com/najarine".toUri())
                             context.startActivity(intent)
                         } catch (_: Exception) {
                             copyText("https://buymeacoffee.com/najarine", "Buy Me a Coffee লিংক")

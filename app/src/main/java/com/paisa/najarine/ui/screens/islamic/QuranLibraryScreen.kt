@@ -3,6 +3,7 @@ package com.paisa.najarine.ui.screens.islamic
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.core.content.edit
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -17,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -64,7 +67,7 @@ fun QuranLibraryScreen(
 
     fun onSelectReciter(reciter: QuranReciter) {
         selectedReciter = reciter
-        prefs.edit().putString(KEY_SELECTED_RECITER_ID, reciter.id).apply()
+        prefs.edit { putString(KEY_SELECTED_RECITER_ID, reciter.id) }
         showReciterDialog = false
         Toast.makeText(context, "তিলাওয়াতকারী: ${reciter.nameBangla}", Toast.LENGTH_SHORT).show()
     }
@@ -114,7 +117,7 @@ fun QuranLibraryScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "ফিরে যান")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
@@ -410,7 +413,7 @@ fun SurahReaderView(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "ফিরে যান")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
@@ -604,7 +607,7 @@ fun SurahReaderView(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (isAutoPlayNext) Icons.Default.PlaylistPlay else Icons.Default.PauseCircle,
+                            if (isAutoPlayNext) Icons.AutoMirrored.Filled.PlaylistPlay else Icons.Default.PauseCircle,
                             contentDescription = null,
                             tint = if (isAutoPlayNext) PaisaTealDark else PaisaTextSecondary,
                             modifier = Modifier.size(16.dp)

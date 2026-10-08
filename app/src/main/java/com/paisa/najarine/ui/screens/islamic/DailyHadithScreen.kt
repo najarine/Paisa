@@ -7,9 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,7 +35,6 @@ fun DailyHadithScreen(
     androidx.activity.compose.BackHandler { onBackClick() }
     val context = LocalContext.current
     val canonicalDailyHadith by viewModel.currentHadith.collectAsState()
-    val hadiths = remember { viewModel.islamicRepo.authenticHadiths }
 
     LaunchedEffect(Unit) {
         viewModel.refreshDynamicHadith()
@@ -46,14 +45,14 @@ fun DailyHadithScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "দৈনিক সহীহ হাদিস (প্রতি ঘন্টায় রিফ্রেশ)",
+                        text = "দৈনিক সহীহ হাদিস (প্রতি ঘণ্টায় রিফ্রেশ)",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "ফিরে যান")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
@@ -215,71 +214,6 @@ fun DailyHadithScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            // More Authentic Hadiths on Finance and Life
-            item {
-                Text(
-                    text = "অর্থনীতি, লেনদেন ও হালাল উপার্জন সম্পর্কিত সহীহ হাদিস",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PaisaTextPrimary,
-                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
-                )
-            }
-
-            items(hadiths) { hadith ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                    border = CardDefaults.outlinedCardBorder()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = hadith.topic,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PaisaTealPrimary
-                            )
-                            Text(
-                                text = hadith.source,
-                                fontSize = 11.sp,
-                                color = PaisaTextSecondary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = hadith.arabic,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PaisaTextPrimary
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = hadith.banglaTranslation,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = PaisaTextSecondary,
-                            fontSize = 13.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "সূত্র: ${hadith.narrator}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = PaisaTextTertiary
-                        )
                     }
                 }
             }

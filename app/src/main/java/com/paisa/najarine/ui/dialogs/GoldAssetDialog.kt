@@ -106,7 +106,7 @@ fun GoldAssetDialog(
                             if (isLoading) {
                                 CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
                             } else {
-                                Text("$${String.format("%.2f", liveGoldPriceUsd)} / oz", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealDark)
+                                Text("$${String.format(java.util.Locale.US, "%.2f", liveGoldPriceUsd)} / oz", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealDark)
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -115,7 +115,7 @@ fun GoldAssetDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("বর্তমান প্রতি ভরি ($karatType ক্যারেট):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
-                            Text("৳${String.format("%,.0f", pricePerBhoriBdt)}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = PaisaTealDark)
+                            Text("৳${String.format(java.util.Locale.US, "%,.0f", pricePerBhoriBdt)}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = PaisaTealDark)
                         }
                     }
                 }
@@ -160,12 +160,12 @@ fun GoldAssetDialog(
                         Text("আপনার স্বর্ণের মোট আনুমানিক বাজারমূল্য", fontSize = 12.sp, color = PaisaTextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "৳${String.format("%,.2f", totalAssetValueBdt)}",
+                            text = "৳${String.format(java.util.Locale.US, "%,.2f", totalAssetValueBdt)}",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Black,
                             color = PaisaTealPrimary
                         )
-                        Text("($bhoriInput ভরি • ${String.format("%.2f", parsedBhori * 11.664)} গ্রাম)", fontSize = 11.sp, color = PaisaTextTertiary)
+                        Text("($bhoriInput ভরি • ${String.format(java.util.Locale.US, "%.2f", parsedBhori * 11.664)} গ্রাম)", fontSize = 11.sp, color = PaisaTextTertiary)
                     }
                 }
             }

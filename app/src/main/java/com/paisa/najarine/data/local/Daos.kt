@@ -243,3 +243,46 @@ interface HourlyQuranDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAyah(ayah: HourlyQuranEntity)
 }
+
+@Dao
+interface SyncOutboxDao {
+    @Query("SELECT * FROM sync_outbox ORDER BY createdAt ASC")
+    fun getAllPendingFlow(): Flow<List<SyncOutboxEntity>>
+
+    @Query("SELECT * FROM sync_outbox ORDER BY createdAt ASC")
+    suspend fun getAllPending(): List<SyncOutboxEntity>
+
+    @Query("SELECT COUNT(*) FROM sync_outbox")
+    fun getPendingCountFlow(): Flow<Int>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun enqueue(operation: SyncOutboxEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun enqueueAll(operations: List<SyncOutboxEntity>)
+
+    @Query("DELETE FROM sync_outbox WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM sync_outbox WHERE entityId = :entityId")
+    suspend fun deleteByEntityId(entityId: String)
+
+    @Query("UPDATE sync_outbox SET retryCount = retryCount + 1 WHERE id = :id")
+    suspend fun incrementRetryCount(id: String)
+}
+
+@Dao
+interface TombstoneDao {
+    @Query("SELECT * FROM sync_tombstones WHERE entityId = :entityId LIMIT 1")
+    suspend fun getTombstone(entityId: String): TombstoneEntity?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_tombstones WHERE entityId = :entityId)")
+    suspend fun isTombstoned(entityId: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTombstone(tombstone: TombstoneEntity)
+
+    @Query("DELETE FROM sync_tombstones WHERE entityId = :entityId")
+    suspend fun deleteTombstone(entityId: String)
+}
+

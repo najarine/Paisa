@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.paisa.najarine.notification.AdhanPreferences
 import com.paisa.najarine.notification.AdhanScheduler
 import com.paisa.najarine.notification.DefaultAdhanAudioProvider
+import com.paisa.najarine.notification.PrayerNotificationWorker
 import com.paisa.najarine.ui.PaisaViewModel
 import com.paisa.najarine.ui.theme.*
 
@@ -44,6 +45,7 @@ fun AdhanPrayerTimesScreen(
     val isDetectingLocation by viewModel.isDetectingLocation.collectAsState()
 
     var isAdhanEnabled by remember { mutableStateOf(AdhanPreferences.isAdhanEnabled(context)) }
+    var isPrayerNotificationsEnabled by remember { mutableStateOf(AdhanPreferences.isPrayerNotificationsEnabled(context)) }
     val isAudioPlaying by DefaultAdhanAudioProvider.isPlayingState.collectAsState()
     val selectedAdhanId by AdhanPreferences.selectedAdhanIdState.collectAsState()
     val currentPlayingUrl by DefaultAdhanAudioProvider.currentPlayingUrlState.collectAsState()
@@ -72,11 +74,26 @@ fun AdhanPrayerTimesScreen(
     ) { granted ->
         if (granted) {
             Toast.makeText(context, "নোটিফিকেশন পারমিশন সফলভাবে অনুমোদিত", Toast.LENGTH_SHORT).show()
+            PrayerNotificationWorker.schedulePrayerAlertWorkers(
+                context = context,
+                timings = timings,
+                locationName = userLocation?.displayName
+            )
         }
     }
 
-    // Ensure alarms are scheduled if adhan toggle is enabled
-    LaunchedEffect(timings, isAdhanEnabled) {
+    // Ensure WorkManager alerts and alarms are scheduled if toggles are enabled
+    LaunchedEffect(timings, isAdhanEnabled, isPrayerNotificationsEnabled) {
+        if (isPrayerNotificationsEnabled) {
+            PrayerNotificationWorker.schedulePrayerAlertWorkers(
+                context = context,
+                timings = timings,
+                locationName = userLocation?.displayName
+            )
+        } else {
+            PrayerNotificationWorker.cancelAllPrayerWork(context)
+        }
+
         if (isAdhanEnabled) {
             AdhanScheduler.schedulePrayerAlarms(
                 context = context,
@@ -224,20 +241,21 @@ fun AdhanPrayerTimesScreen(
                 }
             }
 
-            // 2. PRIMARY ADHAN TOGGLE CARD
+            // 2. PRIMARY PRAYER PUSH NOTIFICATIONS & ADHAN TOGGLE CARD (WorkManager Powered)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isAdhanEnabled) PaisaTealContainer.copy(alpha = 0.5f) else PaisaSurface
+                        containerColor = if (isPrayerNotificationsEnabled || isAdhanEnabled) PaisaTealContainer.copy(alpha = 0.45f) else PaisaSurface
                     ),
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(18.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        // WorkManager Push Notification Toggle Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -249,7 +267,81 @@ fun AdhanPrayerTimesScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(44.dp)
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isPrayerNotificationsEnabled) PaisaTealPrimary else PaisaSurfaceVariant),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPrayerNotificationsEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
+                                        contentDescription = null,
+                                        tint = if (isPrayerNotificationsEnabled) Color.White else PaisaTextSecondary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column {
+                                    Text(
+                                        text = "পুশ নোটিফিকেশন অ্যালার্ট (WorkManager)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = PaisaTextPrimary
+                                    )
+                                    Text(
+                                        text = if (isPrayerNotificationsEnabled) "অবস্থানভিত্তিক ৫ ওয়াক্ত নামাজের সময় স্বয়ংক্রিয় পুশ অ্যালার্ট" else "নামাজের পুশ নোটিফিকেশন বর্তমানে বন্ধ রয়েছে",
+                                        fontSize = 11.sp,
+                                        color = if (isPrayerNotificationsEnabled) PaisaTealDark else PaisaTextSecondary
+                                    )
+                                }
+                            }
+
+                            Switch(
+                                checked = isPrayerNotificationsEnabled,
+                                onCheckedChange = { enabled ->
+                                    isPrayerNotificationsEnabled = enabled
+                                    AdhanPreferences.setPrayerNotificationsEnabled(context, enabled)
+                                    if (enabled) {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                        PrayerNotificationWorker.schedulePrayerAlertWorkers(
+                                            context = context,
+                                            timings = timings,
+                                            locationName = userLocation?.displayName
+                                        )
+                                        Toast.makeText(context, "WorkManager নামাজের পুশ নোটিফিকেশন অ্যালার্ট সক্রিয় করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        PrayerNotificationWorker.cancelAllPrayerWork(context)
+                                        Toast.makeText(context, "নামাজের পুশ নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PaisaTealPrimary
+                                )
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            thickness = 1.dp
+                        )
+
+                        // Adhan Audio Playback Toggle Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
                                         .clip(CircleShape)
                                         .background(if (isAdhanEnabled) PaisaTealPrimary else PaisaSurfaceVariant),
                                     contentAlignment = Alignment.Center
@@ -258,22 +350,22 @@ fun AdhanPrayerTimesScreen(
                                         imageVector = if (isAdhanEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
                                         contentDescription = null,
                                         tint = if (isAdhanEnabled) Color.White else PaisaTextSecondary,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(14.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 Column {
                                     Text(
                                         text = "নামাজের সময়ে আযান বাজান",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
+                                        fontSize = 15.sp,
                                         color = PaisaTextPrimary
                                     )
                                     Text(
                                         text = if (isAdhanEnabled) "ওয়াক্ত হলে স্বয়ংক্রিয়ভাবে পূর্ণ আযান অডিও বাজবে" else "আযান অডিও বর্তমানে বন্ধ রয়েছে",
-                                        fontSize = 12.sp,
+                                        fontSize = 11.sp,
                                         color = if (isAdhanEnabled) PaisaTealDark else PaisaTextSecondary
                                     )
                                 }
@@ -310,22 +402,87 @@ fun AdhanPrayerTimesScreen(
                             )
                         }
 
-                        // Play/Stop Quick Toggle
+                        // WorkManager Status Badge & Action Buttons
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (isAudioPlaying) {
-                                Button(
-                                    onClick = { DefaultAdhanAudioProvider.stopPlayback() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
-                                    shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            // Status Pill
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isPrayerNotificationsEnabled) PaisaTealPrimary.copy(alpha = 0.15f) else PaisaSurfaceVariant.copy(alpha = 0.5f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isPrayerNotificationsEnabled) PaisaTealPrimary else PaisaTextSecondary)
+                                    )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("অডিও বন্ধ করুন", fontSize = 12.sp)
+                                    Text(
+                                        text = if (isPrayerNotificationsEnabled) "WorkManager সক্রিয়" else "পুশ অ্যালার্ট নিষ্ক্রিয়",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isPrayerNotificationsEnabled) PaisaTealDark else PaisaTextSecondary
+                                    )
+                                }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Test WorkManager Push Notification Button
+                                OutlinedButton(
+                                    onClick = {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                        PrayerNotificationWorker.triggerTestAlertViaWorkManager(
+                                            context = context,
+                                            prayerName = "আসরের নামাজ (Asr)",
+                                            scheduledTime = timings.asr
+                                        )
+                                        Toast.makeText(
+                                            context,
+                                            "WorkManager টেস্ট টাস্ক চালু হয়েছে (২ সেকেন্ড পর পুশ নোটিফিকেশন আসবে)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Send,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = PaisaTealPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "টেস্ট নোটিফিকেশন",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = PaisaTealPrimary
+                                    )
+                                }
+
+                                if (isAudioPlaying) {
+                                    Button(
+                                        onClick = { DefaultAdhanAudioProvider.stopPlayback() },
+                                        colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
+                                        shape = RoundedCornerShape(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("অডিও বন্ধ", fontSize = 11.sp)
+                                    }
                                 }
                             }
                         }
@@ -333,7 +490,187 @@ fun AdhanPrayerTimesScreen(
                 }
             }
 
-            // 2A. ROZA / FASTING TIMINGS CARD (UMMAH API SEHRI & IFTAR)
+            // 2A. MADHAB SELECTION CARD (Hanafi vs Shafi'i / Standard)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = CardDefaults.outlinedCardBorder()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(PaisaTealContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = PaisaTealPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "মাজহাব ও আসর ওয়াক্ত নির্ধারণ",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = PaisaTextPrimary
+                                )
+                                Text(
+                                    text = "আসর ওয়াক্তের ছায়ার পরিমাপ অনুযায়ী সঠিক ওয়াক্ত বের করা হয়",
+                                    fontSize = 11.sp,
+                                    color = PaisaTextSecondary
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            val isHanafi = selectedMadhab.equals("Hanafi", ignoreCase = true) || selectedMadhab.contains("হানাফী")
+                            val isShafi = !isHanafi
+
+                            // Hanafi Option
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isHanafi) PaisaTealContainer.copy(alpha = 0.4f) else PaisaSurfaceVariant.copy(alpha = 0.35f)
+                                ),
+                                border = if (isHanafi && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
+                                onClick = {
+                                    AdhanPreferences.setSelectedMadhab(context, "Hanafi")
+                                    viewModel.refreshPrayerTimings("Hanafi")
+                                    PrayerNotificationWorker.triggerImmediateCalculation(context)
+                                    if (isAdhanEnabled) {
+                                        AdhanScheduler.schedulePrayerAlarms(
+                                            context = context,
+                                            fajr = timings.fajr,
+                                            dhuhr = timings.dhuhr,
+                                            asr = timings.asr,
+                                            maghrib = timings.maghrib,
+                                            isha = timings.isha
+                                        )
+                                    }
+                                    Toast.makeText(context, "হানাফী মাজহাব অনুযায়ী আসর ওয়াক্ত ও আযান নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("হানাফী (Hanafi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PaisaTextPrimary)
+                                        RadioButton(
+                                            selected = isHanafi,
+                                            onClick = null,
+                                            colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
+                                        )
+                                    }
+                                    Text("বস্তুর ছায়া ২ গুণ (দ্বিগুণ)", fontSize = 10.sp, color = PaisaTextSecondary)
+                                }
+                            }
+
+                            // Shafi'i / Maliki / Hanbali Option
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isShafi) PaisaTealContainer.copy(alpha = 0.4f) else PaisaSurfaceVariant.copy(alpha = 0.35f)
+                                ),
+                                border = if (isShafi && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
+                                onClick = {
+                                    AdhanPreferences.setSelectedMadhab(context, "Shafi")
+                                    viewModel.refreshPrayerTimings("Shafi")
+                                    PrayerNotificationWorker.triggerImmediateCalculation(context)
+                                    if (isAdhanEnabled) {
+                                        AdhanScheduler.schedulePrayerAlarms(
+                                            context = context,
+                                            fajr = timings.fajr,
+                                            dhuhr = timings.dhuhr,
+                                            asr = timings.asr,
+                                            maghrib = timings.maghrib,
+                                            isha = timings.isha
+                                        )
+                                    }
+                                    Toast.makeText(context, "শাফেয়ী/মালেকী/হাম্বলী অনুযায়ী আসর ওয়াক্ত নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("শাফেয়ী / অন্যান্য", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PaisaTextPrimary)
+                                        RadioButton(
+                                            selected = isShafi,
+                                            onClick = null,
+                                            colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
+                                        )
+                                    }
+                                    Text("বস্তুর ছায়া ১ গুণ (সমান)", fontSize = 10.sp, color = PaisaTextSecondary)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2B. DAILY PRAYER & SUN SCHEDULE TABLE (আজকের নামাজের সময়সূচি)
+            item {
+                Text(
+                    text = "আজকের নামাজের সময়সূচি",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = PaisaTextPrimary,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            item {
+                val isHanafi = selectedMadhab.equals("Hanafi", ignoreCase = true) || selectedMadhab.contains("হানাফী")
+                val asrLabel = if (isHanafi) "আসর (Asr - হানাফী)" else "আসর (Asr - শাফেয়ী)"
+                val sunsetDisplay = if (timings.sunset.isNotBlank()) timings.sunset else timings.maghrib
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = CardDefaults.outlinedCardBorder()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        PrayerTimeRowItem(prayerNameBn = "ফজর (Fajr)", timeStr = timings.fajr, isNext = timings.nextPrayerName.equals("fajr", ignoreCase = true))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = "সূর্যোদয় (Sunrise)", timeStr = timings.sunrise, isNext = false)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = "যোহর (Dhuhr)", timeStr = timings.dhuhr, isNext = timings.nextPrayerName.equals("dhuhr", ignoreCase = true))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = asrLabel, timeStr = timings.asr, isNext = timings.nextPrayerName.equals("asr", ignoreCase = true))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = "সূর্যাস্ত (Sunset)", timeStr = sunsetDisplay, isNext = false)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = "মাগরিব / ইফতার (Maghrib)", timeStr = timings.maghrib, isNext = timings.nextPrayerName.equals("maghrib", ignoreCase = true))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
+                        PrayerTimeRowItem(prayerNameBn = "ইশা (Isha)", timeStr = timings.isha, isNext = timings.nextPrayerName.equals("isha", ignoreCase = true))
+                    }
+                }
+            }
+
+            // 2C. ROZA / FASTING TIMINGS CARD (UMMAH API SEHRI & IFTAR)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -515,144 +852,6 @@ fun AdhanPrayerTimesScreen(
                                         Text("আল্লাহুম্মা লাকা ছুমতু ওয়া আলা রিযক্বিকা আফত্বারতু।", fontSize = 11.sp, color = PaisaTextSecondary)
                                         Text("অর্থ: হে আল্লাহ! তোমার জন্য রোজা রেখেছি এবং তোমার রিযিক দ্বারা ইফতার করলাম।", fontSize = 10.sp, color = PaisaTextTertiary)
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 2B. MADHAB SELECTION CARD (Hanafi vs Shafi'i / Standard)
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                    border = CardDefaults.outlinedCardBorder()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(PaisaTealContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = PaisaTealPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "মাজহাব ও আসর ওয়াক্ত নির্ধারণ",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = PaisaTextPrimary
-                                )
-                                Text(
-                                    text = "আসর ওয়াক্তের ছায়ার পরিমাপ অনুযায়ী সঠিক ওয়াক্ত বের করা হয়",
-                                    fontSize = 11.sp,
-                                    color = PaisaTextSecondary
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            val isHanafi = selectedMadhab.equals("Hanafi", ignoreCase = true) || selectedMadhab.contains("হানাফী")
-                            val isShafi = !isHanafi
-
-                            // Hanafi Option
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isHanafi) PaisaTealContainer.copy(alpha = 0.4f) else PaisaSurfaceVariant.copy(alpha = 0.35f)
-                                ),
-                                border = if (isHanafi && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
-                                onClick = {
-                                    AdhanPreferences.setSelectedMadhab(context, "Hanafi")
-                                    viewModel.refreshPrayerTimings("Hanafi")
-                                    if (isAdhanEnabled) {
-                                        AdhanScheduler.schedulePrayerAlarms(
-                                            context = context,
-                                            fajr = timings.fajr,
-                                            dhuhr = timings.dhuhr,
-                                            asr = timings.asr,
-                                            maghrib = timings.maghrib,
-                                            isha = timings.isha
-                                        )
-                                    }
-                                    Toast.makeText(context, "হানাফী মাজহাব অনুযায়ী আসর ওয়াক্ত ও আযান নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
-                                }
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text("হানাফী (Hanafi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PaisaTextPrimary)
-                                        RadioButton(
-                                            selected = isHanafi,
-                                            onClick = null,
-                                            colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
-                                        )
-                                    }
-                                    Text("বস্তুর ছায়া ২ গুণ (দ্বিগুণ)", fontSize = 10.sp, color = PaisaTextSecondary)
-                                }
-                            }
-
-                            // Shafi'i / Maliki / Hanbali Option
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isShafi) PaisaTealContainer.copy(alpha = 0.4f) else PaisaSurfaceVariant.copy(alpha = 0.35f)
-                                ),
-                                border = if (isShafi && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
-                                onClick = {
-                                    AdhanPreferences.setSelectedMadhab(context, "Shafi")
-                                    viewModel.refreshPrayerTimings("Shafi")
-                                    if (isAdhanEnabled) {
-                                        AdhanScheduler.schedulePrayerAlarms(
-                                            context = context,
-                                            fajr = timings.fajr,
-                                            dhuhr = timings.dhuhr,
-                                            asr = timings.asr,
-                                            maghrib = timings.maghrib,
-                                            isha = timings.isha
-                                        )
-                                    }
-                                    Toast.makeText(context, "শাফেয়ী/মালেকী/হাম্বলী অনুযায়ী আসর ওয়াক্ত নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
-                                }
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text("শাফেয়ী / অন্যান্য", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PaisaTextPrimary)
-                                        RadioButton(
-                                            selected = isShafi,
-                                            onClick = null,
-                                            colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
-                                        )
-                                    }
-                                    Text("বস্তুর ছায়া ১ গুণ (সমান)", fontSize = 10.sp, color = PaisaTextSecondary)
                                 }
                             }
                         }
@@ -855,43 +1054,6 @@ fun AdhanPrayerTimesScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            // 3. DAILY PRAYER SCHEDULE TABLE (Testing panel removed as requested)
-            item {
-                Text(
-                    text = "আজকের নামাজের সময়সূচি",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = PaisaTextPrimary,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            item {
-                val isHanafi = selectedMadhab.equals("Hanafi", ignoreCase = true) || selectedMadhab.contains("হানাফী")
-                val asrLabel = if (isHanafi) "আসর (Asr - হানাফী)" else "আসর (Asr - শাফেয়ী)"
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                    border = CardDefaults.outlinedCardBorder()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        PrayerTimeRowItem(prayerNameBn = "ফজর (Fajr)", timeStr = timings.fajr, isNext = timings.nextPrayerName.equals("fajr", ignoreCase = true))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
-                        PrayerTimeRowItem(prayerNameBn = "সূর্যোদয় (Sunrise)", timeStr = timings.sunrise, isNext = false)
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
-                        PrayerTimeRowItem(prayerNameBn = "যোহর (Dhuhr)", timeStr = timings.dhuhr, isNext = timings.nextPrayerName.equals("dhuhr", ignoreCase = true))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
-                        PrayerTimeRowItem(prayerNameBn = asrLabel, timeStr = timings.asr, isNext = timings.nextPrayerName.equals("asr", ignoreCase = true))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
-                        PrayerTimeRowItem(prayerNameBn = "মাগরিব / ইফতার (Maghrib)", timeStr = timings.maghrib, isNext = timings.nextPrayerName.equals("maghrib", ignoreCase = true))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = PaisaSurfaceVariant)
-                        PrayerTimeRowItem(prayerNameBn = "ইশা (Isha)", timeStr = timings.isha, isNext = timings.nextPrayerName.equals("isha", ignoreCase = true))
                     }
                 }
             }

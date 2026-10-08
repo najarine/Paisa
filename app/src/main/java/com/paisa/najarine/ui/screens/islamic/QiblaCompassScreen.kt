@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,6 +63,7 @@ fun QiblaCompassScreen(
 
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        @Suppress("DEPRECATION")
         val rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
             ?: sensorManager?.getDefaultSensor(Sensor.TYPE_ORIENTATION)
 
@@ -78,8 +80,11 @@ fun QiblaCompassScreen(
                     val azimuthInRadians = orientation[0]
                     val azimuthInDegrees = Math.toDegrees(azimuthInRadians.toDouble()).toFloat()
                     currentAzimuth = (azimuthInDegrees + 360f) % 360f
-                } else if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
-                    currentAzimuth = (event.values[0] + 360f) % 360f
+                } else {
+                    @Suppress("DEPRECATION")
+                    if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
+                        currentAzimuth = (event.values[0] + 360f) % 360f
+                    }
                 }
             }
 
@@ -116,7 +121,7 @@ fun QiblaCompassScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "ফিরে যান")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PaisaSurface)

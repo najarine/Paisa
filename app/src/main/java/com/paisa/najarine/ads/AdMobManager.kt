@@ -3,6 +3,7 @@ package com.paisa.najarine.ads
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -86,10 +87,10 @@ object AdMobManager {
         if (savedDate != todayStr) {
             // New day -> Reset daily counter
             count = 0
-            prefs.edit()
-                .putString(KEY_DAILY_DATE, todayStr)
-                .putInt(KEY_DAILY_AD_COUNT, 0)
-                .apply()
+            prefs.edit {
+                putString(KEY_DAILY_DATE, todayStr)
+                putInt(KEY_DAILY_AD_COUNT, 0)
+            }
         }
         _todayAdCount.value = count
 
@@ -144,11 +145,11 @@ object AdMobManager {
             count += 1
         }
 
-        prefs.edit()
-            .putString(KEY_DAILY_DATE, todayStr)
-            .putInt(KEY_DAILY_AD_COUNT, count)
-            .putLong(KEY_LAST_AD_TIMESTAMP, System.currentTimeMillis())
-            .apply()
+        prefs.edit {
+            putString(KEY_DAILY_DATE, todayStr)
+            putInt(KEY_DAILY_AD_COUNT, count)
+            putLong(KEY_LAST_AD_TIMESTAMP, System.currentTimeMillis())
+        }
 
         refreshFrequencyState(context)
     }

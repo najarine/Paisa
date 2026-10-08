@@ -2,6 +2,7 @@ package com.paisa.najarine.ui.screens.profile
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.core.content.edit
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,14 +69,14 @@ fun UserProfileScreen(
                     TextButton(
                         onClick = {
                             isSaving = true
-                            prefs.edit()
-                                .putString("phone", phoneNumber)
-                                .putString("address", address)
-                                .putString("occupation", occupation)
-                                .putString("currency", currency)
-                                .putString("emergency_contact", emergencyContact)
-                                .putString("bio_note", bioNote)
-                                .apply()
+                            prefs.edit {
+                                putString("phone", phoneNumber)
+                                putString("address", address)
+                                putString("occupation", occupation)
+                                putString("currency", currency)
+                                putString("emergency_contact", emergencyContact)
+                                putString("bio_note", bioNote)
+                            }
 
                             // Auto sync to Firebase
                             val profileData = mapOf(
@@ -169,7 +172,7 @@ fun UserProfileScreen(
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF0369A1))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "গুগল একাউন্ট তথ্য (সুরক্ষিত ও অপরিবর্তনযোগ্য)",
+                                text = "গুগল অ্যাকাউন্ট তথ্য (সুরক্ষিত ও অপরিবর্তনযোগ্য)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF0369A1),
                                 fontWeight = FontWeight.SemiBold
@@ -268,14 +271,14 @@ fun UserProfileScreen(
 
             Button(
                 onClick = {
-                    prefs.edit()
-                        .putString("phone", phoneNumber)
-                        .putString("address", address)
-                        .putString("occupation", occupation)
-                        .putString("currency", currency)
-                        .putString("emergency_contact", emergencyContact)
-                        .putString("bio_note", bioNote)
-                        .apply()
+                    prefs.edit {
+                        putString("phone", phoneNumber)
+                        putString("address", address)
+                        putString("occupation", occupation)
+                        putString("currency", currency)
+                        putString("emergency_contact", emergencyContact)
+                        putString("bio_note", bioNote)
+                    }
 
                     val profileData = mapOf(
                         "phoneNumber" to phoneNumber,

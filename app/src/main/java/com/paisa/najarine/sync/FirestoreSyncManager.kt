@@ -1,16 +1,26 @@
 package com.paisa.najarine.sync
 
+import android.content.Context
 import android.util.Log
-import com.paisa.najarine.data.local.*
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import com.paisa.najarine.data.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 
 enum class SyncState {
     SYNCED,
@@ -51,6 +61,145 @@ class FirestoreSyncManager(
     private val _syncStatus = MutableStateFlow(SyncStatus())
     val syncStatus: StateFlow<SyncStatus> = _syncStatus.asStateFlow()
 
+    init {
+        // Collect outbox pending count
+        coroutineScope.launch {
+            database.syncOutboxDao().getPendingCountFlow().collect { count ->
+                _syncStatus.value = _syncStatus.value.copy(pendingOperations = count)
+            }
+        }
+        scheduleBackgroundSync()
+    }
+
+    fun scheduleBackgroundSync() {
+        try {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "paisa_periodic_sync",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicRequest
+            )
+        } catch (e: Exception) {
+            Log.w("FirestoreSyncManager", "WorkManager schedule notice: ${e.message}")
+        }
+    }
+
+    fun triggerImmediateSync() {
+        try {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val oneTimeRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "paisa_immediate_sync",
+                ExistingWorkPolicy.REPLACE,
+                oneTimeRequest
+            )
+        } catch (e: Exception) {
+            Log.w("FirestoreSyncManager", "Immediate sync trigger notice: ${e.message}")
+        }
+        // Also fire in coroutine for rapid response
+        coroutineScope.launch {
+            flushOutbox()
+        }
+    }
+
+    suspend fun flushOutbox(): Int = withContext(Dispatchers.IO) {
+        val currentUser = auth.currentUser ?: return@withContext 0
+        val uid = currentUser.uid
+        val pending = database.syncOutboxDao().getAllPending()
+        if (pending.isEmpty()) return@withContext 0
+
+        _syncStatus.value = _syncStatus.value.copy(state = SyncState.SYNCING)
+        var successCount = 0
+
+        for (item in pending) {
+            try {
+                when (item.entityType) {
+                    "TRANSACTION" -> {
+                        val docRef = firestore.collection("users").document(uid).collection("transactions").document(item.entityId)
+                        if (item.action == "DELETE") {
+                            docRef.delete().await()
+                        } else {
+                            val tx = database.transactionDao().getTransactionById(item.entityId)
+                            if (tx != null) {
+                                val data = hashMapOf<String, Any?>(
+                                    "id" to tx.id,
+                                    "workspaceId" to tx.workspaceId,
+                                    "walletId" to tx.walletId,
+                                    "toWalletId" to tx.toWalletId,
+                                    "type" to tx.type,
+                                    "amount" to tx.amount,
+                                    "fee" to tx.fee,
+                                    "category" to tx.category,
+                                    "note" to tx.note,
+                                    "dateMillis" to tx.dateMillis,
+                                    "tags" to tx.tags,
+                                    "receiptImageUri" to tx.receiptImageUri,
+                                    "isDraft" to tx.isDraft,
+                                    "isAiGenerated" to tx.isAiGenerated,
+                                    "confirmedByUser" to tx.confirmedByUser,
+                                    "updatedAt" to tx.updatedAt
+                                )
+                                docRef.set(data, SetOptions.merge()).await()
+                            }
+                        }
+                    }
+                    "WALLET" -> {
+                        val docRef = firestore.collection("users").document(uid).collection("wallets").document(item.entityId)
+                        if (item.action == "DELETE") {
+                            docRef.delete().await()
+                        } else {
+                            val wallet = database.walletDao().getWalletById(item.entityId)
+                            if (wallet != null) {
+                                val data = hashMapOf<String, Any?>(
+                                    "id" to wallet.id,
+                                    "workspaceId" to wallet.workspaceId,
+                                    "name" to wallet.name,
+                                    "type" to wallet.type,
+                                    "institutionId" to wallet.institutionId,
+                                    "accountNumber" to wallet.accountNumber,
+                                    "balance" to wallet.balance,
+                                    "creditLimit" to wallet.creditLimit,
+                                    "currencyCode" to wallet.currencyCode,
+                                    "colorHex" to wallet.colorHex,
+                                    "isExcludedFromTotal" to wallet.isExcludedFromTotal,
+                                    "note" to wallet.note,
+                                    "updatedAt" to wallet.updatedAt
+                                )
+                                docRef.set(data, SetOptions.merge()).await()
+                            }
+                        }
+                    }
+                }
+                // Successfully synchronized to cloud - remove from outbox queue
+                database.syncOutboxDao().deleteById(item.id)
+                successCount++
+            } catch (e: Exception) {
+                Log.w("FirestoreSyncManager", "Outbox sync failed for ${item.id}: ${e.message}")
+                database.syncOutboxDao().incrementRetryCount(item.id)
+            }
+        }
+
+        _syncStatus.value = SyncStatus(
+            state = SyncState.SYNCED,
+            lastSyncTimeMillis = System.currentTimeMillis()
+        )
+        return@withContext successCount
+    }
+
+
     fun stopAllListeners() {
         activeListeners.forEach { it.remove() }
         activeListeners.clear()
@@ -88,23 +237,44 @@ class FirestoreSyncManager(
             .addSnapshotListener { snapshot, error ->
                 if (error == null && snapshot != null) {
                     coroutineScope.launch {
-                        for (doc in snapshot.documents) {
-                            val data = doc.data ?: continue
-                            val wallet = WalletEntity(
-                                id = doc.id,
-                                workspaceId = "personal_default",
-                                name = data["name"] as? String ?: "Wallet",
-                                type = data["type"] as? String ?: "CASH",
-                                institutionId = data["institutionId"] as? String ?: "cash",
-                                accountNumber = data["accountNumber"] as? String ?: "",
-                                balance = (data["balance"] as? Number)?.toDouble() ?: 0.0,
-                                creditLimit = (data["creditLimit"] as? Number)?.toDouble() ?: 0.0,
-                                currencyCode = data["currencyCode"] as? String ?: "BDT",
-                                colorHex = data["colorHex"] as? String ?: "#0D9488",
-                                note = data["note"] as? String ?: "",
-                                updatedAt = (data["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis()
-                            )
-                            database.walletDao().insertWallet(wallet)
+                        for (change in snapshot.documentChanges) {
+                            val doc = change.document
+                            val docId = doc.id
+                            when (change.type) {
+                                DocumentChange.Type.REMOVED -> {
+                                    database.walletDao().deleteWallet(docId)
+                                }
+                                DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                                    // Check tombstone - do not resurrect locally deleted items
+                                    if (database.tombstoneDao().isTombstoned(docId)) {
+                                        continue
+                                    }
+                                    val data = doc.data
+                                    val cloudUpdatedAt = (data["updatedAt"] as? Number)?.toLong() ?: 0L
+                                    val localWallet = database.walletDao().getWalletById(docId)
+
+                                    // Conflict handling: Do not overwrite newer local changes
+                                    if (localWallet != null && localWallet.updatedAt > cloudUpdatedAt) {
+                                        continue
+                                    }
+
+                                    val wallet = WalletEntity(
+                                        id = docId,
+                                        workspaceId = "personal_default",
+                                        name = data["name"] as? String ?: "Wallet",
+                                        type = data["type"] as? String ?: "CASH",
+                                        institutionId = data["institutionId"] as? String ?: "cash",
+                                        accountNumber = data["accountNumber"] as? String ?: "",
+                                        balance = (data["balance"] as? Number)?.toDouble() ?: 0.0,
+                                        creditLimit = (data["creditLimit"] as? Number)?.toDouble() ?: 0.0,
+                                        currencyCode = data["currencyCode"] as? String ?: "BDT",
+                                        colorHex = data["colorHex"] as? String ?: "#0D9488",
+                                        note = data["note"] as? String ?: "",
+                                        updatedAt = cloudUpdatedAt
+                                    )
+                                    database.walletDao().insertWallet(wallet)
+                                }
+                            }
                         }
                     }
                 }
@@ -116,21 +286,43 @@ class FirestoreSyncManager(
             .addSnapshotListener { snapshot, error ->
                 if (error == null && snapshot != null) {
                     coroutineScope.launch {
-                        for (doc in snapshot.documents) {
-                            val data = doc.data ?: continue
-                            val tx = TransactionEntity(
-                                id = doc.id,
-                                workspaceId = "personal_default",
-                                walletId = data["walletId"] as? String ?: "default",
-                                toWalletId = data["toWalletId"] as? String,
-                                type = data["type"] as? String ?: "EXPENSE",
-                                amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
-                                fee = (data["fee"] as? Number)?.toDouble() ?: 0.0,
-                                category = data["category"] as? String ?: "General",
-                                note = data["note"] as? String ?: "",
-                                dateMillis = (data["dateMillis"] as? Number)?.toLong() ?: System.currentTimeMillis()
-                            )
-                            database.transactionDao().insertTransaction(tx)
+                        for (change in snapshot.documentChanges) {
+                            val doc = change.document
+                            val docId = doc.id
+                            when (change.type) {
+                                DocumentChange.Type.REMOVED -> {
+                                    database.transactionDao().deleteTransaction(docId)
+                                }
+                                DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                                    // Check tombstone - do not resurrect locally deleted items
+                                    if (database.tombstoneDao().isTombstoned(docId)) {
+                                        continue
+                                    }
+                                    val data = doc.data
+                                    val cloudUpdatedAt = (data["updatedAt"] as? Number)?.toLong() ?: 0L
+                                    val localTx = database.transactionDao().getTransactionById(docId)
+
+                                    // Conflict handling: Do not overwrite newer unsynced local changes
+                                    if (localTx != null && localTx.updatedAt > cloudUpdatedAt) {
+                                        continue
+                                    }
+
+                                    val tx = TransactionEntity(
+                                        id = docId,
+                                        workspaceId = "personal_default",
+                                        walletId = data["walletId"] as? String ?: "default",
+                                        toWalletId = data["toWalletId"] as? String,
+                                        type = data["type"] as? String ?: "EXPENSE",
+                                        amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
+                                        fee = (data["fee"] as? Number)?.toDouble() ?: 0.0,
+                                        category = data["category"] as? String ?: "General",
+                                        note = data["note"] as? String ?: "",
+                                        dateMillis = (data["dateMillis"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                                        updatedAt = cloudUpdatedAt
+                                    )
+                                    database.transactionDao().insertTransaction(tx)
+                                }
+                            }
                         }
                     }
                 }

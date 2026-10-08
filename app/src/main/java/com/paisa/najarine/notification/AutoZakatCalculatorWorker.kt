@@ -2,6 +2,7 @@ package com.paisa.najarine.notification
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.paisa.najarine.accounting.AccountingEngine
@@ -134,10 +135,10 @@ class AutoZakatCalculatorWorker(
                 put("receivables", summary.totalReceivables)
                 put("formattedReportText", reportText)
             }
-            prefs.edit()
-                .putString(KEY_LATEST_REPORT_JSON, jsonReport.toString())
-                .putLong(KEY_LAST_CALCULATED_TIME, now)
-                .apply()
+            prefs.edit {
+                putString(KEY_LATEST_REPORT_JSON, jsonReport.toString())
+                putLong(KEY_LAST_CALCULATED_TIME, now)
+            }
 
             // 7. Send Push Notification Summary
             if (isNisabReached) {

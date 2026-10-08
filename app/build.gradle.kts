@@ -105,7 +105,7 @@ dependencies {
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.functions)
   implementation(libs.firebase.auth)
-  implementation("com.google.android.gms:play-services-auth:21.2.0")
+  implementation(libs.play.services.auth)
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services)
   implementation(libs.googleid)

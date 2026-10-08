@@ -2,6 +2,8 @@ package com.paisa.najarine.data.repository
 
 import androidx.room.withTransaction
 import com.paisa.najarine.data.local.PaisaDatabase
+import com.paisa.najarine.data.local.SyncOutboxEntity
+import com.paisa.najarine.data.local.TombstoneEntity
 import com.paisa.najarine.data.local.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -21,10 +23,12 @@ class TransactionRepository(private val database: PaisaDatabase) {
         category: String,
         note: String = "",
         dateMillis: Long = System.currentTimeMillis(),
-        tags: String = ""
-    ) {
+        tags: String = "",
+        id: String = UUID.randomUUID().toString()
+    ): TransactionEntity {
+        val now = System.currentTimeMillis()
         val tx = TransactionEntity(
-            id = UUID.randomUUID().toString(),
+            id = id,
             workspaceId = workspaceId,
             walletId = walletId,
             toWalletId = null,
@@ -33,12 +37,37 @@ class TransactionRepository(private val database: PaisaDatabase) {
             category = category,
             note = note,
             dateMillis = dateMillis,
-            tags = tags
+            tags = tags,
+            updatedAt = now
         )
         database.withTransaction {
             database.transactionDao().insertTransaction(tx)
-            database.walletDao().adjustBalance(walletId, amount)
+            database.walletDao().adjustBalance(walletId, amount, now)
+            database.tombstoneDao().deleteTombstone(tx.id)
+
+            // Enqueue outbox operations atomically
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "TRANSACTION",
+                    entityId = tx.id,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "WALLET",
+                    entityId = walletId,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
         }
+        return tx
     }
 
     suspend fun recordExpense(
@@ -50,10 +79,12 @@ class TransactionRepository(private val database: PaisaDatabase) {
         note: String = "",
         dateMillis: Long = System.currentTimeMillis(),
         tags: String = "",
-        receiptImageUri: String? = null
-    ) {
+        receiptImageUri: String? = null,
+        id: String = UUID.randomUUID().toString()
+    ): TransactionEntity {
+        val now = System.currentTimeMillis()
         val tx = TransactionEntity(
-            id = UUID.randomUUID().toString(),
+            id = id,
             workspaceId = workspaceId,
             walletId = walletId,
             toWalletId = null,
@@ -64,12 +95,36 @@ class TransactionRepository(private val database: PaisaDatabase) {
             note = note,
             dateMillis = dateMillis,
             tags = tags,
-            receiptImageUri = receiptImageUri
+            receiptImageUri = receiptImageUri,
+            updatedAt = now
         )
         database.withTransaction {
             database.transactionDao().insertTransaction(tx)
-            database.walletDao().adjustBalance(walletId, -(amount + fee))
+            database.walletDao().adjustBalance(walletId, -(amount + fee), now)
+            database.tombstoneDao().deleteTombstone(tx.id)
+
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "TRANSACTION",
+                    entityId = tx.id,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "WALLET",
+                    entityId = walletId,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
         }
+        return tx
     }
 
     suspend fun recordTransfer(
@@ -79,10 +134,12 @@ class TransactionRepository(private val database: PaisaDatabase) {
         amount: Double,
         fee: Double = 0.0,
         note: String = "",
-        dateMillis: Long = System.currentTimeMillis()
-    ) {
+        dateMillis: Long = System.currentTimeMillis(),
+        id: String = UUID.randomUUID().toString()
+    ): TransactionEntity {
+        val now = System.currentTimeMillis()
         val tx = TransactionEntity(
-            id = UUID.randomUUID().toString(),
+            id = id,
             workspaceId = workspaceId,
             walletId = sourceWalletId,
             toWalletId = destinationWalletId,
@@ -91,31 +148,173 @@ class TransactionRepository(private val database: PaisaDatabase) {
             fee = fee,
             category = "Transfer",
             note = note,
-            dateMillis = dateMillis
+            dateMillis = dateMillis,
+            updatedAt = now
         )
         database.withTransaction {
             database.transactionDao().insertTransaction(tx)
-            // Deterministic balance adjustments:
-            // Transfers must not count as income or expense
-            database.walletDao().adjustBalance(sourceWalletId, -(amount + fee))
-            database.walletDao().adjustBalance(destinationWalletId, amount)
+            database.walletDao().adjustBalance(sourceWalletId, -(amount + fee), now)
+            database.walletDao().adjustBalance(destinationWalletId, amount, now)
+            database.tombstoneDao().deleteTombstone(tx.id)
+
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "TRANSACTION",
+                    entityId = tx.id,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "WALLET",
+                    entityId = sourceWalletId,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "WALLET",
+                    entityId = destinationWalletId,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+        }
+        return tx
+    }
+
+    suspend fun editTransaction(
+        oldTx: TransactionEntity,
+        newTx: TransactionEntity
+    ) {
+        val now = System.currentTimeMillis()
+        val updatedTx = newTx.copy(updatedAt = now)
+
+        database.withTransaction {
+            // 1. Revert previous transaction impact on old wallets
+            when (oldTx.type) {
+                "INCOME" -> database.walletDao().adjustBalance(oldTx.walletId, -oldTx.amount, now)
+                "EXPENSE" -> database.walletDao().adjustBalance(oldTx.walletId, (oldTx.amount + oldTx.fee), now)
+                "TRANSFER" -> {
+                    database.walletDao().adjustBalance(oldTx.walletId, (oldTx.amount + oldTx.fee), now)
+                    oldTx.toWalletId?.let { destId ->
+                        database.walletDao().adjustBalance(destId, -oldTx.amount, now)
+                    }
+                }
+            }
+
+            // 2. Apply new transaction impact on new wallets
+            when (updatedTx.type) {
+                "INCOME" -> database.walletDao().adjustBalance(updatedTx.walletId, updatedTx.amount, now)
+                "EXPENSE" -> database.walletDao().adjustBalance(updatedTx.walletId, -(updatedTx.amount + updatedTx.fee), now)
+                "TRANSFER" -> {
+                    database.walletDao().adjustBalance(updatedTx.walletId, -(updatedTx.amount + updatedTx.fee), now)
+                    updatedTx.toWalletId?.let { destId ->
+                        database.walletDao().adjustBalance(destId, updatedTx.amount, now)
+                    }
+                }
+            }
+
+            // 3. Update transaction record
+            database.transactionDao().insertTransaction(updatedTx)
+
+            // 4. Enqueue sync outbox mutations
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "TRANSACTION",
+                    entityId = updatedTx.id,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            val affectedWallets = setOfNotNull(oldTx.walletId, oldTx.toWalletId, updatedTx.walletId, updatedTx.toWalletId)
+            for (wId in affectedWallets) {
+                database.syncOutboxDao().enqueue(
+                    SyncOutboxEntity(
+                        id = UUID.randomUUID().toString(),
+                        entityType = "WALLET",
+                        entityId = wId,
+                        action = "UPSERT",
+                        payload = "",
+                        createdAt = now
+                    )
+                )
+            }
         }
     }
 
     suspend fun deleteTransaction(transaction: TransactionEntity) {
+        val now = System.currentTimeMillis()
         database.withTransaction {
             database.transactionDao().deleteTransaction(transaction.id)
-            // Reverse balance effect
+
+            // Reverse balance effect atomically
             when (transaction.type) {
-                "INCOME" -> database.walletDao().adjustBalance(transaction.walletId, -transaction.amount)
-                "EXPENSE" -> database.walletDao().adjustBalance(transaction.walletId, (transaction.amount + transaction.fee))
+                "INCOME" -> database.walletDao().adjustBalance(transaction.walletId, -transaction.amount, now)
+                "EXPENSE" -> database.walletDao().adjustBalance(transaction.walletId, (transaction.amount + transaction.fee), now)
                 "TRANSFER" -> {
-                    database.walletDao().adjustBalance(transaction.walletId, (transaction.amount + transaction.fee))
+                    database.walletDao().adjustBalance(transaction.walletId, (transaction.amount + transaction.fee), now)
                     transaction.toWalletId?.let { destId ->
-                        database.walletDao().adjustBalance(destId, -transaction.amount)
+                        database.walletDao().adjustBalance(destId, -transaction.amount, now)
                     }
                 }
+            }
+
+            // Insert tombstone so incoming snapshots cannot re-create this transaction
+            database.tombstoneDao().insertTombstone(
+                TombstoneEntity(
+                    entityId = transaction.id,
+                    entityType = "TRANSACTION",
+                    deletedAt = now
+                )
+            )
+
+            // Enqueue outbox delete
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "TRANSACTION",
+                    entityId = transaction.id,
+                    action = "DELETE",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+
+            // Enqueue wallet balance sync
+            database.syncOutboxDao().enqueue(
+                SyncOutboxEntity(
+                    id = UUID.randomUUID().toString(),
+                    entityType = "WALLET",
+                    entityId = transaction.walletId,
+                    action = "UPSERT",
+                    payload = "",
+                    createdAt = now
+                )
+            )
+            transaction.toWalletId?.let { destId ->
+                database.syncOutboxDao().enqueue(
+                    SyncOutboxEntity(
+                        id = UUID.randomUUID().toString(),
+                        entityType = "WALLET",
+                        entityId = destId,
+                        action = "UPSERT",
+                        payload = "",
+                        createdAt = now
+                    )
+                )
             }
         }
     }
 }
+

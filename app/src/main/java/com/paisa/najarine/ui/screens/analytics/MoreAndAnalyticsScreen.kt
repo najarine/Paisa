@@ -396,8 +396,8 @@ fun MoreAndAnalyticsScreen(
         item {
             Spacer(modifier = Modifier.height(14.dp))
             HubSectionContainer(
-                title = "ব্যক্তিগত একাউন্ট ও ক্লাউড সিঙ্ক",
-                description = "গুগল একাউন্ট প্রোফাইল ও ফায়ারবেস অটোমেটিক সিঙ্ক",
+                title = "ব্যক্তিগত অ্যাকাউন্ট ও ক্লাউড সিঙ্ক",
+                description = "গুগল অ্যাকাউন্ট প্রোফাইল ও ফায়ারবেস অটোমেটিক সিঙ্ক",
                 icon = Icons.Default.Person,
                 accentColor = Color(0xFF0D9488)
             ) {
@@ -450,7 +450,7 @@ fun MoreAndAnalyticsScreen(
                     onClick = onNavigateToQuran
                 )
                 HubActionItem(
-                    title = "দৈনিক সহীহ হাদিস (প্রতি ঘন্টায় রিফ্রেশ)",
+                    title = "দৈনিক সহীহ হাদিস (প্রতি ঘণ্টায় রিফ্রেশ)",
                     subtitle = "সহীহ বুখারী ও মুসলিম ভিত্তিক লাইভ হাদিস",
                     icon = Icons.Default.AutoStories,
                     onClick = onNavigateToHadith

@@ -2,6 +2,7 @@ package com.paisa.najarine.notification
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.paisa.najarine.data.local.HourlyHadithEntity
@@ -169,7 +170,7 @@ class HourlyIslamicSyncWorker(
                     targetTab = 3,
                     targetScreen = "QURAN"
                 )
-                sharedPrefs.edit().putLong("last_ayah_notification_time", now).apply()
+                sharedPrefs.edit { putLong("last_ayah_notification_time", now) }
             }
 
             Log.d("HourlyIslamicSyncWorker", "Hourly Hadith (1 hr) & Quran Ayah (1 hr) successfully processed and notified.")

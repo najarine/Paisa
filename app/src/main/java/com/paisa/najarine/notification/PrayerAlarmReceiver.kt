@@ -54,17 +54,9 @@ class BootCompletedReceiver : BroadcastReceiver() {
             val repo = IslamicRepository(database)
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val timings = repo.getPrayerTimings()
-                    AdhanScheduler.schedulePrayerAlarms(
-                        context = context,
-                        fajr = timings.fajr,
-                        dhuhr = timings.dhuhr,
-                        asr = timings.asr,
-                        maghrib = timings.maghrib,
-                        isha = timings.isha
-                    )
+                    PrayerNotificationWorker.refreshAndScheduleDailyPrayerAlerts(context)
                 } catch (e: Exception) {
-                    Log.e("BootCompletedReceiver", "Failed to reschedule on boot: ${e.localizedMessage}")
+                    Log.e("BootCompletedReceiver", "Failed to reschedule WorkManager prayer alerts on boot: ${e.localizedMessage}")
                 }
             }
         }
@@ -133,19 +125,11 @@ object AdhanScheduler {
             )
 
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        cal.timeInMillis,
-                        pendingIntent
-                    )
-                } else {
-                    alarmManager.setExact(
-                        AlarmManager.RTC_WAKEUP,
-                        cal.timeInMillis,
-                        pendingIntent
-                    )
-                }
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    cal.timeInMillis,
+                    pendingIntent
+                )
             } catch (_: SecurityException) {
                 // If exact alarms capability is missing, gracefully use standard wakeup
                 alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)

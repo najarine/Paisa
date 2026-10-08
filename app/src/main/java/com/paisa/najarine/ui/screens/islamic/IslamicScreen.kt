@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -233,7 +234,7 @@ fun IslamicScreen(
                 // Al-Quran
                 ModuleSmallCard(
                     title = "Al-Quran",
-                    icon = Icons.Default.MenuBook,
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
                     iconBg = Color(0xFFD1FAE5),
                     iconTint = Color(0xFF059669),
                     modifier = Modifier.weight(1f),

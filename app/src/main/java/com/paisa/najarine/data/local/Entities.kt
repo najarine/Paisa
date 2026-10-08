@@ -46,7 +46,26 @@ data class TransactionEntity(
     val receiptImageUri: String? = null,
     val isDraft: Boolean = false,
     val isAiGenerated: Boolean = false,
-    val confirmedByUser: Boolean = true
+    val confirmedByUser: Boolean = true,
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "sync_outbox")
+data class SyncOutboxEntity(
+    @PrimaryKey val id: String,
+    val entityType: String,      // "WALLET", "TRANSACTION", "BUDGET", "GOAL", "DEBT", "ASSET", "BILL", "LEDGER", "QAZA"
+    val entityId: String,
+    val action: String,          // "UPSERT", "DELETE"
+    val payload: String = "",    // JSON serialized representation for offline replays
+    val createdAt: Long = System.currentTimeMillis(),
+    val retryCount: Int = 0
+)
+
+@Entity(tableName = "sync_tombstones")
+data class TombstoneEntity(
+    @PrimaryKey val entityId: String,
+    val entityType: String,
+    val deletedAt: Long = System.currentTimeMillis()
 )
 
 @Entity(tableName = "categories")

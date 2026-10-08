@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -662,7 +663,7 @@ fun ZakatCalculatorScreen(
             onDismissRequest = { showReportDialog = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Assignment, contentDescription = null, tint = PaisaTealPrimary)
+                    Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = PaisaTealPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("যাকাত সামারি রিপোর্ট", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
