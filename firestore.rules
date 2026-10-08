@@ -24,28 +24,24 @@ service cloud.firestore {
       }
     }
 
-    // Partner Invitations (Direct & Cross-User)
+    // Disabled for single-user app security
     match /partner_invitations/{invitationId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if false;
     }
 
-    // Legacy Invitations Compatibility
     match /invitations/{invitationId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if false;
     }
 
-    // Shared Finance Partnership Data
     match /shared_finances/{partnershipId} {
-      allow read, write: if isSignedIn();
-
+      allow read, write: if false;
       match /{allSubcollections=**} {
-        allow read, write: if isSignedIn();
+        allow read, write: if false;
       }
     }
 
-    // Mail Trigger Extension Collection
     match /mail/{mailId} {
-      allow create, read: if isSignedIn();
+      allow read, write: if false;
     }
   }
 }

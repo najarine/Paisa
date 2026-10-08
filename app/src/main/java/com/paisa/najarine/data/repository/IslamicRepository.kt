@@ -757,7 +757,7 @@ class IslamicRepository(
     )
 
     val namesOfAllah = listOf(
-        AllahNameItem(1, "الرَّحْمَنُ", "আর-রাহমান", "পরম দয়ালু", "সৃষ্টির প্রতি অসীম রহমত কামনায় জিকির করুন।"),
+        AllahNameItem(1, "الرَّحْمَنُ", "আর-راহমান", "পরম দয়ালু", "সৃষ্টির প্রতি অসীম রহমত কামনায় জিকির করুন।"),
         AllahNameItem(2, "الرَّحِيمُ", "আর-রাহীম", "পরম করুণাময়", "ক্ষমা, মানসিক প্রশান্তি ও পারিবারিক বরকতের জন্য।"),
         AllahNameItem(3, "الْمَلِكُ", "আল-মালিক", "প্রকৃত সার্বভৌম মালিক", "স্মরণ করিয়ে দেয় সমস্ত রাজত্ব ও সম্পদ একমাত্র আল্লাহর।"),
         AllahNameItem(4, "الْقُدُّوسُ", "আল-কুদ্দুস", "মহা পবিত্র", "অন্তরকে লোভ, পরশ্রীকাতরতা ও মোহ থেকে পবিত্র করে।"),
@@ -778,4 +778,12 @@ class IslamicRepository(
         AllahNameItem(88, "الْغَنِيُّ", "আল-গানিয়্যু", "অভাবমুক্ত ও পরম ধনী", "বান্দাকে অল্পে তুষ্ট ও ঋণমুক্ত জীবন দান করেন।"),
         AllahNameItem(89, "الْمُغْنِي", "আল-মুগনী", "সমৃদ্ধিদাতা", "প্রচুর হালাল সমৃদ্ধি ও উদার হৃদয় দান করেন।")
     )
+
+    suspend fun calculateZakatViaUmmahApi(request: com.paisa.najarine.data.remote.UmmahZakatRequest): com.paisa.najarine.data.remote.UmmahZakatResponse? {
+        return try {
+            apiService.calculateZakat(request)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

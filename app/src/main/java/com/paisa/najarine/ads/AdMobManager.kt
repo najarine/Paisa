@@ -9,8 +9,6 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import kotlinx.coroutines.CoroutineScope
@@ -27,8 +25,8 @@ import java.util.Locale
 
 object AdMobManager {
     private const val TAG = "AdMobManager"
-    const val AD_UNIT_ID = "ca-app-pub-5571621417978572/3802447896"
-    const val BANNER_AD_UNIT_ID = "ca-app-pub-5571621417978572/1238461366"
+    const val AD_UNIT_ID = "ca-app-pub-5571621417978572/3802447896" // Rewarded Ad Unit ID
+    const val BANNER_AD_UNIT_ID = "ca-app-pub-5571621417978572/1238461366" // Banner Ad Unit ID
     const val MEDIATION_AD_UNIT_ID = "ca-app-pub-5571621417978572/1238461366"
 
     // Anti-Abuse & AdMob Account Protection Limits
@@ -85,7 +83,6 @@ object AdMobManager {
 
         var count = prefs.getInt(KEY_DAILY_AD_COUNT, 0)
         if (savedDate != todayStr) {
-            // New day -> Reset daily counter
             count = 0
             prefs.edit {
                 putString(KEY_DAILY_DATE, todayStr)
@@ -155,7 +152,7 @@ object AdMobManager {
     }
 
     /**
-     * Loads and shows a full-screen ad (Rewarded or Interstitial) for developer support with strict frequency capping.
+     * Loads and shows a rewarded ad for developer support with strict frequency capping. No interstitial ads.
      */
     fun showSupportAd(
         activity: Activity,
@@ -165,7 +162,6 @@ object AdMobManager {
     ) {
         initialize(activity)
 
-        // Strict Pre-flight Rate Limit & Frequency Capping Check to protect AdMob Account
         val (canWatch, reason) = canUserWatchAd(activity)
         if (!canWatch) {
             val msg = reason ?: "বিজ্ঞাপন সীমা সক্রিয় রয়েছে।"
@@ -181,7 +177,6 @@ object AdMobManager {
 
             val adRequest = AdRequest.Builder().build()
 
-            // 1. Try loading Rewarded Ad first
             RewardedAd.load(
                 activity,
                 AD_UNIT_ID,
@@ -218,57 +213,6 @@ object AdMobManager {
                     }
 
                     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        Log.w(TAG, "Rewarded Ad failed to load: ${loadAdError.message}. Trying Interstitial fallback...")
-                        loadInterstitialFallback(activity, adRequest, onAdCompleted, onError)
-                    }
-                }
-            )
-        } catch (e: Throwable) {
-            _isLoadingAd.value = false
-            val errorMsg = "বিজ্ঞাপন সার্ভিস উপলব্ধ নয়: ${e.localizedMessage ?: "অজ্ঞাত সমস্যা"}"
-            Log.e(TAG, errorMsg)
-            _adStatusMessage.value = errorMsg
-            onError(errorMsg)
-        }
-    }
-
-    private fun loadInterstitialFallback(
-        activity: Activity,
-        adRequest: AdRequest,
-        onAdCompleted: (String) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        try {
-            InterstitialAd.load(
-                activity,
-                AD_UNIT_ID,
-                adRequest,
-                object : InterstitialAdLoadCallback() {
-                    override fun onAdLoaded(interstitialAd: InterstitialAd) {
-                        _isLoadingAd.value = false
-                        _adStatusMessage.value = "বিজ্ঞাপন প্রদর্শিত হচ্ছে..."
-
-                        interstitialAd.fullScreenContentCallback = object : FullScreenContentCallback() {
-                            override fun onAdDismissedFullScreenContent() {
-                                Log.d(TAG, "Interstitial Ad dismissed.")
-                                recordAdWatched(activity)
-                                val msg = "বিজ্ঞাপন দেখার জন্য ধন্যবাদ! আপনার সহায়তা সফল হয়েছে।"
-                                _adStatusMessage.value = msg
-                                onAdCompleted(msg)
-                            }
-
-                            override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                                Log.e(TAG, "Interstitial failed to show: ${adError.message}")
-                                _isLoadingAd.value = false
-                                _adStatusMessage.value = "বিজ্ঞাপন প্রদর্শনে ত্রুটি: ${adError.message}"
-                                onError("বিজ্ঞাপন প্রদর্শনে ত্রুটি: ${adError.message}")
-                            }
-                        }
-
-                        interstitialAd.show(activity)
-                    }
-
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                         _isLoadingAd.value = false
                         val errorMsg = "বিজ্ঞাপন লোড করা যায়নি (কোড ${loadAdError.code}): ${loadAdError.message}"
                         Log.e(TAG, errorMsg)
@@ -279,7 +223,7 @@ object AdMobManager {
             )
         } catch (e: Throwable) {
             _isLoadingAd.value = false
-            val errorMsg = "বিজ্ঞাপন লোড ব্যর্থ হয়েছে: ${e.localizedMessage ?: "সার্ভার উপলব্ধ নেই"}"
+            val errorMsg = "বিজ্ঞাপন সার্ভিস উপলব্ধ নয়: ${e.localizedMessage ?: "অজ্ঞাত সমস্যা"}"
             Log.e(TAG, errorMsg)
             _adStatusMessage.value = errorMsg
             onError(errorMsg)

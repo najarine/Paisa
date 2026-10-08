@@ -494,7 +494,7 @@ fun SupportDeveloperScreen(
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(
-                            text = "মোবাইল ব্যাংকিং (MFS)",
+                            text = "MFS",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = PaisaTextPrimary

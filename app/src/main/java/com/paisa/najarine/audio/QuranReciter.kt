@@ -101,6 +101,42 @@ object QuranReciters {
             style = "কুরআন তিলাওয়াত (Classic)",
             networkIdentifier = "ar.muhammadjibreel",
             everyAyahFolder = "Muhammad_Jibreel_128kbps"
+        ),
+        QuranReciter(
+            id = "ar.saudshuraim",
+            nameBangla = "শায়খ সৌদ আশ-শুরাইম",
+            nameArabic = "سعود الشريم",
+            nameEnglish = "Saud Al-Shuraim",
+            style = "ইমাম, মসজিদুল হারাম (Makkah)",
+            networkIdentifier = "ar.saudshuraim",
+            everyAyahFolder = "Saud_Ash-Shuraim_128kbps"
+        ),
+        QuranReciter(
+            id = "ar.yasseraldosari",
+            nameBangla = "শায়খ ইয়াসির আল-দোসারি",
+            nameArabic = "ياسر الدوسري",
+            nameEnglish = "Yasser Al-Dosari",
+            style = "ইমাম, মসজিদুল হারাম (Makkah)",
+            networkIdentifier = "ar.yasseraldosari",
+            everyAyahFolder = "Yasser_Ad-Dosari_128kbps"
+        ),
+        QuranReciter(
+            id = "ar.nasserqatami",
+            nameBangla = "শায়খ নাসের আল-কাতামি",
+            nameArabic = "ناصر القطامي",
+            nameEnglish = "Nasser Al Qatami",
+            style = "ভাবগম্ভীর তিলাওয়াত (Emotional)",
+            networkIdentifier = "ar.nasserqatami",
+            everyAyahFolder = "Nasser_Al_Qatami_128kbps"
+        ),
+        QuranReciter(
+            id = "ar.minshawi",
+            nameBangla = "কারী মুহাম্মদ সিদ্দিক আল-মিনশাবি",
+            nameArabic = "محمد صديق المنشاوي",
+            nameEnglish = "Mohamed Siddiq El-Minshawi",
+            style = "তাজবীদ মাস্টার (Tajweed Legend)",
+            networkIdentifier = "ar.minshawi",
+            everyAyahFolder = "Minshawy_Murattal_128kbps"
         )
     )
 

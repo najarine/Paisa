@@ -274,7 +274,6 @@ class CloudBackupManager(
                 // Settings
                 put("settings", JSONObject().apply {
                     put("securityLockEnabled", securityPrefs.getBoolean("security_lock_enabled", false))
-                    put("securityPin", securityPrefs.getString("security_pin", "1234"))
                     put("selectedMadhab", adhanPrefs.getString("selected_madhab", "Hanafi"))
                     put("adhanAudioEnabled", adhanPrefs.getBoolean("adhan_audio_enabled", true))
                     put("selectedReciter", audioPrefs.getString("selected_reciter_id", "ar.alafasy"))
@@ -638,7 +637,6 @@ class CloudBackupManager(
             if (settingsObj != null) {
                 context.getSharedPreferences("paisa_security_prefs", Context.MODE_PRIVATE).edit().apply {
                     putBoolean("security_lock_enabled", settingsObj.optBoolean("securityLockEnabled", false))
-                    putString("security_pin", settingsObj.optString("securityPin", "1234"))
                     apply()
                 }
                 context.getSharedPreferences("paisa_adhan_prefs", Context.MODE_PRIVATE).edit().apply {

@@ -29,12 +29,20 @@ class BiometricAuthManager(private val context: Context) {
         }
     }
 
+    private fun hashPin(pin: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest(pin.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
     fun getStoredPin(): String {
-        return sharedPrefs.getString("security_pin", "1234") ?: "1234"
+        // Return placeholder for UI display if needed, but verification uses hashed pin
+        return "1234"
     }
 
     fun setStoredPin(pin: String) {
-        sharedPrefs.edit { putString("security_pin", pin) }
+        val hashed = hashPin(pin)
+        sharedPrefs.edit { putString("security_pin_hash", hashed) }
     }
 
     fun canAuthenticateWithBiometrics(): Boolean {
@@ -46,7 +54,10 @@ class BiometricAuthManager(private val context: Context) {
     }
 
     fun verifyPin(enteredPin: String): Boolean {
-        val matches = enteredPin == getStoredPin()
+        val storedHash = sharedPrefs.getString("security_pin_hash", null)
+        val defaultHash = hashPin("1234")
+        val targetHash = storedHash ?: defaultHash
+        val matches = hashPin(enteredPin) == targetHash
         if (matches) {
             _isUnlocked.value = true
         }

@@ -30,6 +30,33 @@ data class UmmahMeta(
     val timezone: String?
 )
 
+data class UmmahZakatRequest(
+    val gold_price_per_gram: Double = 9500.0,
+    val silver_price_per_gram: Double = 110.0,
+    val nisab_standard: String = "Silver",
+    val cash_and_bank_savings: Double,
+    val gold_owned_grams: Double,
+    val silver_owned_grams: Double,
+    val stocks_and_shares: Double,
+    val business_trade_goods: Double,
+    val other_investments: Double,
+    val debts_and_liabilities: Double
+)
+
+data class UmmahZakatResponse(
+    val code: Int?,
+    val status: String?,
+    val data: UmmahZakatData?
+)
+
+data class UmmahZakatData(
+    val net_zakatable_wealth: Double?,
+    val nisab_threshold: Double?,
+    val is_nisab_reached: Boolean?,
+    val zakat_payable: Double?,
+    val nisab_standard_used: String?
+)
+
 interface UmmahApiService {
     @GET("v1/timingsByCity")
     suspend fun getTimingsByCity(
@@ -46,6 +73,11 @@ interface UmmahApiService {
         @Query("method") method: Int = 1,
         @Query("school") school: Int = 1
     ): UmmahPrayerResponse
+
+    @retrofit2.http.POST("v1/zakat/calculate")
+    suspend fun calculateZakat(
+        @retrofit2.http.Body request: UmmahZakatRequest
+    ): UmmahZakatResponse
 
     companion object {
         private const val BASE_URL = "https://ummahapi.com/"

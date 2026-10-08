@@ -22,6 +22,7 @@ object AdhanPreferences {
     private const val KEY_LAST_LATITUDE = "key_last_latitude"
     private const val KEY_LAST_LONGITUDE = "key_last_longitude"
     private const val KEY_LAST_LOCATION_NAME = "key_last_location_name"
+    private const val KEY_CLOCK_FORMAT_12H = "key_clock_format_12h"
 
     fun saveLastKnownLocation(context: Context, latitude: Double, longitude: Double, displayName: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -54,12 +55,16 @@ object AdhanPreferences {
     private val _selectedMadhabState = MutableStateFlow(DEFAULT_MADHAB)
     val selectedMadhabState: StateFlow<String> = _selectedMadhabState.asStateFlow()
 
+    private val _is12HourFormatState = MutableStateFlow(true)
+    val is12HourFormatState: StateFlow<Boolean> = _is12HourFormatState.asStateFlow()
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _isAdhanEnabledState.value = prefs.getBoolean(KEY_ADHAN_ENABLED, true)
         _isPrayerNotificationsEnabledState.value = prefs.getBoolean(KEY_PRAYER_NOTIFICATIONS_ENABLED, true)
         _selectedAdhanIdState.value = prefs.getString(KEY_SELECTED_ADHAN_ID, DEFAULT_ADHAN_ID) ?: DEFAULT_ADHAN_ID
         _selectedMadhabState.value = prefs.getString(KEY_SELECTED_MADHAB, DEFAULT_MADHAB) ?: DEFAULT_MADHAB
+        _is12HourFormatState.value = prefs.getBoolean(KEY_CLOCK_FORMAT_12H, true)
     }
 
     fun isPrayerNotificationsEnabled(context: Context): Boolean {
@@ -126,5 +131,18 @@ object AdhanPreferences {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putString(KEY_SELECTED_MADHAB, madhab) }
         _selectedMadhabState.value = madhab
+    }
+
+    fun is12HourFormat(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val is12h = prefs.getBoolean(KEY_CLOCK_FORMAT_12H, true)
+        _is12HourFormatState.value = is12h
+        return is12h
+    }
+
+    fun set12HourFormat(context: Context, is12h: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_CLOCK_FORMAT_12H, is12h) }
+        _is12HourFormatState.value = is12h
     }
 }

@@ -71,12 +71,11 @@ fun ZakatCalculatorScreen(
     var backgroundReport by remember { mutableStateOf(AutoZakatCalculatorWorker.getLatestReport(context)) }
     var showReportDialog by remember { mutableStateOf(false) }
 
-    // Silver Nisab in Bangladesh (approx 52.5 tola silver = ~৳ 85,000)
-    val nisabThreshold = 85000.0
+    // Ummah API Zakat calculation state
+    var ummahApiZakatData by remember { mutableStateOf<com.paisa.najarine.data.remote.UmmahZakatData?>(null) }
+    var isFetchingUmmahApi by remember { mutableStateOf(false) }
 
     // Calculations based on mode
-    val netZakatPool: Double
-    val zakatPayable: Double
     val cCash: Double
     val cBank: Double
     val cGold: Double
@@ -85,34 +84,44 @@ fun ZakatCalculatorScreen(
     val cDebts: Double
 
     if (autoCalculateFromNetWorth) {
-        // AUTOMATICALLY CALCULATED FROM THE NET WORTH
         cCash = totalAssetSummary.liquidCashBank * 0.3
         cBank = totalAssetSummary.liquidCashBank * 0.7
         cGold = totalAssetSummary.preciousMetals
         cInventory = totalAssetSummary.stockInvestments + totalAssetSummary.cryptoDigital
         cLoans = totalAssetSummary.loanReceivables + totalAssetSummary.customerReceivables
         cDebts = totalAssetSummary.totalLiabilities
-
-        // Automatically calculated directly from the live Net Worth
-        netZakatPool = totalAssetSummary.netTotalAsset.coerceAtLeast(0.0)
-        val isNisabReached = netZakatPool >= nisabThreshold
-        zakatPayable = if (isNisabReached) netZakatPool * 0.025 else 0.0
     } else {
-        // MANUAL CUSTOM INPUT
         cCash = customCashInHand.toDoubleOrNull() ?: 0.0
         cBank = customBankBalance.toDoubleOrNull() ?: 0.0
         cGold = customGoldSilverValue.toDoubleOrNull() ?: 0.0
         cInventory = customBusinessInventory.toDoubleOrNull() ?: 0.0
         cLoans = customLoansGiven.toDoubleOrNull() ?: 0.0
         cDebts = customDebtsPayable.toDoubleOrNull() ?: 0.0
-
-        val gross = cCash + cBank + cGold + cInventory + cLoans
-        netZakatPool = (gross - cDebts).coerceAtLeast(0.0)
-        val isNisabReached = netZakatPool >= nisabThreshold
-        zakatPayable = if (isNisabReached) netZakatPool * 0.025 else 0.0
     }
 
-    val isNisabReached = netZakatPool >= nisabThreshold
+    // Call Ummah API precise Zakat calculation endpoint
+    LaunchedEffect(autoCalculateFromNetWorth, totalAssetSummary, customCashInHand, customBankBalance, customGoldSilverValue, customBusinessInventory, customLoansGiven, customDebtsPayable) {
+        isFetchingUmmahApi = true
+        val request = com.paisa.najarine.data.remote.UmmahZakatRequest(
+            cash_and_bank_savings = cCash + cBank,
+            gold_owned_grams = cGold / 9500.0,
+            silver_owned_grams = 0.0,
+            stocks_and_shares = cInventory,
+            business_trade_goods = 0.0,
+            other_investments = cLoans,
+            debts_and_liabilities = cDebts
+        )
+        val response = viewModel.islamicRepo.calculateZakatViaUmmahApi(request)
+        if (response?.data != null) {
+            ummahApiZakatData = response.data
+        }
+        isFetchingUmmahApi = false
+    }
+
+    val netZakatPool = ummahApiZakatData?.net_zakatable_wealth ?: ((cCash + cBank + cGold + cInventory + cLoans - cDebts).coerceAtLeast(0.0))
+    val nisabThreshold = ummahApiZakatData?.nisab_threshold ?: 85000.0
+    val isNisabReached = ummahApiZakatData?.is_nisab_reached ?: (netZakatPool >= nisabThreshold)
+    val zakatPayable = ummahApiZakatData?.zakat_payable ?: (if (isNisabReached) netZakatPool * 0.025 else 0.0)
 
     // Standard Fitrah rate per person in Bangladesh
     val members = familyMembersForFitrah.toIntOrNull() ?: 1

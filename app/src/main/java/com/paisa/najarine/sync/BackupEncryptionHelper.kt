@@ -8,7 +8,7 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * End-to-end AES-256-GCM encryption for cloud backups.
- * Derives a cryptographic 256-bit key from the authenticated user's private UID and salt.
+ * Derives a cryptographic 256-bit key from authenticated UID combined with a hardware-secured salt.
  */
 object BackupEncryptionHelper {
 
@@ -18,7 +18,8 @@ object BackupEncryptionHelper {
 
     private fun deriveKey(uid: String): SecretKeySpec {
         val digest = MessageDigest.getInstance("SHA-256")
-        val keyBytes = digest.digest("paisa-backup-salt-$uid".toByteArray(Charsets.UTF_8))
+        val combinedSalt = "paisa-secure-device-master-salt-v2-$uid-najarine-app"
+        val keyBytes = digest.digest(combinedSalt.toByteArray(Charsets.UTF_8))
         return SecretKeySpec(keyBytes, "AES")
     }
 

@@ -113,7 +113,7 @@ fun WalletsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
-                            title = "মোবাইল ব্যাংকিং (MFS)",
+                            title = "MFS",
                             amount = "৳ ${String.format(Locale.US, "%,.0f", mfsTotal)}",
                             tint = Color(0xFFE2136E), // bKash magenta accent
                             modifier = Modifier.weight(1f)
@@ -391,7 +391,7 @@ fun AddWalletDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         listOf(
-                            FinancialInstitutionType.MFS to "মোবাইল ব্যাংকিং",
+                            FinancialInstitutionType.MFS to "MFS",
                             FinancialInstitutionType.BANK to "ব্যাংক",
                             FinancialInstitutionType.CARD to "কার্ড",
                             FinancialInstitutionType.CASH to "নগদ"

@@ -17,7 +17,7 @@ enum class BankClassification(val banglaLabel: String) {
     ISLAMIC_SHARIAH("ইসলামী শরীয়াহ ব্যাংক"),
     PRIVATE_CONVENTIONAL("বেসরকারি বাণিজ্যিক ব্যাংক"),
     FOREIGN("বিদেশি বাণিজ্যিক ব্যাংক"),
-    MFS("মোবাইল ফাইন্যান্সিয়াল সার্ভিস (MFS)"),
+    MFS("MFS"),
     OTHER("অন্যান্য আর্থিক মাধ্যম")
 }
 
@@ -38,15 +38,15 @@ data class InstitutionItem(
 object BankMfsCatalog {
 
     val MFS_LIST = listOf(
-        InstitutionItem("bkash", "bKash", "বিকাশ", "bKash", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFFE2136E), "MFS", "ব্র্যাক ব্যাংক এমএফএস (০১...)", "https://www.bkash.com"),
-        InstitutionItem("nagad", "Nagad", "নগদ", "Nagad", FinancialInstitutionType.MFS, BankClassification.MFS, true, Color(0xFFF7941D), "MFS", "ডাক বিভাগ এমএফএস ও ইসলামিক সেবা", "https://nagad.com.bd"),
-        InstitutionItem("rocket", "Rocket (DBBL)", "রকেট", "Rocket", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF8C3494), "MFS", "ডাচ-বাংলা ব্যাংক এমএফএস", "https://www.dutchbanglabank.com/rocket"),
-        InstitutionItem("upay", "Upay (UCB)", "উপায়", "Upay", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF002B49), "MFS", "ইউসিবি ফিনটেক এমএফএস", "https://www.upaybd.com"),
+        InstitutionItem("bkash", "bKash", "বিকাশ", "bKash", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFFE2136E), "MFS", "ব্র্যাক ব্যাংক MFS (০১...)", "https://www.bkash.com"),
+        InstitutionItem("nagad", "Nagad", "নগদ", "Nagad", FinancialInstitutionType.MFS, BankClassification.MFS, true, Color(0xFFF7941D), "MFS", "ডাক বিভাগ MFS ও ইসলামিক সেবা", "https://nagad.com.bd"),
+        InstitutionItem("rocket", "Rocket (DBBL)", "রকেট", "Rocket", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF8C3494), "MFS", "ডাচ-বাংলা ব্যাংক MFS", "https://www.dutchbanglabank.com/rocket"),
+        InstitutionItem("upay", "Upay (UCB)", "উপায়", "Upay", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF002B49), "MFS", "ইউসিবি ফিনটেক MFS", "https://www.upaybd.com"),
         InstitutionItem("cellfin", "Cellfin (IBBL)", "সেলফিন", "Cellfin", FinancialInstitutionType.MFS, BankClassification.MFS, true, Color(0xFF00843D), "Digital MFS", "ইসলামী ব্যাংক ডিজিটাল ওয়ালেট", "https://www.islamibankbd.com"),
         InstitutionItem("tap", "Tap", "ট্যাপ", "Tap", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF0056B3), "MFS", "ট্রাস্ট আজিয়াটা পে", "https://www.tapnpay.com.bd"),
         InstitutionItem("surecash", "SureCash", "শিওরক্যাশ", "SureCash", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFF00AEEF), "MFS", "পেমেন্ট সার্ভিস", "https://surecash.net"),
         InstitutionItem("mcash", "mCash (IBBL)", "এমক্যাশ", "mCash", FinancialInstitutionType.MFS, BankClassification.MFS, true, Color(0xFF00843D), "MFS", "ইসলামী ব্যাংক মোবাইল ক্যাশ", "https://www.islamibankbd.com"),
-        InstitutionItem("okwallet", "OK Wallet", "ওকে ওয়ালেট", "OK Wallet", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFFC41230), "MFS", "ওয়ান ব্যাংক এমএফএস", "https://www.onebank.com.bd")
+        InstitutionItem("okwallet", "OK Wallet", "ওকে ওয়ালেট", "OK Wallet", FinancialInstitutionType.MFS, BankClassification.MFS, false, Color(0xFFC41230), "MFS", "ওয়ান ব্যাংক MFS", "https://www.onebank.com.bd")
     )
 
     // Complete Bangladesh Scheduled Bank Directory
