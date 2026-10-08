@@ -61,9 +61,10 @@ fun MasterSettingsScreen(
 
     // Settings Search Items in Bangla
     var selectedMadhab by remember { mutableStateOf(com.paisa.najarine.notification.AdhanPreferences.getSelectedMadhab(context)) }
+    var is12Hour by remember { mutableStateOf(com.paisa.najarine.notification.AdhanPreferences.is12HourFormat(context)) }
     var showMadhabDialog by remember { mutableStateOf(false) }
 
-    val allSettings = remember(selectedMadhab) {
+    val allSettings = remember(selectedMadhab, is12Hour) {
         listOf(
             BanglaSettingItem("ব্যবহারকারী প্রোফাইল", "গুগল আইডি ও ব্যক্তিগত তথ্য দেখুন বা যোগ করুন", "অ্যাকাউন্ট", Icons.Default.Person, onOpenProfile),
             BanglaSettingItem("গুগল অ্যাকাউন্ট", "লগইনকৃত: ${authUser?.email ?: "ব্যবহারকারী"}", "অ্যাকাউন্ট", Icons.Default.AccountCircle, onSwitchAccountClick),
@@ -77,6 +78,11 @@ fun MasterSettingsScreen(
             BanglaSettingItem("সিঙ্ক ও ব্যাকআপ কেন্দ্র", "রুম এসকিউলাইট অফলাইন ডাটাবেস ও ক্লাউড অটো-সিঙ্ক", "সিঙ্ক", Icons.Default.Sync, onOpenSyncCenter),
             BanglaSettingItem("ডিফল্ট মুদ্রা", "বাংলাদেশী টাকা: BDT (৳)", "অর্থব্যবস্থা", Icons.Default.Payments) {
                 Toast.makeText(context, "ডিফল্ট মুদ্রা: BDT (৳)", Toast.LENGTH_SHORT).show()
+            },
+            BanglaSettingItem("ঘড়ি ফরম্যাট (12/24 ঘণ্টা)", if (is12Hour) "বর্তমান: ১২ ঘণ্টা (AM/PM)" else "বর্তমান: ২৪ ঘণ্টা", "ইসলামিক", Icons.Default.AccessTime) {
+                is12Hour = !is12Hour
+                com.paisa.najarine.notification.AdhanPreferences.set12HourFormat(context, is12Hour)
+                Toast.makeText(context, if (is12Hour) "১২ ঘণ্টা (AM/PM) ফরম্যাট চালু হয়েছে" else "২৪ ঘণ্টা ফরম্যাট চালু হয়েছে", Toast.LENGTH_SHORT).show()
             },
             BanglaSettingItem("নামাজ গণনা পদ্ধতি", "University of Islamic Sciences, Karachi (করাচি)", "ইসলামিক", Icons.Default.Mosque) {},
             BanglaSettingItem("মাজহাব নির্বাচন", if (selectedMadhab == "Hanafi") "হানাফী (Hanafi) — আসর ২য় ছায়া" else "শাফেয়ী/মালেকি/হাম্বলি — আসর ১ম ছায়া", "ইসলামিক", Icons.Default.Mosque) {

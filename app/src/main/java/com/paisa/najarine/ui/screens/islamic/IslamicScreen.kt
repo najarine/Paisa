@@ -39,6 +39,7 @@ fun IslamicScreen(
     onOpenQuran: () -> Unit = {},
     onOpenHadith: () -> Unit = {},
     onOpenZakat: () -> Unit = {},
+    onOpenDua: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -49,6 +50,9 @@ fun IslamicScreen(
 
     val repo = viewModel.islamicRepo
     val timings = prayerTimings ?: repo.getOfflinePrayerTimings()
+
+    val is12Hour by com.paisa.najarine.notification.AdhanPreferences.is12HourFormatState.collectAsState()
+    fun ft(time: String): String = com.paisa.najarine.notification.AdhanPreferences.formatTo12Hour(time, is12Hour)
 
     // Hourly Room Table Observers (Dynamic updates from hourly worker & tests)
     val latestHourlyHadith by viewModel.latestHourlyHadith.collectAsState(initial = null)
@@ -147,7 +151,7 @@ fun IslamicScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "পরবর্তী ওয়াক্ত: ${timings.nextPrayerNameBn} (${timings.nextPrayerTime})",
+                        text = "পরবর্তী ওয়াক্ত: ${timings.nextPrayerNameBn} (${ft(timings.nextPrayerTime)})",
                         fontWeight = FontWeight.Bold,
                         fontSize = 19.sp,
                         color = PaisaTextPrimary
@@ -169,11 +173,11 @@ fun IslamicScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        PrayerPillItem(name = "ফজর", time = timings.fajr, isHighlighted = timings.nextPrayerName.contains("Fajr", ignoreCase = true))
-                        PrayerPillItem(name = "যোহর", time = timings.dhuhr, isHighlighted = timings.nextPrayerName.contains("Dhuhr", ignoreCase = true))
-                        PrayerPillItem(name = "আসর", time = timings.asr, isHighlighted = timings.nextPrayerName.contains("Asr", ignoreCase = true))
-                        PrayerPillItem(name = "মাগরিব", time = timings.maghrib, isHighlighted = timings.nextPrayerName.contains("Maghrib", ignoreCase = true))
-                        PrayerPillItem(name = "ইশা", time = timings.isha, isHighlighted = timings.nextPrayerName.contains("Isha", ignoreCase = true))
+                        PrayerPillItem(name = "ফজর", time = ft(timings.fajr), isHighlighted = timings.nextPrayerName.contains("Fajr", ignoreCase = true))
+                        PrayerPillItem(name = "যোহর", time = ft(timings.dhuhr), isHighlighted = timings.nextPrayerName.contains("Dhuhr", ignoreCase = true))
+                        PrayerPillItem(name = "আসর", time = ft(timings.asr), isHighlighted = timings.nextPrayerName.contains("Asr", ignoreCase = true))
+                        PrayerPillItem(name = "মাগরিব", time = ft(timings.maghrib), isHighlighted = timings.nextPrayerName.contains("Maghrib", ignoreCase = true))
+                        PrayerPillItem(name = "ইশা", time = ft(timings.isha), isHighlighted = timings.nextPrayerName.contains("Isha", ignoreCase = true))
                     }
                 }
             }
@@ -249,7 +253,7 @@ fun IslamicScreen(
                             ) {
                                 Text("🌅 সেহরির শেষ সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857))
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(timings.sehriEnds, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF065F46))
+                                Text(ft(timings.sehriEnds), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF065F46))
                                 Text("ফজরের আগে শেষ", fontSize = 10.sp, color = Color(0xFF059669))
                             }
                         }
@@ -266,7 +270,7 @@ fun IslamicScreen(
                             ) {
                                 Text("🌇 ইফতারের সময়", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2410C))
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(timings.iftarTime, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+                                Text(ft(timings.iftarTime), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
                                 Text("মাগরিবের আযানে", fontSize = 10.sp, color = Color(0xFFEA580C))
                             }
                         }
@@ -334,200 +338,192 @@ fun IslamicScreen(
             }
         }
 
-        // Row 2 of Modules: Al-Quran, Daily Hadith, Zakat & Fitrah
+        // Row 2 of Modules: Al-Quran, Daily Hadith, Zakat & Fitrah, Dua
         item {
             Spacer(modifier = Modifier.height(10.dp))
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Al-Quran
-                ModuleSmallCard(
-                    title = "আল-কুরআন",
-                    icon = Icons.AutoMirrored.Filled.MenuBook,
-                    iconBg = Color(0xFFD1FAE5),
-                    iconTint = Color(0xFF059669),
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenQuran
-                )
-
-                // Daily Hadith
-                ModuleSmallCard(
-                    title = "প্রতিদিনের হাদিস",
-                    icon = Icons.Default.AutoStories,
-                    iconBg = Color(0xFFE0F2FE),
-                    iconTint = Color(0xFF0284C7),
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenHadith
-                )
-
-                // Zakat & Fitrah
-                ModuleSmallCard(
-                    title = "যাকাত ও ফিতরা",
-                    icon = Icons.Default.Calculate,
-                    iconBg = Color(0xFFFFEDD5),
-                    iconTint = Color(0xFFEA580C),
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenZakat
-                )
-            }
-        }
-
-
-
-        // HOURLY QURAN AYAH (Backed by Room Table + Auto-changes hourly)
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            val quranEntity = latestHourlyQuran
-            val ayahRef = if (quranEntity != null) {
-                "সূরা ${quranEntity.surahNameBangla} [${quranEntity.surahNumber}:${quranEntity.ayahNumber}]"
-            } else {
-                repo.canonicalDailyAyah.reference
-            }
-            val arabicText = quranEntity?.arabicText ?: repo.canonicalDailyAyah.arabicText
-            val banglaText = quranEntity?.banglaTranslation ?: repo.canonicalDailyAyah.banglaText
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                border = CardDefaults.outlinedCardBorder()
-            ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "HOURLY QURAN AYAH — $ayahRef",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD97706),
-                            letterSpacing = 0.5.sp
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFFEF3C7))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "প্রতি ঘণ্টায় পরিবর্তিত",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFB45309)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Arabic Calligraphy
-                    Text(
-                        text = arabicText,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PaisaTextPrimary,
-                        lineHeight = 32.sp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Al-Quran
+                    ModuleSmallCard(
+                        title = "আল-কুরআন",
+                        icon = Icons.AutoMirrored.Filled.MenuBook,
+                        iconBg = Color(0xFFD1FAE5),
+                        iconTint = Color(0xFF059669),
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenQuran
                     )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    // Hadith
+                    ModuleSmallCard(
+                        title = "হাদিস",
+                        icon = Icons.Default.AutoStories,
+                        iconBg = Color(0xFFE0F2FE),
+                        iconTint = Color(0xFF0284C7),
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenHadith
+                    )
+                }
 
-                    // Bangla Translation
-                    Text(
-                        text = banglaText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = PaisaTextSecondary,
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Zakat & Fitrah
+                    ModuleSmallCard(
+                        title = "যাকাত ও ফিতরা",
+                        icon = Icons.Default.Calculate,
+                        iconBg = Color(0xFFFFEDD5),
+                        iconTint = Color(0xFFEA580C),
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenZakat
+                    )
+
+                    // Dua & Adhkar
+                    ModuleSmallCard(
+                        title = "দোয়া ও যিকির",
+                        icon = Icons.Default.MenuBook,
+                        iconBg = Color(0xFFFCE7F3),
+                        iconTint = Color(0xFFDB2777),
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenDua
                     )
                 }
             }
         }
 
-        // HOURLY HADITH (Backed by Room Table + Auto-changes hourly from UmmahAPI)
+
+
+        // HOURLY QURAN AYAH & HADITH (Same Design, Random/Hourly from Ummah API)
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            val quranEntity = latestHourlyQuran
+            val ayahRef = quranEntity?.let { "সূরা ${it.surahNameBangla} [${it.surahNumber}:${it.ayahNumber}]" } ?: repo.canonicalDailyAyah.reference
+            val quranArabic = quranEntity?.arabicText ?: repo.canonicalDailyAyah.arabicText
+            val quranTranslation = quranEntity?.banglaTranslation ?: repo.canonicalDailyAyah.banglaText
+
+            IslamicFeaturedCard(
+                title = "প্রতি ঘণ্টার কুরআনী আয়াত — $ayahRef",
+                badgeText = "উম্মা এপিআই সিঙ্কড",
+                badgeColor = Color(0xFFD97706),
+                badgeBg = Color(0xFFFEF3C7),
+                subtitle = "",
+                arabicText = quranArabic,
+                translationText = quranTranslation,
+                onClick = onOpenQuran
+            )
+        }
+
         item {
             Spacer(modifier = Modifier.height(14.dp))
             val hadithEntity = latestHourlyHadith
-            val hadithTitle = hadithEntity?.title ?: canonicalDailyHadithState.title
             val hadithSource = hadithEntity?.source ?: canonicalDailyHadithState.source
             val hadithNarrator = hadithEntity?.narrator ?: canonicalDailyHadithState.narrator
             val hadithArabic = hadithEntity?.arabic ?: canonicalDailyHadithState.arabic
             val hadithBangla = hadithEntity?.banglaTranslation ?: canonicalDailyHadithState.banglaTranslation
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = PaisaSurface),
-                border = CardDefaults.outlinedCardBorder()
+            IslamicFeaturedCard(
+                title = "প্রতি ঘণ্টার হাদিস — $hadithSource",
+                badgeText = "উম্মা এপিআই সিঙ্কড",
+                badgeColor = Color(0xFF047857),
+                badgeBg = Color(0xFFD1FAE5),
+                subtitle = hadithNarrator,
+                arabicText = hadithArabic,
+                translationText = hadithBangla,
+                onClick = onOpenHadith
+            )
+        }
+    }
+}
+
+@Composable
+fun IslamicFeaturedCard(
+    title: String,
+    badgeText: String,
+    badgeColor: Color,
+    badgeBg: Color,
+    subtitle: String,
+    arabicText: String,
+    translationText: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "প্রতি ঘণ্টার হাদিস — $hadithSource",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF047857),
-                            letterSpacing = 0.5.sp
-                        )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = badgeColor,
+                    letterSpacing = 0.5.sp
+                )
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFD1FAE5))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "উম্মা এপিআই সিঙ্কড",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF065F46)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(badgeBg)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
                     Text(
-                        text = hadithNarrator,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = PaisaTextSecondary,
-                        fontSize = 11.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = hadithArabic,
-                        fontSize = 17.sp,
+                        text = badgeText,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PaisaTealDark,
-                        lineHeight = 28.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "“$hadithBangla”",
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp,
-                        color = PaisaTextPrimary,
-                        lineHeight = 20.sp
+                        color = badgeColor
                     )
                 }
             }
+
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PaisaTextSecondary,
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Arabic Text
+            Text(
+                text = arabicText,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                color = PaisaTextPrimary,
+                lineHeight = 32.sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Translation
+            Text(
+                text = "“$translationText”",
+                style = MaterialTheme.typography.bodyMedium,
+                color = PaisaTextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

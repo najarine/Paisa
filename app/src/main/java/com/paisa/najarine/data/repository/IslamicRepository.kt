@@ -786,4 +786,59 @@ class IslamicRepository(
             null
         }
     }
+
+    suspend fun fetchDuaCategoriesFromApi(): List<String> {
+        return try {
+            val response = apiService.getDuaCategories()
+            response.data ?: listOf("সকল", "প্রতিদিনের দোয়া", "আর্থিক মুক্তি", "রিজিক ও বরকত", "রমজান")
+        } catch (e: Exception) {
+            listOf("সকল", "প্রতিদিনের দোয়া", "আর্থিক মুক্তি", "রিজিক ও বরকত", "রমজান")
+        }
+    }
+
+    suspend fun fetchDuasFromApi(): List<DuaItem> {
+        return try {
+            val response = apiService.getAllDuas()
+            if (response.success == true && !response.data.isNullOrEmpty()) {
+                response.data.mapIndexed { index, item ->
+                    DuaItem(
+                        id = item.id?.toString() ?: "dua_$index",
+                        title = item.title ?: "দোয়া #${index + 1}",
+                        category = item.category ?: "সাধারণ",
+                        arabic = item.arabic ?: "",
+                        transliteration = item.transliteration ?: "",
+                        translation = item.translation ?: "",
+                        reference = item.reference ?: ""
+                    )
+                }
+            } else {
+                categorizedDuas
+            }
+        } catch (e: Exception) {
+            categorizedDuas
+        }
+    }
+
+    suspend fun fetchDuasByCategoryFromApi(category: String): List<DuaItem> {
+        return try {
+            val response = apiService.getDuasByCategory(category)
+            if (response.success == true && !response.data.isNullOrEmpty()) {
+                response.data.mapIndexed { index, item ->
+                    DuaItem(
+                        id = item.id?.toString() ?: "dua_${category}_$index",
+                        title = item.title ?: "দোয়া #${index + 1}",
+                        category = item.category ?: category,
+                        arabic = item.arabic ?: "",
+                        transliteration = item.transliteration ?: "",
+                        translation = item.translation ?: "",
+                        reference = item.reference ?: ""
+                    )
+                }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }

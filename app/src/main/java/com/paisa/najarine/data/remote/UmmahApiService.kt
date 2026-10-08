@@ -57,6 +57,49 @@ data class UmmahZakatData(
     val nisab_standard_used: String?
 )
 
+data class UmmahDuaItem(
+    val id: Int?,
+    val title: String?,
+    val category: String?,
+    val arabic: String?,
+    val transliteration: String?,
+    val translation: String?,
+    val reference: String?
+)
+
+data class UmmahDuasResponse(
+    val success: Boolean?,
+    val data: List<UmmahDuaItem>?
+)
+
+data class UmmahSingleDuaResponse(
+    val success: Boolean?,
+    val data: UmmahDuaItem?
+)
+
+data class UmmahDuaCategoriesResponse(
+    val success: Boolean?,
+    val data: List<String>?
+)
+
+data class UmmahHadithItem(
+    val id: Int?,
+    val collection: String?,
+    val number: Int?,
+    val arabic: String?,
+    val translation: String?,
+    val banglaTranslation: String?,
+    val narrator: String?,
+    val source: String?,
+    val grade: String?,
+    val topic: String?
+)
+
+data class UmmahHadithResponse(
+    val success: Boolean?,
+    val data: UmmahHadithItem?
+)
+
 interface UmmahApiService {
     @GET("v1/timingsByCity")
     suspend fun getTimingsByCity(
@@ -78,6 +121,26 @@ interface UmmahApiService {
     suspend fun calculateZakat(
         @retrofit2.http.Body request: UmmahZakatRequest
     ): UmmahZakatResponse
+
+    @GET("api/duas/categories")
+    suspend fun getDuaCategories(): UmmahDuaCategoriesResponse
+
+    @GET("api/duas/category/{category}")
+    suspend fun getDuasByCategory(
+        @retrofit2.http.Path("category") category: String
+    ): UmmahDuasResponse
+
+    @GET("api/duas")
+    suspend fun getAllDuas(): UmmahDuasResponse
+
+    @GET("api/duas/random")
+    suspend fun getRandomDua(): UmmahSingleDuaResponse
+
+    @GET("api/hadith/{collection}/{number}")
+    suspend fun getHadithByCollectionAndNumber(
+        @retrofit2.http.Path("collection") collection: String,
+        @retrofit2.http.Path("number") number: Int
+    ): UmmahHadithResponse
 
     companion object {
         private const val BASE_URL = "https://ummahapi.com/"

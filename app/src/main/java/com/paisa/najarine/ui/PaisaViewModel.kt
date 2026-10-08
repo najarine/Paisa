@@ -117,6 +117,8 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     // Dynamic Hourly Hadith
     val currentHadith = MutableStateFlow<HadithItem>(hadithService.getAllAuthenticHadiths().first())
 
+    fun getAllAuthenticHadiths(): List<HadithItem> = hadithService.getAllAuthenticHadiths()
+
     // In-Memory/Persistent Invoices, Tasks, and Habits
     val invoices = MutableStateFlow<List<InvoiceItemUi>>(emptyList())
     val tasks = MutableStateFlow<List<TaskUi>>(emptyList())

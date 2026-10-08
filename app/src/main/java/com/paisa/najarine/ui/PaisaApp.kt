@@ -62,6 +62,7 @@ enum class AppScreen {
     QURAN,
     HADITH,
     ZAKAT,
+    DUA,
     BUDGET_PLANNING,
     SAVINGS_GOALS,
     BILLS_SUBSCRIPTIONS,
@@ -382,6 +383,7 @@ fun PaisaApp(
                     onOpenQuran = { navigateTo(AppScreen.QURAN) },
                     onOpenHadith = { navigateTo(AppScreen.HADITH) },
                     onOpenZakat = { navigateTo(AppScreen.ZAKAT) },
+                    onOpenDua = { navigateTo(AppScreen.DUA) },
                     onSearchClick = { showSearchDialog = true }
                 )
                 AppScreen.TOOLS -> MoreAndAnalyticsScreen(
@@ -468,6 +470,10 @@ fun PaisaApp(
                     onBackClick = { goBack() }
                 )
                 AppScreen.ZAKAT -> ZakatCalculatorScreen(
+                    viewModel = viewModel,
+                    onBackClick = { goBack() }
+                )
+                AppScreen.DUA -> DuaScreen(
                     viewModel = viewModel,
                     onBackClick = { goBack() }
                 )

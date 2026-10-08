@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Locale
 
 object AdhanPreferences {
     private const val PREFS_NAME = "paisa_adhan_preferences"
@@ -144,5 +145,25 @@ object AdhanPreferences {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_CLOCK_FORMAT_12H, is12h) }
         _is12HourFormatState.value = is12h
+    }
+
+    fun formatTo12Hour(time24: String, is12Hour: Boolean): String {
+        if (!is12Hour) return time24
+        return try {
+            val clean = time24.split(" ")[0].trim()
+            val parts = clean.split(":")
+            if (parts.size >= 2) {
+                var hour = parts[0].toIntOrNull() ?: 0
+                val minute = parts[1]
+                val ampm = if (hour >= 12) "PM" else "AM"
+                if (hour > 12) hour -= 12
+                if (hour == 0) hour = 12
+                String.format(Locale.US, "%02d:%s %s", hour, minute, ampm)
+            } else {
+                time24
+            }
+        } catch (_: Exception) {
+            time24
+        }
     }
 }
