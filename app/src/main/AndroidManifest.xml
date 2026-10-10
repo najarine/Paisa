@@ -10,8 +10,13 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:allowBackup="true"
@@ -25,6 +30,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.MyApplication">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,12 +38,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".auth.AuthDebugActivity"
-            android:exported="true"
-            android:label="Auth Debug"
-            android:theme="@style/Theme.MyApplication" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -58,6 +58,23 @@
         <receiver
             android:name=".notification.PrayerAlarmReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".notification.AdhanActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.paisa.najarine.ACTION_STOP_ADHAN" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".notification.HourlyIslamicAlarmReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".notification.AdhanPlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <receiver
             android:name=".notification.BootCompletedReceiver"

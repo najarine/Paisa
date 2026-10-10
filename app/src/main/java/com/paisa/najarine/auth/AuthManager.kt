@@ -122,12 +122,13 @@ class AuthManager(private val context: Context) {
                     if (e is GetCredentialCancellationException) throw e
                     Log.w("Auth", "Primary GetSignInWithGoogleOption request failed, attempting GetGoogleIdOption fallback: ${e.message}")
                     val fallbackGoogleIdOption = GetGoogleIdOption.Builder()
-                        .setFilterByAuthorizedAccounts(false)
+                        .setFilterByAuthorizedAccounts(true)
                         .setServerClientId(clientId)
                         .setAutoSelectEnabled(false)
                         .build()
                     val fallbackRequest = GetCredentialRequest.Builder()
                         .addCredentialOption(fallbackGoogleIdOption)
+                        .setPreferImmediatelyAvailableCredentials(true)
                         .build()
                     credentialManager.getCredential(activity, fallbackRequest)
                 }
@@ -210,13 +211,13 @@ class AuthManager(private val context: Context) {
         val clientId = getWebClientId()
         if (clientId.isBlank()) return
 
-        val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(true)
-            .setServerClientId(clientId)
-            .setAutoSelectEnabled(true)
+        // Use single-account GetSignInWithGoogleOption and setPreferImmediatelyAvailableCredentials
+        // to prevent displaying 3 duplicate passkeys on app opening and only target the single primary account
+        val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(signInOption)
+            .setPreferImmediatelyAvailableCredentials(true)
             .build()
-
-        val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
 
         scope.launch {
             try {

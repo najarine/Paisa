@@ -309,6 +309,262 @@ fun AdhanPrayerTimesScreen(
             }
 
             // =========================================================
+            // 2. PRAYER & ADHAN NOTIFICATION SETTINGS (Between Location and Prayer Times)
+            // =========================================================
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = CardDefaults.outlinedCardBorder()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(PaisaTealPrimary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        tint = PaisaTealPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "নামাজ ও আযান সেটিংস (WorkManager)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = PaisaTextPrimary
+                                    )
+                                    Text(
+                                        text = "পুশ অ্যালার্ট, আযান অডিও ও ব্যাকগ্রাউন্ড সেটিংস",
+                                        fontSize = 11.sp,
+                                        color = PaisaTextSecondary
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = PaisaBorder, thickness = 0.5.dp)
+
+                        // 1. Prayer Push Notifications Switch (WorkManager)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "ওয়াক্তের পুশ নোটিফিকেশন (WorkManager)",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = PaisaTextPrimary
+                                )
+                                Text(
+                                    text = if (isPrayerNotificationsEnabled) "প্রতি ওয়াক্তের শুরুতেই পুশ অ্যালার্ট আসবে" else "ওয়াক্তের পুশ নোটিফিকেশন বন্ধ",
+                                    fontSize = 11.sp,
+                                    color = if (isPrayerNotificationsEnabled) PaisaTealDark else PaisaTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = isPrayerNotificationsEnabled,
+                                onCheckedChange = { enabled ->
+                                    isPrayerNotificationsEnabled = enabled
+                                    AdhanPreferences.setPrayerNotificationsEnabled(context, enabled)
+                                    if (enabled) {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                        PrayerNotificationWorker.schedulePrayerAlertWorkers(
+                                            context = context,
+                                            timings = timings,
+                                            locationName = userLocation?.displayName
+                                        )
+                                        Toast.makeText(context, "নামাজের নোটিফিকেশন চালু হয়েছে", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        PrayerNotificationWorker.cancelAllPrayerWork(context)
+                                        Toast.makeText(context, "নামাজের নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PaisaTealPrimary
+                                )
+                            )
+                        }
+
+                        // 2. Auto-Adhan Audio Switch
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "ওয়াক্তে অটো-আযান অডিও",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = PaisaTextPrimary
+                                )
+                                Text(
+                                    text = if (isAdhanEnabled) "ওয়াক্ত হলে স্বয়ংক্রিয় আযান অডিও বাজবে" else "আযান অডিও বর্তমানে বন্ধ",
+                                    fontSize = 11.sp,
+                                    color = if (isAdhanEnabled) PaisaTealDark else PaisaTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = isAdhanEnabled,
+                                onCheckedChange = { enabled ->
+                                    isAdhanEnabled = enabled
+                                    AdhanPreferences.setAdhanEnabled(context, enabled)
+                                    if (enabled) {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                        AdhanScheduler.schedulePrayerAlarms(
+                                            context = context,
+                                            fajr = timings.fajr,
+                                            dhuhr = timings.dhuhr,
+                                            asr = timings.asr,
+                                            maghrib = timings.maghrib,
+                                            isha = timings.isha
+                                        )
+                                        Toast.makeText(context, "আযান অডিও চালু করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        AdhanScheduler.cancelAllAlarms(context)
+                                        com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
+                                        DefaultAdhanAudioProvider.stopPlayback()
+                                        Toast.makeText(context, "আযান অডিও বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PaisaTealPrimary
+                                )
+                            )
+                        }
+
+                        // 3. Action Buttons: Test Notification + Test Adhan
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    PrayerNotificationWorker.triggerTestAlertViaWorkManager(
+                                        context = context,
+                                        prayerName = "আসরের নামাজ (Asr)",
+                                        scheduledTime = formatTime("16:25")
+                                    )
+                                    Toast.makeText(context, "টেস্ট নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("টেস্ট অ্যালার্ট", fontSize = 12.sp, color = PaisaTealPrimary)
+                            }
+
+                            if (isAudioPlaying) {
+                                Button(
+                                    onClick = {
+                                        com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
+                                        DefaultAdhanAudioProvider.stopPlayback()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.CallEnd, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("আজান বন্ধ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = {
+                                        com.paisa.najarine.notification.AdhanPlaybackService.start(context, "টেস্ট আযান", false)
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("টেস্ট আজান", fontSize = 12.sp, color = PaisaTealPrimary)
+                                }
+                            }
+                        }
+
+                        // 4. Battery Optimization / Exact Background Execution Prompt
+                        if (!AdhanPreferences.isIgnoringBatteryOptimizations(context)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF97316).copy(alpha = 0.4f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "⚠️ সঠিক সময়ে ব্যাকগ্রাউন্ডে আযান পেতে",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = Color(0xFFC2410C)
+                                        )
+                                        Text(
+                                            text = "অ্যাপ বন্ধ থাকলেও আযান বাজাতে ব্যাটারি অপটিমাইজেশন বন্ধ রাখুন।",
+                                            fontSize = 10.sp,
+                                            color = Color(0xFF7C2D12),
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Button(
+                                        onClick = {
+                                            try {
+                                                context.startActivity(AdhanPreferences.getBatteryOptimizationSettingsIntent(context))
+                                            } catch (_: Exception) {}
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C)),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("অনুমতি", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // =========================================================
             // NEXT PRAYER HIGHLIGHT BANNER
             // =========================================================
             item {
@@ -969,187 +1225,6 @@ fun AdhanPrayerTimesScreen(
                                             }
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // =========================================================
-            // 6. WORKMANAGER PUSH NOTIFICATION & ADHAN TOGGLE (Test Notification removed)
-            // =========================================================
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isPrayerNotificationsEnabled || isAdhanEnabled) PaisaTealContainer.copy(alpha = 0.45f) else PaisaSurface
-                    ),
-                    border = CardDefaults.outlinedCardBorder()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        // WorkManager Push Notification Toggle Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isPrayerNotificationsEnabled) PaisaTealPrimary else PaisaSurfaceVariant),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (isPrayerNotificationsEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                                        contentDescription = null,
-                                        tint = if (isPrayerNotificationsEnabled) Color.White else PaisaTextSecondary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Column {
-                                    Text(
-                                        text = "পুশ নোটিফিকেশন অ্যালার্ট (WorkManager)",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = PaisaTextPrimary
-                                    )
-                                    Text(
-                                        text = if (isPrayerNotificationsEnabled) "৫ ওয়াক্ত নামাজের পুশ অ্যালার্ট সক্রিয়" else "নামাজের পুশ নোটিফিকেশন বন্ধ",
-                                        fontSize = 11.sp,
-                                        color = if (isPrayerNotificationsEnabled) PaisaTealDark else PaisaTextSecondary
-                                    )
-                                }
-                            }
-
-                            Switch(
-                                checked = isPrayerNotificationsEnabled,
-                                onCheckedChange = { enabled ->
-                                    isPrayerNotificationsEnabled = enabled
-                                    AdhanPreferences.setPrayerNotificationsEnabled(context, enabled)
-                                    if (enabled) {
-                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                        }
-                                        PrayerNotificationWorker.schedulePrayerAlertWorkers(
-                                            context = context,
-                                            timings = timings,
-                                            locationName = userLocation?.displayName
-                                        )
-                                        Toast.makeText(context, "WorkManager পুশ নোটিফিকেশন অ্যালার্ট চালু হয়েছে", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        PrayerNotificationWorker.cancelAllPrayerWork(context)
-                                        Toast.makeText(context, "নামাজের পুশ নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = PaisaTealPrimary
-                                )
-                            )
-                        }
-
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            thickness = 1.dp
-                        )
-
-                        // Adhan Audio Playback Toggle Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isAdhanEnabled) PaisaTealPrimary else PaisaSurfaceVariant),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (isAdhanEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                                        contentDescription = null,
-                                        tint = if (isAdhanEnabled) Color.White else PaisaTextSecondary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Column {
-                                    Text(
-                                        text = "নামাজের সময়ে আযান বাজান",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = PaisaTextPrimary
-                                    )
-                                    Text(
-                                        text = if (isAdhanEnabled) "ওয়াক্ত হলে স্বয়ংক্রিয় আযান অডিও বাজবে" else "আযান অডিও বর্তমানে বন্ধ",
-                                        fontSize = 11.sp,
-                                        color = if (isAdhanEnabled) PaisaTealDark else PaisaTextSecondary
-                                    )
-                                }
-                            }
-
-                            Switch(
-                                checked = isAdhanEnabled,
-                                onCheckedChange = { enabled ->
-                                    isAdhanEnabled = enabled
-                                    AdhanPreferences.setAdhanEnabled(context, enabled)
-                                    if (enabled) {
-                                        AdhanScheduler.schedulePrayerAlarms(
-                                            context = context,
-                                            fajr = timings.fajr,
-                                            dhuhr = timings.dhuhr,
-                                            asr = timings.asr,
-                                            maghrib = timings.maghrib,
-                                            isha = timings.isha
-                                        )
-                                        Toast.makeText(context, "আযান অডিও চালু করা হয়েছে", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        AdhanScheduler.cancelAllAlarms(context)
-                                        DefaultAdhanAudioProvider.stopPlayback()
-                                        Toast.makeText(context, "আযান অডিও বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = PaisaTealPrimary
-                                )
-                            )
-                        }
-
-                        if (isAudioPlaying) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(
-                                    onClick = { DefaultAdhanAudioProvider.stopPlayback() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
-                                    shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("অডিও বন্ধ করুন", fontSize = 11.sp)
                                 }
                             }
                         }

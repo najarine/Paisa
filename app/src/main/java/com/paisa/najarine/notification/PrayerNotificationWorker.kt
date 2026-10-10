@@ -85,9 +85,9 @@ class PrayerNotificationWorker(
             targetScreen = "ADHAN_PRAYER"
         )
 
-        // Play dedicated Adhan sound if enabled by user
+        // Play dedicated Adhan sound via Foreground Service if enabled by user
         if (AdhanPreferences.isAdhanEnabled(context)) {
-            DefaultAdhanAudioProvider.playAdhan(context, isFajr)
+            AdhanPlaybackService.start(context, prayerName, isFajr)
         }
     }
 

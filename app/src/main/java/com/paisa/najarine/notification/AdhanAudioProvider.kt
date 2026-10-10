@@ -37,14 +37,18 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
     private val _isPlayingState = MutableStateFlow(false)
     val isPlayingState: StateFlow<Boolean> = _isPlayingState.asStateFlow()
 
+    private val _activePrayerNameState = MutableStateFlow<String?>("আজান")
+    val activePrayerNameState: StateFlow<String?> = _activePrayerNameState.asStateFlow()
+
     private val _currentPlayingUrlState = MutableStateFlow<String?>(null)
     val currentPlayingUrlState: StateFlow<String?> = _currentPlayingUrlState.asStateFlow()
 
     override fun playAdhan(context: Context, isFajr: Boolean) {
-        playSelectedAdhan(context, isFajr)
+        playSelectedAdhan(context, isFajr, if (isFajr) "ফজর" else "নামাজ")
     }
 
-    fun playSelectedAdhan(context: Context, isFajr: Boolean) {
+    fun playSelectedAdhan(context: Context, isFajr: Boolean, prayerName: String = if (isFajr) "ফজর" else "নামাজ") {
+        _activePrayerNameState.value = prayerName
         val audioUrl = if (isFajr) {
             ALADHAN_FAJR_ADHAN_URL
         } else {
@@ -169,6 +173,7 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
             mediaPlayer = null
             _isPlayingState.value = false
             _currentPlayingUrlState.value = null
+            _activePrayerNameState.value = null
         }
     }
 

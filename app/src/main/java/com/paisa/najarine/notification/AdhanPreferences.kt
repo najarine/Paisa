@@ -24,6 +24,8 @@ object AdhanPreferences {
     private const val KEY_LAST_LONGITUDE = "key_last_longitude"
     private const val KEY_LAST_LOCATION_NAME = "key_last_location_name"
     private const val KEY_CLOCK_FORMAT_12H = "key_clock_format_12h"
+    private const val KEY_HOURLY_QURAN_NOTIF_ENABLED = "key_hourly_quran_notif_enabled"
+    private const val KEY_HOURLY_HADITH_NOTIF_ENABLED = "key_hourly_hadith_notif_enabled"
 
     fun saveLastKnownLocation(context: Context, latitude: Double, longitude: Double, displayName: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -59,6 +61,12 @@ object AdhanPreferences {
     private val _is12HourFormatState = MutableStateFlow(true)
     val is12HourFormatState: StateFlow<Boolean> = _is12HourFormatState.asStateFlow()
 
+    private val _isHourlyQuranNotificationEnabledState = MutableStateFlow(true)
+    val isHourlyQuranNotificationEnabledState: StateFlow<Boolean> = _isHourlyQuranNotificationEnabledState.asStateFlow()
+
+    private val _isHourlyHadithNotificationEnabledState = MutableStateFlow(true)
+    val isHourlyHadithNotificationEnabledState: StateFlow<Boolean> = _isHourlyHadithNotificationEnabledState.asStateFlow()
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _isAdhanEnabledState.value = prefs.getBoolean(KEY_ADHAN_ENABLED, true)
@@ -66,6 +74,53 @@ object AdhanPreferences {
         _selectedAdhanIdState.value = prefs.getString(KEY_SELECTED_ADHAN_ID, DEFAULT_ADHAN_ID) ?: DEFAULT_ADHAN_ID
         _selectedMadhabState.value = prefs.getString(KEY_SELECTED_MADHAB, DEFAULT_MADHAB) ?: DEFAULT_MADHAB
         _is12HourFormatState.value = prefs.getBoolean(KEY_CLOCK_FORMAT_12H, true)
+        _isHourlyQuranNotificationEnabledState.value = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)
+        _isHourlyHadithNotificationEnabledState.value = prefs.getBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, true)
+    }
+
+    fun isHourlyQuranNotificationEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)
+        _isHourlyQuranNotificationEnabledState.value = enabled
+        return enabled
+    }
+
+    fun setHourlyQuranNotificationEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, enabled) }
+        _isHourlyQuranNotificationEnabledState.value = enabled
+    }
+
+    fun isHourlyHadithNotificationEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, true)
+        _isHourlyHadithNotificationEnabledState.value = enabled
+        return enabled
+    }
+
+    fun setHourlyHadithNotificationEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, enabled) }
+        _isHourlyHadithNotificationEnabledState.value = enabled
+    }
+
+    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            pm?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+        } else {
+            true
+        }
+    }
+
+    fun getBatteryOptimizationSettingsIntent(context: Context): android.content.Intent {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = android.net.Uri.parse("package:${context.packageName}")
+            }
+        } else {
+            android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+        }
     }
 
     fun isPrayerNotificationsEnabled(context: Context): Boolean {

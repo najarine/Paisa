@@ -22,6 +22,38 @@ object HourlyIslamicScheduler {
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
+
+        scheduleHourlyAlarm(context)
+    }
+
+    fun scheduleHourlyAlarm(context: Context) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+            val intent = android.content.Intent(context, HourlyIslamicAlarmReceiver::class.java)
+            val pendingIntent = android.app.PendingIntent.getBroadcast(
+                context,
+                8821,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Trigger every hour on the top of the hour or +1 hour
+            val nextTriggerMillis = System.currentTimeMillis() + java.util.concurrent.TimeUnit.HOURS.toMillis(1)
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    nextTriggerMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.set(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    nextTriggerMillis,
+                    pendingIntent
+                )
+            }
+        } catch (_: Exception) {}
     }
 
     fun triggerImmediateSync(context: Context) {

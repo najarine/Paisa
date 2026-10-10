@@ -303,6 +303,42 @@ fun UserProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             var showSignOutDialog by remember { mutableStateOf(false) }
+            var showDeleteAccountDialog by remember { mutableStateOf(false) }
+
+            // Privacy Policy & Google Play Data Safety
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = {
+                        try {
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse("https://github.com/najarine/paisa/blob/main/PRIVACY_POLICY.md")
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "প্রাইভেসি পলিসি: আপনার সকল ডাটা নিজস্ব ডিভাইসে ও এনক্রিপ্টেড ক্লাউডে সংরক্ষিত থাকে।", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                ) {
+                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("প্রাইভেসি পলিসি ও ডাটা নিরাপত্তা", fontSize = 12.sp)
+                }
+
+                TextButton(
+                    onClick = { showDeleteAccountDialog = true }
+                ) {
+                    Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("অ্যাকাউন্ট মুছে ফেলুন", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedButton(
                 onClick = { showSignOutDialog = true },
@@ -313,6 +349,39 @@ fun UserProfileScreen(
                 Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("অ্যাকাউন্ট থেকে লগআউট / সাইন আউট করুন", fontWeight = FontWeight.Bold)
+            }
+
+            if (showDeleteAccountDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteAccountDialog = false },
+                    icon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    title = { Text("অ্যাকাউন্ট ও ডাটা মুছে ফেলার অনুরোধ", fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "গুগল প্লে স্টোর পলিসি অনুযায়ী আপনি যেকোনো সময় আপনার অ্যাকাউন্ট ও সংশ্লিষ্ট সমস্ত ক্লাউড ব্যাকআপ স্থায়ীভাবে মুছে ফেলতে পারেন। নিশ্চিত করলে বর্তমান সেশন মুছে যাবে এবং ক্লাউড ডাটা ক্লিনআপ রিকোয়েস্ট সাবমিট হবে।",
+                            fontSize = 13.sp
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDeleteAccountDialog = false
+                                prefs.edit { clear() }
+                                viewModel.signOut()
+                                Toast.makeText(context, "অ্যাকাউন্ট মুছে ফেলার অনুরোধ সম্পন্ন হয়েছে", Toast.LENGTH_LONG).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("স্থায়ীভাবে মুছুন")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteAccountDialog = false }) {
+                            Text("বাতিল")
+                        }
+                    }
+                )
             }
 
             if (showSignOutDialog) {

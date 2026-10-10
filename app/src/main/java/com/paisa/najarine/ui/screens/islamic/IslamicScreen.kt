@@ -410,11 +410,11 @@ fun IslamicScreen(
             val quranTranslation = quranEntity?.banglaTranslation ?: repo.canonicalDailyAyah.banglaText
 
             IslamicFeaturedCard(
-                title = "প্রতি ঘণ্টার কুরআনী আয়াত — $ayahRef",
+                title = "প্রতি ঘণ্টার কুরআনী আয়াত",
                 badgeText = "উম্মা এপিআই সিঙ্কড",
                 badgeColor = Color(0xFFD97706),
                 badgeBg = Color(0xFFFEF3C7),
-                subtitle = "",
+                subtitle = ayahRef,
                 arabicText = quranArabic,
                 translationText = quranTranslation,
                 onClick = onOpenQuran
@@ -430,11 +430,11 @@ fun IslamicScreen(
             val hadithBangla = hadithEntity?.banglaTranslation ?: canonicalDailyHadithState.banglaTranslation
 
             IslamicFeaturedCard(
-                title = "প্রতি ঘণ্টার হাদিস — $hadithSource",
+                title = "প্রতি ঘণ্টার হাদিস",
                 badgeText = "উম্মা এপিআই সিঙ্কড",
                 badgeColor = Color(0xFF047857),
                 badgeBg = Color(0xFFD1FAE5),
-                subtitle = hadithNarrator,
+                subtitle = if (hadithNarrator.isNotBlank()) "$hadithSource — $hadithNarrator" else hadithSource,
                 arabicText = hadithArabic,
                 translationText = hadithBangla,
                 onClick = onOpenHadith
@@ -464,24 +464,41 @@ fun IslamicFeaturedCard(
         border = CardDefaults.outlinedCardBorder()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
+            // Header with Category Title, Ayah/Hadith Reference and API badge cleanly separated
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = badgeColor,
-                    letterSpacing = 0.5.sp
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeColor,
+                        letterSpacing = 0.5.sp
+                    )
+                    if (subtitle.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = PaisaTextPrimary,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
 
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .background(badgeBg)
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = badgeText,
@@ -490,16 +507,6 @@ fun IslamicFeaturedCard(
                         color = badgeColor
                     )
                 }
-            }
-
-            if (subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = PaisaTextSecondary,
-                    fontSize = 11.sp
-                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))

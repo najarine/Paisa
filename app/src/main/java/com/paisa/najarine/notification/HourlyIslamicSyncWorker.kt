@@ -131,8 +131,9 @@ class HourlyIslamicSyncWorker(
             )
             database.hourlyHadithDao().insertHadith(hadithEntity)
 
-            // Deliver notification when user is active during daytime/screen on
-            if (isDaytimeHours || isScreenActive) {
+            // Deliver notification when enabled by user toggle
+            val isHadithNotifEnabled = AdhanPreferences.isHourlyHadithNotificationEnabled(applicationContext)
+            if (isHadithNotifEnabled) {
                 PaisaNotificationManager.showNotification(
                     context = applicationContext,
                     channelId = PaisaNotificationManager.CHANNEL_QURAN_HADITH,
@@ -160,7 +161,8 @@ class HourlyIslamicSyncWorker(
             )
             database.hourlyQuranDao().insertAyah(quranEntity)
 
-            if (isDaytimeHours || isScreenActive) {
+            val isQuranNotifEnabled = AdhanPreferences.isHourlyQuranNotificationEnabled(applicationContext)
+            if (isQuranNotifEnabled) {
                 PaisaNotificationManager.showNotification(
                     context = applicationContext,
                     channelId = PaisaNotificationManager.CHANNEL_QURAN_HADITH,

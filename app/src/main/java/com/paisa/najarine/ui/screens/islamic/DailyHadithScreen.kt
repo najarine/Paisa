@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -71,6 +72,7 @@ fun DailyHadithScreen(
     var isInitialLoading by remember { mutableStateOf(true) }
 
     val listState = rememberLazyListState()
+    val isHourlyHadithNotifEnabled by com.paisa.najarine.notification.AdhanPreferences.isHourlyHadithNotificationEnabledState.collectAsState()
 
     // Load initial batch when collection changes
     LaunchedEffect(selectedCollection) {
@@ -224,6 +226,105 @@ fun DailyHadithScreen(
                 .background(PaisaBackground)
                 .padding(padding)
         ) {
+            // =========================================================
+            // HOURLY HADITH NOTIFICATION SETTINGS (Right before Search Bar)
+            // =========================================================
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                border = CardDefaults.outlinedCardBorder()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(PaisaTealPrimary.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoStories,
+                                    contentDescription = null,
+                                    tint = PaisaTealPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "প্রতি ঘণ্টার হাদিস নোটিফিকেশন",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = PaisaTextPrimary
+                                )
+                                Text(
+                                    text = if (isHourlyHadithNotifEnabled) "প্রতি ঘণ্টায় উম্মা এপিআই থেকে বিশুদ্ধ হাদিস আসবে" else "ঘণ্টার হাদিস নোটিফিকেশন বন্ধ",
+                                    fontSize = 11.sp,
+                                    color = if (isHourlyHadithNotifEnabled) PaisaTealDark else PaisaTextSecondary
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = isHourlyHadithNotifEnabled,
+                            onCheckedChange = { enabled ->
+                                com.paisa.najarine.notification.AdhanPreferences.setHourlyHadithNotificationEnabled(context, enabled)
+                                if (enabled) {
+                                    com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(context)
+                                    Toast.makeText(context, "ঘণ্টার হাদিস নোটিফিকেশন চালু হয়েছে", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "ঘণ্টার হাদিস নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = PaisaTealPrimary
+                            )
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "৩৬,০০০+ হাদিস • ১০টি প্রামাণ্য গ্রন্থ",
+                            fontSize = 10.sp,
+                            color = PaisaTextSecondary
+                        )
+                        TextButton(
+                            onClick = {
+                                viewModel.testHourlyHadithNotification(context)
+                                Toast.makeText(context, "টেস্ট হাদিস নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("টেস্ট করুন", fontSize = 11.sp, color = PaisaTealPrimary)
+                        }
+                    }
+                }
+            }
+
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,

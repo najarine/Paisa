@@ -23,6 +23,7 @@ class MainActivity : FragmentActivity() {
 
         // Initialize Services
         com.paisa.najarine.analytics.PaisaAnalytics.initialize(this)
+        com.paisa.najarine.ads.AdMobManager.initialize(this)
         com.paisa.najarine.notification.AdhanPreferences.init(this)
         com.paisa.najarine.notification.PaisaNotificationManager.createNotificationChannels(this)
         com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(this)

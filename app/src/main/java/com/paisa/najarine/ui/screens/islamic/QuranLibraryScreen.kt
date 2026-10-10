@@ -64,6 +64,7 @@ fun QuranLibraryScreen(
         mutableStateOf(QuranReciters.getReciterById(savedId ?: QuranReciters.DEFAULT_RECITER.id))
     }
     var showReciterDialog by remember { mutableStateOf(false) }
+    val isHourlyQuranNotifEnabled by com.paisa.najarine.notification.AdhanPreferences.isHourlyQuranNotificationEnabledState.collectAsState()
 
     fun onSelectReciter(reciter: QuranReciter) {
         selectedReciter = reciter
@@ -188,6 +189,105 @@ fun QuranLibraryScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = PaisaTealPrimary
                             )
+                        }
+                    }
+                }
+            }
+
+            // =========================================================
+            // HOURLY QURAN AYAH NOTIFICATION SETTINGS (Right after Qari Selection)
+            // =========================================================
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = CardDefaults.outlinedCardBorder()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(PaisaTealPrimary.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MenuBook,
+                                        contentDescription = null,
+                                        tint = PaisaTealPrimary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "প্রতি ঘণ্টার কুরআন আয়াত নোটিফিকেশন",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = PaisaTextPrimary
+                                    )
+                                    Text(
+                                        text = if (isHourlyQuranNotifEnabled) "প্রতি ঘণ্টায় নতুন আয়াত ও অর্থ নোটিফিকেশন আসবে" else "ঘণ্টার আয়াত নোটিফিকেশন বন্ধ",
+                                        fontSize = 11.sp,
+                                        color = if (isHourlyQuranNotifEnabled) PaisaTealDark else PaisaTextSecondary
+                                    )
+                                }
+                            }
+
+                            Switch(
+                                checked = isHourlyQuranNotifEnabled,
+                                onCheckedChange = { enabled ->
+                                    com.paisa.najarine.notification.AdhanPreferences.setHourlyQuranNotificationEnabled(context, enabled)
+                                    if (enabled) {
+                                        com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(context)
+                                        Toast.makeText(context, "ঘণ্টার কুরআন নোটিফিকেশন চালু হয়েছে", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "ঘণ্টার কুরআন নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PaisaTealPrimary
+                                )
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "উম্মা এপিআই (Ummah API) থেকে স্বয়ংক্রিয় রিফ্রেশ",
+                                fontSize = 10.sp,
+                                color = PaisaTextSecondary
+                            )
+                            TextButton(
+                                onClick = {
+                                    viewModel.testHourlyQuranNotification(context)
+                                    Toast.makeText(context, "টেস্ট আয়াত নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("টেস্ট করুন", fontSize = 11.sp, color = PaisaTealPrimary)
+                            }
                         }
                     }
                 }

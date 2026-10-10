@@ -136,7 +136,7 @@ fun SupportDeveloperScreen(
                 }
             }
 
-            // Method 1: Google AdMob Rewarded/Interstitial Support (With Anti-Abuse Frequency Capping)
+            // Method 1: Google AdMob Rewarded Support (Strictly Rewarded Ads Only - No Interstitial)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -715,6 +715,7 @@ fun AdMobBannerCard(
 ) {
     var isAdLoaded by remember { mutableStateOf(false) }
     var adLoadError by remember { mutableStateOf<String?>(null) }
+    var retryKey by remember { mutableStateOf(0) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -764,7 +765,7 @@ fun AdMobBannerCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "AdMob Sponsor",
+                        text = "Banner Ad",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = PaisaTextSecondary
@@ -777,41 +778,82 @@ fun AdMobBannerCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .wrapContentHeight()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(PaisaSurfaceVariant),
+                    .background(PaisaSurfaceVariant)
+                    .padding(vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
-                AndroidView(
-                    modifier = Modifier.fillMaxWidth(),
-                    factory = { ctx ->
-                        AdMobManager.initialize(ctx)
-                        AdView(ctx).apply {
-                            setAdSize(AdSize.BANNER)
-                            setAdUnitId(adUnitId)
-                            adListener = object : AdListener() {
-                                override fun onAdLoaded() {
-                                    isAdLoaded = true
-                                    adLoadError = null
-                                }
+                androidx.compose.runtime.key(retryKey) {
+                    AndroidView(
+                        modifier = Modifier.wrapContentSize(),
+                        factory = { ctx ->
+                            AdView(ctx).apply {
+                                layoutParams = android.view.ViewGroup.LayoutParams(
+                                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                                )
+                                setAdSize(AdSize.BANNER)
+                                setAdUnitId(adUnitId)
+                                adListener = object : AdListener() {
+                                    override fun onAdLoaded() {
+                                        isAdLoaded = true
+                                        adLoadError = null
+                                    }
 
-                                override fun onAdFailedToLoad(error: LoadAdError) {
-                                    adLoadError = error.message
+                                    override fun onAdFailedToLoad(error: LoadAdError) {
+                                        isAdLoaded = false
+                                        adLoadError = "স্ট্যাটাস: ${error.message} (কোড ${error.code})"
+                                    }
                                 }
+                                try {
+                                    loadAd(AdRequest.Builder().build())
+                                } catch (_: Throwable) {}
                             }
-                            try {
-                                loadAd(AdRequest.Builder().build())
-                            } catch (_: Throwable) {}
                         }
-                    }
-                )
+                    )
+                }
 
                 if (!isAdLoaded && adLoadError == null) {
-                    Text(
-                        text = "স্পনসর ব্যানার সক্রিয় রয়েছে...",
-                        fontSize = 11.sp,
-                        color = PaisaTextSecondary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(14.dp),
+                            color = PaisaTealPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "AdMob স্পনসর ব্যানার লোড হচ্ছে...",
+                            fontSize = 12.sp,
+                            color = PaisaTextSecondary
+                        )
+                    }
+                } else if (adLoadError != null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Text(
+                            text = adLoadError ?: "ব্যানার সাময়িকভাবে উপলব্ধ নয়",
+                            fontSize = 11.sp,
+                            color = PaisaTextSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(
+                            onClick = {
+                                adLoadError = null
+                                retryKey++
+                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+                        ) {
+                            Text("পুনরায় চেষ্টা করুন", fontSize = 11.sp, color = PaisaTealPrimary)
+                        }
+                    }
                 }
             }
         }

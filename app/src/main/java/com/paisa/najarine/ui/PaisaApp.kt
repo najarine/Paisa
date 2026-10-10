@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,13 +19,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.fragment.app.FragmentActivity
 import com.paisa.najarine.auth.AuthState
+import com.paisa.najarine.ui.components.AdhanCallAlarmDialog
 import com.paisa.najarine.ui.components.PaisaBrandHeader
 import com.paisa.najarine.ui.components.SecurityLockOverlay
 import com.paisa.najarine.ui.screens.accounting.*
@@ -153,6 +158,8 @@ fun PaisaApp(
     var showTransferDialog by remember { mutableStateOf(false) }
     var showAddWalletDialog by remember { mutableStateOf(false) }
     var showSearchDialog by remember { mutableStateOf(false) }
+    var showBackgroundPermissionDialog by remember { mutableStateOf(false) }
+    var isAdhanCallModalMinimized by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -164,6 +171,7 @@ fun PaisaApp(
         }
     }
 
+    // Request permissions and check background execution ONLY after successful Google Sign-In
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             val permissionsToRequest = mutableListOf(
@@ -174,6 +182,12 @@ fun PaisaApp(
                 permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS)
             }
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
+
+            // Background execution permission check for Adhan & Alarms (only after sign-in)
+            if (!com.paisa.najarine.notification.AdhanPreferences.isIgnoringBatteryOptimizations(context)) {
+                showBackgroundPermissionDialog = true
+            }
+
             viewModel.detectLocationAndRefreshPrayerTimings(context)
         }
     }
@@ -243,7 +257,8 @@ fun PaisaApp(
     )
 
     // 3. Authenticated App UI
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
         topBar = {
             if (isMainTab) {
                 val syncStatus by viewModel.syncManager.syncStatus.collectAsState()
@@ -539,8 +554,135 @@ fun PaisaApp(
                     onBackClick = { goBack() }
                 )
             }
+
         }
     }
+
+    // In-App Adhan Incoming Call / Alarm Popup Alert
+    val isAdhanAudioPlaying by com.paisa.najarine.notification.DefaultAdhanAudioProvider.isPlayingState.collectAsState()
+    val activeAdhanName by com.paisa.najarine.notification.DefaultAdhanAudioProvider.activePrayerNameState.collectAsState()
+
+    LaunchedEffect(isAdhanAudioPlaying) {
+        if (isAdhanAudioPlaying) {
+            isAdhanCallModalMinimized = false
+        }
+    }
+
+    // 1. Full-Screen Incoming Call / Alarm Popup (In-tree Compose overlay with zero white flash)
+    AnimatedVisibility(
+        visible = isAdhanAudioPlaying && !isAdhanCallModalMinimized,
+        enter = fadeIn(animationSpec = tween(250)),
+        exit = fadeOut(animationSpec = tween(200)),
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(99f)
+    ) {
+        AdhanCallAlarmDialog(
+            activePrayerName = activeAdhanName,
+            onDeclineClick = {
+                com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
+                com.paisa.najarine.notification.DefaultAdhanAudioProvider.stopPlayback()
+                isAdhanCallModalMinimized = false
+            },
+            onMinimizeClick = {
+                isAdhanCallModalMinimized = true
+            },
+            onDismissRequest = {
+                isAdhanCallModalMinimized = true
+            }
+        )
+    }
+
+    // 2. Minimized Top Floating Banner (Available when user minimizes the call modal)
+    AnimatedVisibility(
+        visible = isAdhanAudioPlaying && isAdhanCallModalMinimized,
+        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .zIndex(98f)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isAdhanCallModalMinimized = false },
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = PaisaTealPrimary),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "🔊 ${activeAdhanName ?: "আজান"} চলছে...",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "ট্যাপ করে ফুলস্ক্রিন দেখুন • সালাতের সময়",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = {
+                            com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
+                            com.paisa.najarine.notification.DefaultAdhanAudioProvider.stopPlayback()
+                            isAdhanCallModalMinimized = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CallEnd,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "আজান বন্ধ",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
     // Quick Add Expense Dialog
     if (showExpenseDialog) {
@@ -627,6 +769,63 @@ fun PaisaApp(
             },
             confirmButton = {
                 TextButton(onClick = { showSearchDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
+    // Startup Background Execution & Notification Permission Dialog for Adhan
+    if (showBackgroundPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackgroundPermissionDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Alarm,
+                    contentDescription = null,
+                    tint = PaisaTealPrimary,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "সময়মতো আযান ও অ্যালার্টের পারমিশন",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "অ্যাপ বন্ধ থাকলেও ব্যাকগ্রাউন্ডে যাতে ওয়াক্ত অনুযায়ী সময়মতো আযান এবং পুশ অ্যালার্ট পাওয়া যায়, সেজন্য ব্যাকগ্রাউন্ড পারমিশন নিশ্চিত করুন।",
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        color = PaisaTextPrimary
+                    )
+                    Text(
+                        text = "• ফোন লক থাকলেও সময়মতো আযান বাজবে\n• কোনো ওয়াক্ত মিস হবে না\n• সার্বক্ষণিক সঠিক ওয়াক্ত অ্যালার্ট",
+                        fontSize = 12.sp,
+                        color = PaisaTealDark,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBackgroundPermissionDialog = false
+                        try {
+                            context.startActivity(com.paisa.najarine.notification.AdhanPreferences.getBatteryOptimizationSettingsIntent(context))
+                        } catch (_: Exception) {}
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PaisaTealPrimary)
+                ) {
+                    Text("অনুমতি দিন")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBackgroundPermissionDialog = false }) {
+                    Text("পরে করব", color = PaisaTextSecondary)
+                }
             }
         )
     }
