@@ -30,6 +30,9 @@ fun GoldAssetDialog(
     val scope = rememberCoroutineScope()
     val goldApi = remember { GoldApiService.create() }
 
+    val selectedCurrency by com.paisa.najarine.notification.AdhanPreferences.selectedCurrencyState.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
+
     var bhoriInput by remember { mutableStateOf("2.0") }
     var karatType by remember { mutableStateOf("22") } // 22, 21, 18
     var liveGoldPriceUsd by remember { mutableStateOf(4140.0) }
@@ -115,7 +118,7 @@ fun GoldAssetDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("বর্তমান প্রতি ভরি ($karatType ক্যারেট):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
-                            Text("৳${String.format(java.util.Locale.US, "%,.0f", pricePerBhoriBdt)}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = PaisaTealDark)
+                            Text("$currencySymbol${String.format(java.util.Locale.US, "%,.0f", pricePerBhoriBdt)}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = PaisaTealDark)
                         }
                     }
                 }
@@ -160,7 +163,7 @@ fun GoldAssetDialog(
                         Text("আপনার স্বর্ণের মোট আনুমানিক বাজারমূল্য", fontSize = 12.sp, color = PaisaTextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "৳${String.format(java.util.Locale.US, "%,.2f", totalAssetValueBdt)}",
+                            text = "$currencySymbol${String.format(java.util.Locale.US, "%,.2f", totalAssetValueBdt)}",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Black,
                             color = PaisaTealPrimary

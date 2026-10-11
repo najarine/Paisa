@@ -51,9 +51,19 @@ fun DetailedFinancialAnalyticsScreen(
     var selectedTimeframe by remember { mutableStateOf("এই মাস") }
     val timeframes = listOf("এই মাস", "গত ৩০ দিন", "চলতি বছর", "সকল সময়")
 
-    val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
-            maximumFractionDigits = 0
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
+
+    val currencyFormat = remember(selectedCurrency) {
+        if (selectedCurrency.equals("USD", ignoreCase = true)) {
+            NumberFormat.getNumberInstance(Locale.US).apply {
+                maximumFractionDigits = 2
+                minimumFractionDigits = 0
+            }
+        } else {
+            NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
+                maximumFractionDigits = 0
+            }
         }
     }
 
@@ -287,7 +297,7 @@ fun DetailedFinancialAnalyticsScreen(
                             // Total Income
                             CashFlowPill(
                                 label = "মোট আয়",
-                                amount = "৳${currencyFormat.format(totalIncome)}",
+                                amount = "$currencySymbol${currencyFormat.format(totalIncome)}",
                                 color = PaisaIncomeGreen,
                                 icon = Icons.Default.ArrowDownward,
                                 modifier = Modifier.weight(1f)
@@ -296,7 +306,7 @@ fun DetailedFinancialAnalyticsScreen(
                             // Total Expense
                             CashFlowPill(
                                 label = "মোট ব্যয়",
-                                amount = "৳${currencyFormat.format(totalExpense)}",
+                                amount = "$currencySymbol${currencyFormat.format(totalExpense)}",
                                 color = PaisaExpenseRed,
                                 icon = Icons.Default.ArrowUpward,
                                 modifier = Modifier.weight(1f)
@@ -318,7 +328,7 @@ fun DetailedFinancialAnalyticsScreen(
                             Column {
                                 Text(text = "নিট সঞ্চয় (বা উদ্বৃত্ত)", fontSize = 11.sp, color = PaisaTextSecondary)
                                 Text(
-                                    text = "${if (netSavings >= 0) "+" else ""}৳${currencyFormat.format(netSavings)}",
+                                    text = "${if (netSavings >= 0) "+" else ""}$currencySymbol${currencyFormat.format(netSavings)}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = if (netSavings >= 0) PaisaIncomeGreen else PaisaExpenseRed
@@ -342,7 +352,8 @@ fun DetailedFinancialAnalyticsScreen(
             // 3. MONTHLY SPENDING TRENDS (LINE CHART OVER PAST SIX MONTHS)
             item {
                 MonthlySpendingTrendsSection(
-                    transactions = transactions
+                    transactions = transactions,
+                    currencySymbol = currencySymbol
                 )
             }
 
@@ -350,7 +361,8 @@ fun DetailedFinancialAnalyticsScreen(
             item {
                 MonthlyCategoryBreakdownSection(
                     transactions = transactions,
-                    categories = categories
+                    categories = categories,
+                    currencySymbol = currencySymbol
                 )
             }
 
@@ -383,8 +395,8 @@ fun DetailedFinancialAnalyticsScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             AnalyticsMetricBox(
                                 label = "মোট দেনা (ঋণ)",
-                                value = "৳${currencyFormat.format(totalPayable)}",
-                                subtext = "পাওনা: ৳${currencyFormat.format(totalReceivable)}",
+                                value = "$currencySymbol${currencyFormat.format(totalPayable)}",
+                                subtext = "পাওনা: $currencySymbol${currencyFormat.format(totalReceivable)}",
                                 icon = Icons.Default.Handshake,
                                 modifier = Modifier.weight(1f)
                             )

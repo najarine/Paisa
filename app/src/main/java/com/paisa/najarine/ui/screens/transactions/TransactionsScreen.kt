@@ -39,6 +39,8 @@ fun TransactionsScreen(
     val allTransactions by viewModel.transactions.collectAsState()
     val wallets by viewModel.wallets.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     var selectedFilter by remember { mutableStateOf("ALL") } // ALL, INCOME, EXPENSE, TRANSFER
     var searchQuery by remember { mutableStateOf("") }
@@ -274,6 +276,7 @@ fun TransactionsScreen(
                         tx = tx,
                         sourceWallet = sourceWallet,
                         destWallet = destWallet,
+                        currencySymbol = currencySymbol,
                         onClick = { selectedTxForDetail = tx }
                     )
                 }
@@ -306,6 +309,7 @@ fun TransactionsScreen(
             wallets = wallets,
             categories = categories.filter { it.type == "EXPENSE" },
             bills = viewModel.bills.collectAsState().value,
+            currencySymbol = currencySymbol,
             onDismiss = { showExpenseDialog = false },
             onSwitchToIncome = {
                 showExpenseDialog = false
@@ -323,6 +327,7 @@ fun TransactionsScreen(
         AddIncomeDialog(
             wallets = wallets,
             categories = categories.filter { it.type == "INCOME" },
+            currencySymbol = currencySymbol,
             onDismiss = { showIncomeDialog = false },
             onSwitchToExpense = {
                 showIncomeDialog = false
@@ -339,6 +344,7 @@ fun TransactionsScreen(
     if (showTransferDialog) {
         AddTransferDialog(
             wallets = wallets,
+            currencySymbol = currencySymbol,
             onDismiss = { showTransferDialog = false },
             onConfirm = { fromId, toId, amount, fee, note ->
                 viewModel.addTransfer(fromId, toId, amount, fee, note)
@@ -351,6 +357,7 @@ fun TransactionsScreen(
     if (showVoiceDraftDialog) {
         VoiceDraftDialog(
             wallets = wallets,
+            currencySymbol = currencySymbol,
             onDismiss = { showVoiceDraftDialog = false },
             onConfirmDraft = { walletId, amount, type, category, note ->
                 if (type == "INCOME") {
@@ -367,6 +374,7 @@ fun TransactionsScreen(
     if (showScanDraftDialog) {
         ReceiptScanDraftDialog(
             wallets = wallets,
+            currencySymbol = currencySymbol,
             onDismiss = { showScanDraftDialog = false },
             onConfirmDraft = { walletId, amount, category, note ->
                 viewModel.addExpense(walletId, amount, category, 0.0, note)
@@ -381,6 +389,7 @@ fun TransactionsScreen(
             tx = tx,
             sourceWallet = wallets.find { it.id == tx.walletId },
             destWallet = wallets.find { it.id == tx.toWalletId },
+            currencySymbol = currencySymbol,
             onDismiss = { selectedTxForDetail = null },
             onDelete = {
                 viewModel.deleteTransaction(tx)
@@ -395,6 +404,7 @@ fun TransactionCard(
     tx: TransactionEntity,
     sourceWallet: WalletEntity?,
     destWallet: WalletEntity?,
+    currencySymbol: String = "৳",
     onClick: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
@@ -468,9 +478,9 @@ fun TransactionCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 val prefix = when {
-                    isIncome -> "+৳ "
-                    isTransfer -> "৳ "
-                    else -> "-৳ "
+                    isIncome -> "+$currencySymbol "
+                    isTransfer -> "$currencySymbol "
+                    else -> "-$currencySymbol "
                 }
                 Text(
                     text = "$prefix${String.format(Locale.US, "%,.0f", tx.amount)}",
@@ -480,7 +490,7 @@ fun TransactionCard(
                 )
                 if (tx.fee > 0) {
                     Text(
-                        text = "Fee: ৳${String.format(Locale.US, "%.0f", tx.fee)}",
+                        text = "Fee: $currencySymbol${String.format(Locale.US, "%.0f", tx.fee)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = PaisaTextTertiary
                     )
@@ -661,6 +671,7 @@ fun AddExpenseDialog(
     wallets: List<WalletEntity>,
     categories: List<CategoryEntity>,
     bills: List<com.paisa.najarine.data.local.BillSubscriptionEntity> = emptyList(),
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onSwitchToIncome: () -> Unit = {},
     onConfirm: (walletId: String, amount: Double, category: String, fee: Double, note: String) -> Unit
@@ -721,7 +732,7 @@ fun AddExpenseDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
-                            value = selectedBill?.let { "${it.name} (৳${it.amount})" } ?: "সংরক্ষিত বিল থেকে সিলেক্ট করুন...",
+                            value = selectedBill?.let { "${it.name} ($currencySymbol${it.amount})" } ?: "সংরক্ষিত বিল থেকে সিলেক্ট করুন...",
                             onValueChange = {},
                             readOnly = true,
                             leadingIcon = { Icon(Icons.Default.Receipt, contentDescription = null, tint = PaisaTealPrimary) },
@@ -743,7 +754,7 @@ fun AddExpenseDialog(
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(b.name, fontWeight = FontWeight.SemiBold)
-                                            Text("৳ ${b.amount}", color = PaisaExpenseRed, fontWeight = FontWeight.Bold)
+                                            Text("$currencySymbol ${b.amount}", color = PaisaExpenseRed, fontWeight = FontWeight.Bold)
                                         }
                                     },
                                     onClick = {
@@ -763,7 +774,7 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("খরচের পরিমাণ (৳)") },
+                    label = { Text("খরচের পরিমাণ ($currencySymbol)") },
                     placeholder = { Text("যেমন: ৪৫০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -804,7 +815,7 @@ fun AddExpenseDialog(
                                         Spacer(modifier = Modifier.width(10.dp))
                                         Column {
                                             Text(w.name, fontWeight = FontWeight.SemiBold)
-                                            Text("৳ ${String.format(Locale.US, "%,.0f", w.balance)}", fontSize = 11.sp, color = PaisaTextSecondary)
+                                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", w.balance)}", fontSize = 11.sp, color = PaisaTextSecondary)
                                         }
                                     }
                                 },
@@ -886,6 +897,7 @@ fun AddExpenseDialog(
 fun AddIncomeDialog(
     wallets: List<WalletEntity>,
     categories: List<CategoryEntity>,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onSwitchToExpense: () -> Unit = {},
     onConfirm: (walletId: String, amount: Double, category: String, note: String) -> Unit
@@ -936,7 +948,7 @@ fun AddIncomeDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("আয়ের পরিমাণ (৳)") },
+                    label = { Text("আয়ের পরিমাণ ($currencySymbol)") },
                     placeholder = { Text("যেমন: ৫০০০০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -1040,6 +1052,7 @@ fun AddIncomeDialog(
 @Composable
 fun AddTransferDialog(
     wallets: List<WalletEntity>,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onConfirm: (fromId: String, toId: String, amount: Double, fee: Double, note: String) -> Unit
 ) {
@@ -1068,7 +1081,7 @@ fun AddTransferDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("স্থানান্তরের পরিমাণ (৳)") },
+                    label = { Text("স্থানান্তরের পরিমাণ ($currencySymbol)") },
                     placeholder = { Text("যেমন: ৫০০০") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -1212,6 +1225,7 @@ fun AddTransferDialog(
 @Composable
 fun VoiceDraftDialog(
     wallets: List<WalletEntity>,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onConfirmDraft: (walletId: String, amount: Double, type: String, category: String, note: String) -> Unit
 ) {
@@ -1253,7 +1267,7 @@ fun VoiceDraftDialog(
                 OutlinedTextField(
                     value = parsedAmount,
                     onValueChange = { parsedAmount = it },
-                    label = { Text("পরিমাণ (৳)") },
+                    label = { Text("পরিমাণ ($currencySymbol)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1302,6 +1316,7 @@ fun VoiceDraftDialog(
 @Composable
 fun ReceiptScanDraftDialog(
     wallets: List<WalletEntity>,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onConfirmDraft: (walletId: String, amount: Double, category: String, note: String) -> Unit
 ) {
@@ -1338,7 +1353,7 @@ fun ReceiptScanDraftDialog(
                 OutlinedTextField(
                     value = parsedAmount,
                     onValueChange = { parsedAmount = it },
-                    label = { Text("মোট বিল (৳)") },
+                    label = { Text("মোট বিল ($currencySymbol)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1380,6 +1395,7 @@ fun TransactionDetailDialog(
     tx: TransactionEntity,
     sourceWallet: WalletEntity?,
     destWallet: WalletEntity?,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -1402,7 +1418,7 @@ fun TransactionDetailDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("পরিমাণ", color = PaisaTextSecondary)
-                    Text("৳ ${String.format(Locale.US, "%,.2f", tx.amount)}", fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
+                    Text("$currencySymbol ${String.format(Locale.US, "%,.2f", tx.amount)}", fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
                 }
                 if (tx.fee > 0) {
                     Row(
@@ -1410,7 +1426,7 @@ fun TransactionDetailDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("ফি", color = PaisaTextSecondary)
-                        Text("৳ ${String.format(Locale.US, "%,.2f", tx.fee)}", fontWeight = FontWeight.Medium)
+                        Text("$currencySymbol ${String.format(Locale.US, "%,.2f", tx.fee)}", fontWeight = FontWeight.Medium)
                     }
                 }
                 Row(

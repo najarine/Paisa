@@ -45,6 +45,8 @@ fun GoldSilverScreen(
     val totalGoldValuation = metalAssets.filter { it.category == "GOLD" }.sumOf { it.quantity * it.currentPrice }
     val totalSilverValuation = metalAssets.filter { it.category == "SILVER" }.sumOf { it.quantity * it.currentPrice }
     val totalMetalsValuation = totalAssetSummary.preciousMetals
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     Scaffold(
         topBar = {
@@ -88,7 +90,7 @@ fun GoldSilverScreen(
                     Text("মোট মূল্যবান ধাতু সম্পদ (Total Assets এ যুক্ত)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF92400E))
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "৳ ${String.format(Locale.US, "%,.0f", totalMetalsValuation)}",
+                        text = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalMetalsValuation)}",
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFFB45309)
                     )
@@ -97,8 +99,8 @@ fun GoldSilverScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("স্বর্ণ মোট: ৳ ${String.format(Locale.US, "%,.0f", totalGoldValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
-                        Text("রৌপ্য মোট: ৳ ${String.format(Locale.US, "%,.0f", totalSilverValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
+                        Text("স্বর্ণ মোট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalGoldValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
+                        Text("রৌপ্য মোট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalSilverValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -188,11 +190,11 @@ fun GoldSilverScreen(
                                 ) {
                                     Column {
                                         Text("বর্তমান বাজার মূল্য (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", value)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                                        Text("$currencySymbol ${String.format(Locale.US, "%,.0f", value)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text("প্রতি ${item.unit} দর", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", item.currentPrice)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                        Text("$currencySymbol ${String.format(Locale.US, "%,.0f", item.currentPrice)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -276,7 +278,7 @@ fun GoldSilverScreen(
                     OutlinedTextField(
                         value = ratePerUnit,
                         onValueChange = { ratePerUnit = it },
-                        label = { Text("প্রতি $unit এর বর্তমান বাজার দর (৳)") },
+                        label = { Text("প্রতি $unit এর বর্তমান বাজার দর ($currencySymbol)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

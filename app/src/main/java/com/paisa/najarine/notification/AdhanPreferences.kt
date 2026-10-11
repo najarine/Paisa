@@ -107,6 +107,24 @@ object AdhanPreferences {
         _selectedCurrencyState.value = currency
     }
 
+    fun getCurrencySymbol(context: Context): String {
+        val cur = getSelectedCurrency(context)
+        return if (cur.equals("USD", ignoreCase = true)) "$" else "৳"
+    }
+
+    fun getCurrencySymbolForCode(currencyCode: String): String {
+        return if (currencyCode.equals("USD", ignoreCase = true)) "$" else "৳"
+    }
+
+    fun formatAmountWithCurrency(amount: Double, currencyCode: String = _selectedCurrencyState.value): String {
+        val symbol = getCurrencySymbolForCode(currencyCode)
+        val formatted = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
+            maximumFractionDigits = 2
+            minimumFractionDigits = 0
+        }.format(amount)
+        return "$symbol $formatted"
+    }
+
     fun isHourlyQuranNotificationEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val enabled = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)

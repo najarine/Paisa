@@ -53,6 +53,8 @@ fun ZakatCalculatorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     // Mode: Auto-calculate directly from Net Worth (default: true) vs Custom Manual Input
     var autoCalculateFromNetWorth by remember { mutableStateOf(true) }
@@ -304,7 +306,7 @@ fun ZakatCalculatorScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "৳ ${String.format(Locale.US, "%,.0f", zakatPayable)}",
+                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", zakatPayable)}",
                             fontWeight = FontWeight.Black,
                             fontSize = 32.sp,
                             color = Color.White
@@ -322,11 +324,11 @@ fun ZakatCalculatorScreen(
                         ) {
                             Column {
                                 Text("যাকাতযোগ্য নিট সম্পদ:", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
-                                Text("৳ ${String.format(Locale.US, "%,.0f", netZakatPool)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("$currencySymbol ${String.format(Locale.US, "%,.0f", netZakatPool)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("রৌপ্য নেসাব (৫২.৫ তোলা):", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
-                                Text("৳ ${String.format(Locale.US, "%,.0f", nisabThreshold)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
+                                Text("$currencySymbol ${String.format(Locale.US, "%,.0f", nisabThreshold)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
                             }
                         }
                     }
@@ -391,8 +393,8 @@ fun ZakatCalculatorScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("মূল্যায়িত নিট সম্পদ: ৳ ${String.format(Locale.US, "%,.0f", report.netWorth)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PaisaTextPrimary)
-                                Text("প্রদেয় যাকাত: ৳ ${String.format(Locale.US, "%,.0f", report.zakatPayable)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealPrimary)
+                                Text("মূল্যায়িত নিট সম্পদ: $currencySymbol ${String.format(Locale.US, "%,.0f", report.netWorth)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PaisaTextPrimary)
+                                Text("প্রদেয় যাকাত: $currencySymbol ${String.format(Locale.US, "%,.0f", report.zakatPayable)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealPrimary)
                             }
                         } else {
                             Text(
@@ -473,18 +475,18 @@ fun ZakatCalculatorScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text("অ্যাকাউন্টিং ইঞ্জিন লাইভ নিট ওর্থ", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
                                 }
-                                Text("মোট: ৳ ${String.format(Locale.US, "%,.0f", totalAssetSummary.netTotalAsset)}", fontWeight = FontWeight.Bold, color = PaisaTealPrimary, fontSize = 13.sp)
+                                Text("মোট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalAssetSummary.netTotalAsset)}", fontWeight = FontWeight.Bold, color = PaisaTealPrimary, fontSize = 13.sp)
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
 
                             // Asset items breakdown
-                            ZakatAssetRow("নগদ টাকা ও ব্যাংক/MFS ওয়ালেট", totalAssetSummary.liquidCashBank, isDeduction = false)
-                            ZakatAssetRow("স্বর্ণ ও মূল্যবান ধাতু (Gold/Silver)", totalAssetSummary.preciousMetals, isDeduction = false)
-                            ZakatAssetRow("শেয়ার বাজার ও ক্রিপ্টো সম্পদ", totalAssetSummary.stockInvestments + totalAssetSummary.cryptoDigital, isDeduction = false)
-                            ZakatAssetRow("ডিপিএস ও অন্যান্য সেভিংস স্কিম", totalAssetSummary.fdrDpsSavings, isDeduction = false)
-                            ZakatAssetRow("পাওনা ঋণ ও বাকি কাস্টমার লেজার", totalAssetSummary.loanReceivables + totalAssetSummary.customerReceivables, isDeduction = false)
-                            ZakatAssetRow("বাদ: সক্রিয় দেনা ও ক্রেডিট কার্ড দায়", totalAssetSummary.totalLiabilities, isDeduction = true)
+                            ZakatAssetRow("নগদ টাকা ও ব্যাংক/MFS ওয়ালেট", totalAssetSummary.liquidCashBank, isDeduction = false, currencySymbol = currencySymbol)
+                            ZakatAssetRow("স্বর্ণ ও মূল্যবান ধাতু (Gold/Silver)", totalAssetSummary.preciousMetals, isDeduction = false, currencySymbol = currencySymbol)
+                            ZakatAssetRow("শেয়ার বাজার ও ক্রিপ্টো সম্পদ", totalAssetSummary.stockInvestments + totalAssetSummary.cryptoDigital, isDeduction = false, currencySymbol = currencySymbol)
+                            ZakatAssetRow("ডিপিএস ও অন্যান্য সেভিংস স্কিম", totalAssetSummary.fdrDpsSavings, isDeduction = false, currencySymbol = currencySymbol)
+                            ZakatAssetRow("পাওনা ঋণ ও বাকি কাস্টমার লেজার", totalAssetSummary.loanReceivables + totalAssetSummary.customerReceivables, isDeduction = false, currencySymbol = currencySymbol)
+                            ZakatAssetRow("বাদ: সক্রিয় দেনা ও ক্রেডিট কার্ড দায়", totalAssetSummary.totalLiabilities, isDeduction = true, currencySymbol = currencySymbol)
 
                             Spacer(modifier = Modifier.height(10.dp))
                             HorizontalDivider(color = PaisaBorder)
@@ -495,7 +497,7 @@ fun ZakatCalculatorScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text("সর্বমোট নিট সম্পদ (Net Worth)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PaisaTextPrimary)
-                                Text("৳ ${String.format(Locale.US, "%,.0f", totalAssetSummary.netTotalAsset)}", fontWeight = FontWeight.Black, fontSize = 15.sp, color = PaisaTealPrimary)
+                                Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalAssetSummary.netTotalAsset)}", fontWeight = FontWeight.Black, fontSize = 15.sp, color = PaisaTealPrimary)
                             }
                         }
                     }
@@ -503,7 +505,7 @@ fun ZakatCalculatorScreen(
             } else {
                 // 4. CUSTOM MANUAL INPUT FIELDS
                 item {
-                    Text("যাকাতযোগ্য সম্পদের কাস্টম বিবরণ (টাকা)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
+                    Text("যাকাতযোগ্য সম্পদের কাস্টম বিবরণ ($currencySymbol)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
                 }
 
                 item {
@@ -511,7 +513,7 @@ fun ZakatCalculatorScreen(
                         value = customCashInHand,
                         onValueChange = { customCashInHand = it },
                         label = { Text("হাতের নগদ টাকা (Cash in Hand)") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -523,7 +525,7 @@ fun ZakatCalculatorScreen(
                         value = customBankBalance,
                         onValueChange = { customBankBalance = it },
                         label = { Text("ব্যাংক ও ওয়ালেট ব্যালেন্স (Bank / MFS)") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -535,7 +537,7 @@ fun ZakatCalculatorScreen(
                         value = customGoldSilverValue,
                         onValueChange = { customGoldSilverValue = it },
                         label = { Text("স্বর্ণ ও রৌপ্যের বর্তমান বাজারমূল্য") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -547,7 +549,7 @@ fun ZakatCalculatorScreen(
                         value = customBusinessInventory,
                         onValueChange = { customBusinessInventory = it },
                         label = { Text("ব্যবসায়িক পণ্যের বিক্রয়যোগ্য মজুদ (Inventory / Stocks)") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -559,7 +561,7 @@ fun ZakatCalculatorScreen(
                         value = customLoansGiven,
                         onValueChange = { customLoansGiven = it },
                         label = { Text("প্রাপ্য পাওনা টাকা (Receivables)") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -571,7 +573,7 @@ fun ZakatCalculatorScreen(
                         value = customDebtsPayable,
                         onValueChange = { customDebtsPayable = it },
                         label = { Text("তাত্ক্ষণিক প্রদেয় ঋণ বা দেনা (বাদ যাবে)") },
-                        placeholder = { Text("৳ ০") },
+                        placeholder = { Text("$currencySymbol ০") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -599,7 +601,7 @@ fun ZakatCalculatorScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("মোট প্রদেয় ফিতরা:", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text("৳ ${String.format(Locale.US, "%,.0f", totalFitrah)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PaisaTealPrimary)
+                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalFitrah)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PaisaTealPrimary)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -725,7 +727,8 @@ fun ZakatCalculatorScreen(
 private fun ZakatAssetRow(
     title: String,
     amount: Double,
-    isDeduction: Boolean
+    isDeduction: Boolean,
+    currencySymbol: String = "৳"
 ) {
     Row(
         modifier = Modifier
@@ -736,7 +739,7 @@ private fun ZakatAssetRow(
     ) {
         Text(text = title, fontSize = 12.sp, color = PaisaTextSecondary)
         Text(
-            text = "${if (isDeduction) "- " else ""}৳ ${String.format(Locale.US, "%,.0f", amount)}",
+            text = "${if (isDeduction) "- " else ""}$currencySymbol ${String.format(Locale.US, "%,.0f", amount)}",
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (isDeduction) PaisaExpenseRed else PaisaTextPrimary

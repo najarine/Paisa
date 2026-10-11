@@ -32,6 +32,8 @@ fun CreditCardEmiScreen(
     BackHandler { onBackClick() }
     val context = LocalContext.current
     val wallets by viewModel.wallets.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     // Filter wallets that are Credit Cards
     val creditCardWallets = remember(wallets) { wallets.filter { it.type == "CREDIT_CARD" } }

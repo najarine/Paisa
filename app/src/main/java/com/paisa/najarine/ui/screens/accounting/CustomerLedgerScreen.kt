@@ -36,6 +36,8 @@ fun CustomerLedgerScreen(
     val ledgerEntries by viewModel.customerLedger.collectAsState()
     val wallets by viewModel.wallets.collectAsState()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -92,7 +94,7 @@ fun CustomerLedgerScreen(
                         Text("কাস্টমারদের মোট বাকি (পাওনা সম্পদ)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "৳ ${String.format(Locale.US, "%,.0f", netDueReceivable)}",
+                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", netDueReceivable)}",
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFF15803D)
                         )
@@ -160,7 +162,7 @@ fun CustomerLedgerScreen(
 
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
-                                        text = "${if (isBaki) "+" else "-"}৳ ${String.format(Locale.US, "%,.0f", entry.amount)}",
+                                        text = "${if (isBaki) "+" else "-"}$currencySymbol ${String.format(Locale.US, "%,.0f", entry.amount)}",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isBaki) Color(0xFFEF4444) else Color(0xFF10B981)
@@ -249,7 +251,7 @@ fun CustomerLedgerScreen(
                     OutlinedTextField(
                         value = amount,
                         onValueChange = { amount = it },
-                        label = { Text("টাকার পরিমাণ (৳)") },
+                        label = { Text("টাকার পরিমাণ ($currencySymbol)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

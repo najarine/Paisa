@@ -65,7 +65,7 @@ fun MasterSettingsScreen(
     var showMadhabDialog by remember { mutableStateOf(false) }
 
     // Currency Selection State (BDT default, option to switch to USD)
-    var selectedCurrency by remember { mutableStateOf(com.paisa.najarine.notification.AdhanPreferences.getSelectedCurrency(context)) }
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
 
     val allSettings = remember(selectedMadhab, is12Hour, selectedCurrency) {
@@ -476,8 +476,7 @@ fun MasterSettingsScreen(
                         ),
                         border = if (isBdt && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
                         onClick = {
-                            selectedCurrency = "BDT"
-                            com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(context, "BDT")
+                            viewModel.updateDefaultCurrency("BDT")
                             showCurrencyDialog = false
                             Toast.makeText(context, "ডিফল্ট মুদ্রা BDT (৳) নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
                         }
@@ -510,8 +509,7 @@ fun MasterSettingsScreen(
                         ),
                         border = if (!isBdt && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
                         onClick = {
-                            selectedCurrency = "USD"
-                            com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(context, "USD")
+                            viewModel.updateDefaultCurrency("USD")
                             showCurrencyDialog = false
                             Toast.makeText(context, "ডিফল্ট মুদ্রা USD ($) নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
                         }

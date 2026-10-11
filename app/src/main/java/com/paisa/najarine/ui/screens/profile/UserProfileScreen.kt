@@ -48,9 +48,10 @@ fun UserProfileScreen(
     val prefs = remember { context.getSharedPreferences("user_profile_prefs", android.content.Context.MODE_PRIVATE) }
 
     var phoneNumber by remember { mutableStateOf(prefs.getString("phone", "") ?: "") }
-    var address by remember { mutableStateOf(prefs.getString("address", "") ?: "") }
     var occupation by remember { mutableStateOf(prefs.getString("occupation", "") ?: "") }
-    var currency by remember { mutableStateOf(prefs.getString("currency", "BDT (৳)") ?: "BDT (৳)") }
+    var address by remember { mutableStateOf(prefs.getString("address", "") ?: "") }
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    var currency by remember(selectedCurrency) { mutableStateOf(if (selectedCurrency == "USD") "USD ($)" else "BDT (৳)") }
     var emergencyContact by remember { mutableStateOf(prefs.getString("emergency_contact", "") ?: "") }
     var bioNote by remember { mutableStateOf(prefs.getString("bio_note", "") ?: "") }
 
@@ -260,6 +261,8 @@ fun UserProfileScreen(
                             text = { Text(option) },
                             onClick = {
                                 currency = option
+                                val code = if (option.contains("USD")) "USD" else "BDT"
+                                viewModel.updateDefaultCurrency(code)
                                 currencyExpanded = false
                             }
                         )

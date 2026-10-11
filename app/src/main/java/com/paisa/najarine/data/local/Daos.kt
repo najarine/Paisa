@@ -42,6 +42,9 @@ interface WalletDao {
     @Query("UPDATE wallets SET balance = balance + :amount, updatedAt = :timestamp WHERE id = :walletId")
     suspend fun adjustBalance(walletId: String, amount: Double, timestamp: Long = System.currentTimeMillis())
 
+    @Query("UPDATE wallets SET currencyCode = :currencyCode")
+    suspend fun updateAllWalletsCurrency(currencyCode: String)
+
     @Query("DELETE FROM wallets WHERE id = :id")
     suspend fun deleteWallet(id: String)
 }

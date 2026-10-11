@@ -87,9 +87,19 @@ fun HomeScreen(
         }
     }
 
-    val currencyFormat = remember {
-        NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
-            maximumFractionDigits = 0
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
+
+    val currencyFormat = remember(selectedCurrency) {
+        if (selectedCurrency.equals("USD", ignoreCase = true)) {
+            NumberFormat.getNumberInstance(Locale.US).apply {
+                maximumFractionDigits = 2
+                minimumFractionDigits = 0
+            }
+        } else {
+            NumberFormat.getNumberInstance(Locale.forLanguageTag("bn-BD")).apply {
+                maximumFractionDigits = 0
+            }
         }
     }
 
@@ -142,7 +152,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "৳ ${currencyFormat.format(netTotalWorth)}",
+                        text = "$currencySymbol ${currencyFormat.format(netTotalWorth)}",
                         fontWeight = FontWeight.Black,
                         fontSize = 28.sp,
                         color = if (netTotalWorth >= 0) Color(0xFF0F766E) else Color(0xFFB91C1C)
@@ -166,7 +176,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "৳ ${currencyFormat.format(liquidAssets)}",
+                                text = "$currencySymbol ${currencyFormat.format(liquidAssets)}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFF0F766E)
@@ -183,7 +193,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "৳ ${currencyFormat.format(totalReceivables)}",
+                                text = "$currencySymbol ${currencyFormat.format(totalReceivables)}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFF0284C7)
@@ -200,7 +210,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "৳ ${currencyFormat.format(totalInvestments)}",
+                                text = "$currencySymbol ${currencyFormat.format(totalInvestments)}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFFD97706)
@@ -217,7 +227,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "৳ ${currencyFormat.format(cardLiabilities)}",
+                                text = "$currencySymbol ${currencyFormat.format(cardLiabilities)}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFFB91C1C)
@@ -351,7 +361,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Paisa শুরু হয়েছে সম্পূর্ণ শূন্য (৳০) অবস্থা থেকে। আপনার দৈনন্দিন ক্যাশ, ব্যাংক বা বিকাশ/নগদ ওয়ালেট যুক্ত করে আয়-ব্যয়ের হিসাব রাখা শুরু করুন।",
+                            text = "Paisa শুরু হয়েছে সম্পূর্ণ শূন্য (${currencySymbol}০) অবস্থা থেকে। আপনার দৈনন্দিন ক্যাশ, ব্যাংক বা বিকাশ/নগদ ওয়ালেট যুক্ত করে আয়-ব্যয়ের হিসাব রাখা শুরু করুন।",
                             style = MaterialTheme.typography.bodySmall,
                             color = PaisaTextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -440,7 +450,7 @@ fun HomeScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "৳ ${currencyFormat.format(wallet.balance)}",
+                                text = "$currencySymbol ${currencyFormat.format(wallet.balance)}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = if (wallet.balance < 0) Color(0xFFB91C1C) else Color(0xFF0F766E)

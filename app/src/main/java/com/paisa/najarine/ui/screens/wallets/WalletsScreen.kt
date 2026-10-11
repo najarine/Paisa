@@ -42,8 +42,10 @@ fun WalletsScreen(
 
     val totalAssets = wallets.filter { it.balance > 0 && !it.isExcludedFromTotal }.sumOf { it.balance }
     val totalLiabilities = wallets.filter { it.balance < 0 }.sumOf { kotlin.math.abs(it.balance) }
-    val mfsTotal = wallets.filter { it.type == "MFS" }.sumOf { it.balance }
     val bankTotal = wallets.filter { it.type == "BANK" }.sumOf { it.balance }
+    val mfsTotal = wallets.filter { it.type == "MFS" }.sumOf { it.balance }
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     Scaffold(
         floatingActionButton = {
@@ -88,13 +90,13 @@ fun WalletsScreen(
                     ) {
                         WalletStatChip(
                             title = "লিকুইড সম্পদ",
-                            amount = "৳ ${String.format(Locale.US, "%,.0f", totalAssets)}",
+                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalAssets)}",
                             tint = PaisaIncomeGreen,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
                             title = "দায় ও দেনা",
-                            amount = "৳ ${String.format(Locale.US, "%,.0f", totalLiabilities)}",
+                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalLiabilities)}",
                             tint = PaisaExpenseRed,
                             modifier = Modifier.weight(1f)
                         )
@@ -108,13 +110,13 @@ fun WalletsScreen(
                     ) {
                         WalletStatChip(
                             title = "ব্যাংক ব্যালেন্স",
-                            amount = "৳ ${String.format(Locale.US, "%,.0f", bankTotal)}",
+                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", bankTotal)}",
                             tint = PaisaTransferBlue,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
                             title = "MFS",
-                            amount = "৳ ${String.format(Locale.US, "%,.0f", mfsTotal)}",
+                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", mfsTotal)}",
                             tint = Color(0xFFE2136E), // bKash magenta accent
                             modifier = Modifier.weight(1f)
                         )
@@ -170,6 +172,7 @@ fun WalletsScreen(
                 items(wallets) { wallet ->
                     WalletDetailRow(
                         wallet = wallet,
+                        currencySymbol = currencySymbol,
                         onClick = { selectedWalletForDetail = wallet },
                         onDelete = { viewModel.deleteWallet(wallet.id) }
                     )
@@ -178,31 +181,33 @@ fun WalletsScreen(
         }
     }
 
-    if (showAddWalletDialog) {
-        AddWalletDialog(
-            onDismiss = { showAddWalletDialog = false },
-            onConfirm = { name, type, instId, accNum, balance, creditLimit, isEx ->
-                viewModel.createWallet(
-                    name = name,
-                    type = type,
-                    institutionId = instId,
-                    accountNumber = accNum,
-                    balance = balance,
-                    creditLimit = creditLimit,
-                    isExcludedFromTotal = isEx
-                )
-                showAddWalletDialog = false
-            }
-        )
-    }
-
     selectedWalletForDetail?.let { wallet ->
         WalletDetailDialog(
             wallet = wallet,
+            currencySymbol = currencySymbol,
             onDismiss = { selectedWalletForDetail = null },
             onDelete = {
                 viewModel.deleteWallet(wallet.id)
                 selectedWalletForDetail = null
+            }
+        )
+    }
+
+    if (showAddWalletDialog) {
+        AddWalletDialog(
+            currencySymbol = currencySymbol,
+            onDismiss = { showAddWalletDialog = false },
+            onConfirm = { name, type, institutionId, accountNumber, balance, creditLimit, isExcluded ->
+                viewModel.createWallet(
+                    name = name,
+                    type = type,
+                    institutionId = institutionId,
+                    accountNumber = accountNumber,
+                    balance = balance,
+                    creditLimit = creditLimit,
+                    isExcludedFromTotal = isExcluded
+                )
+                showAddWalletDialog = false
             }
         )
     }
@@ -241,6 +246,7 @@ fun WalletStatChip(
 @Composable
 fun WalletDetailRow(
     wallet: WalletEntity,
+    currencySymbol: String = "৳",
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -308,7 +314,7 @@ fun WalletDetailRow(
 
                     if (wallet.type == "CREDIT_CARD" && wallet.creditLimit > 0) {
                         Text(
-                            text = "Limit: ৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit)} • Available: ৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}",
+                            text = "Limit: $currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit)} • Available: $currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = PaisaTextTertiary
                         )
@@ -318,7 +324,7 @@ fun WalletDetailRow(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "৳ ${String.format(Locale.US, "%,.0f", wallet.balance)}",
+                    text = "$currencySymbol ${String.format(Locale.US, "%,.0f", wallet.balance)}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (wallet.balance < 0) PaisaExpenseRed else PaisaTealPrimary
@@ -336,6 +342,7 @@ fun WalletDetailRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWalletDialog(
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onConfirm: (
         name: String,
@@ -504,7 +511,7 @@ fun AddWalletDialog(
                     OutlinedTextField(
                         value = balanceText,
                         onValueChange = { balanceText = it },
-                        label = { Text("প্রাথমিক ব্যালেন্স (৳)") },
+                        label = { Text("প্রাথমিক ব্যালেন্স ($currencySymbol)") },
                         placeholder = { Text("0.00") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -518,7 +525,7 @@ fun AddWalletDialog(
                         OutlinedTextField(
                             value = creditLimitText,
                             onValueChange = { creditLimitText = it },
-                            label = { Text("ক্রেডিট কার্ডের লিমিট (৳)") },
+                            label = { Text("ক্রেডিট কার্ডের লিমিট ($currencySymbol)") },
                             placeholder = { Text("যেমন: 100000") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -588,6 +595,7 @@ fun AddWalletDialog(
 @Composable
 fun WalletDetailDialog(
     wallet: WalletEntity,
+    currencySymbol: String = "৳",
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -605,13 +613,13 @@ fun WalletDetailDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DetailRow(label = "বর্তমান ব্যালেন্স", value = "৳ ${String.format(Locale.US, "%,.2f", wallet.balance)}")
+                DetailRow(label = "বর্তমান ব্যালেন্স", value = "$currencySymbol ${String.format(Locale.US, "%,.2f", wallet.balance)}")
                 if (wallet.accountNumber.isNotEmpty()) {
                     DetailRow(label = "অ্যাকাউন্ট / ফোন নম্বর", value = wallet.accountNumber)
                 }
                 if (wallet.creditLimit > 0) {
-                    DetailRow(label = "ক্রেডিট লিমিট", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit)}")
-                    DetailRow(label = "অবশিষ্ট ব্যবহারযোগ্য ক্রেডিট", value = "৳ ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}")
+                    DetailRow(label = "ক্রেডিট লিমিট", value = "$currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit)}")
+                    DetailRow(label = "অবশিষ্ট ব্যবহারযোগ্য ক্রেডিট", value = "$currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}")
                 }
                 DetailRow(label = "মুদ্রা", value = wallet.currencyCode)
                 DetailRow(label = "নিট সম্পদে অন্তর্ভুক্তি", value = if (wallet.isExcludedFromTotal) "অন্তর্ভুক্ত নয়" else "অন্তর্ভুক্ত")

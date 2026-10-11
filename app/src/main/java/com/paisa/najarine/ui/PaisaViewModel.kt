@@ -61,9 +61,39 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     private val hadithService = HadithApiService()
 
     val authState: StateFlow<AuthState> = authManager.authState
+    val selectedCurrency: StateFlow<String> = com.paisa.najarine.notification.AdhanPreferences.selectedCurrencyState
+    val currencySymbol: StateFlow<String> = selectedCurrency.map {
+        if (it.equals("USD", ignoreCase = true)) "$" else "৳"
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        if (com.paisa.najarine.notification.AdhanPreferences.getSelectedCurrency(application).equals("USD", ignoreCase = true)) "$" else "৳"
+    )
+
+    fun formatCurrency(amount: Double): String {
+        val sym = currencySymbol.value
+        val formatted = if (selectedCurrency.value.equals("USD", ignoreCase = true)) {
+            String.format(java.util.Locale.US, "%,.2f", amount)
+        } else {
+            String.format(java.util.Locale.US, "%,.0f", amount)
+        }
+        return "$sym $formatted"
+    }
 
     // Single-Account User Workspace
     val activeWorkspaceId = MutableStateFlow("personal_default")
+
+    fun updateDefaultCurrency(currencyCode: String) {
+        val sym = if (currencyCode.equals("USD", ignoreCase = true)) "$" else "৳"
+        com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(getApplication(), currencyCode)
+        viewModelScope.launch(Dispatchers.IO) {
+            val ws = database.workspaceDao().getWorkspaceById(activeWorkspaceId.value)
+            if (ws != null) {
+                database.workspaceDao().updateWorkspace(ws.copy(currencyCode = currencyCode, currencySymbol = sym))
+            }
+            database.walletDao().updateAllWalletsCurrency(currencyCode)
+        }
+    }
 
     // Wallets & Transactions
     val wallets: StateFlow<List<WalletEntity>> = activeWorkspaceId.flatMapLatest { id ->

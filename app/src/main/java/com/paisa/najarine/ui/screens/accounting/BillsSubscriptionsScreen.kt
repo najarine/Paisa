@@ -34,6 +34,8 @@ fun BillsSubscriptionsScreen(
     val context = LocalContext.current
     val bills by viewModel.bills.collectAsState()
     val wallets by viewModel.wallets.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     var payingBillId by remember { mutableStateOf<String?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -89,13 +91,13 @@ fun BillsSubscriptionsScreen(
                         Text("আসন্ন নিয়মিত বিল (বকেয়া)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "৳ ${String.format(Locale.US, "%,.0f", totalMonthlyBills)}",
+                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalMonthlyBills)}",
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFFEF4444)
                         )
                         if (totalPaidBills > 0) {
                             Text(
-                                text = "এই মাসে পরিশোধিত: ৳ ${String.format(Locale.US, "%,.0f", totalPaidBills)}",
+                                text = "এই মাসে পরিশোধিত: $currencySymbol ${String.format(Locale.US, "%,.0f", totalPaidBills)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF10B981)
                             )
@@ -155,7 +157,7 @@ fun BillsSubscriptionsScreen(
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
-                                            text = "৳ ${String.format(Locale.US, "%,.0f", bill.amount)}",
+                                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", bill.amount)}",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = if (bill.isPaid) Color(0xFF10B981) else Color(0xFFEF4444)
@@ -267,7 +269,7 @@ fun BillsSubscriptionsScreen(
                     OutlinedTextField(
                         value = amount,
                         onValueChange = { amount = it },
-                        label = { Text("টাকার পরিমাণ (৳)") },
+                        label = { Text("টাকার পরিমাণ ($currencySymbol)") },
                         placeholder = { Text("যেমন: 2500") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
