@@ -58,7 +58,7 @@ data class UmmahZakatData(
 )
 
 data class UmmahDuaItem(
-    val id: Int?,
+    val id: Any?,
     val title: String?,
     val category: String?,
     val arabic: String?,
@@ -77,13 +77,26 @@ data class UmmahSingleDuaResponse(
     val data: UmmahDuaItem?
 )
 
+data class UmmahCategoryItem(
+    val id: String?,
+    val name: String?,
+    val description: String?,
+    val count: Int?
+)
+
+data class UmmahDuaCategoriesData(
+    val total: Int?,
+    val categories: List<UmmahCategoryItem>?
+)
+
 data class UmmahDuaCategoriesResponse(
     val success: Boolean?,
-    val data: List<String>?
+    val service: String?,
+    val data: UmmahDuaCategoriesData?
 )
 
 data class UmmahHadithItem(
-    val id: Int?,
+    val id: Any?,
     val collection: String?,
     val number: Int?,
     val arabic: String?,
@@ -144,11 +157,24 @@ interface UmmahApiService {
 
     companion object {
         private const val BASE_URL = "https://ummahapi.com/"
+        private const val UMMAH_API_KEY = "umh_cb910c4c91a6563a4f1edac673b877755d4dddb7"
 
         fun create(): UmmahApiService {
             val okClient = OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
+                .addInterceptor { chain ->
+                    val original = chain.request()
+                    val url = original.url.newBuilder()
+                        .addQueryParameter("api_key", UMMAH_API_KEY)
+                        .build()
+                    val request = original.newBuilder()
+                        .header("x-api-key", UMMAH_API_KEY)
+                        .header("Authorization", "Bearer $UMMAH_API_KEY")
+                        .url(url)
+                        .build()
+                    chain.proceed(request)
+                }
+                .connectTimeout(12, TimeUnit.SECONDS)
+                .readTimeout(12, TimeUnit.SECONDS)
                 .build()
 
             val moshi = Moshi.Builder()

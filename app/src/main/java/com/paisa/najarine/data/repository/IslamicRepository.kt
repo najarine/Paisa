@@ -787,12 +787,12 @@ class IslamicRepository(
         }
     }
 
-    suspend fun fetchDuaCategoriesFromApi(): List<String> {
+    suspend fun fetchDuaCategoriesFromApi(): List<com.paisa.najarine.data.remote.UmmahCategoryItem> {
         return try {
             val response = apiService.getDuaCategories()
-            response.data ?: listOf("সকল", "প্রতিদিনের দোয়া", "আর্থিক মুক্তি", "রিজিক ও বরকত", "রমজান")
+            response.data?.categories ?: emptyList()
         } catch (e: Exception) {
-            listOf("সকল", "প্রতিদিনের দোয়া", "আর্থিক মুক্তি", "রিজিক ও বরকত", "রমজান")
+            emptyList()
         }
     }
 

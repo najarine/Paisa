@@ -59,11 +59,15 @@ class CryptoRateService {
             rates["USDT"] = CryptoRate("USDT", "Tether USD", 1.0, usdToBdtRate)
         } catch (_: Exception) {}
 
-        // 2. If Binance failed, fallback to CoinGecko public API
+        // 2. If Binance failed, fallback to CoinGecko API with user API Key
         if (rates.isEmpty()) {
             try {
-                val url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,solana,binancecoin&vs_currencies=usd,bdt"
-                val req = Request.Builder().url(url).build()
+                val apiKey = "CG-7SFsD4JhCXjFbc4BiHZv9SUf"
+                val url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,solana,binancecoin&vs_currencies=usd,bdt&x_cg_demo_api_key=$apiKey"
+                val req = Request.Builder()
+                    .url(url)
+                    .header("x-cg-demo-api-key", apiKey)
+                    .build()
                 client.newCall(req).execute().use { resp ->
                     if (resp.isSuccessful) {
                         val body = resp.body?.string() ?: ""

@@ -233,14 +233,39 @@ fun UserProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = currency,
-                onValueChange = { currency = it },
-                label = { Text("প্রধান হিসাব মুদ্রা (Currency)") },
-                leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) },
-                singleLine = true,
+            // Currency selection (Default BDT, setting for USD)
+            var currencyExpanded by remember { mutableStateOf(false) }
+            val currencyOptions = listOf("BDT (৳)", "USD ($)")
+
+            ExposedDropdownMenuBox(
+                expanded = currencyExpanded,
+                onExpandedChange = { currencyExpanded = !currencyExpanded },
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                OutlinedTextField(
+                    value = currency,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("প্রধান হিসাব মুদ্রা (Currency Setting)") },
+                    leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null, tint = PaisaTealPrimary) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = currencyExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = currencyExpanded,
+                    onDismissRequest = { currencyExpanded = false }
+                ) {
+                    currencyOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                currency = option
+                                currencyExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 

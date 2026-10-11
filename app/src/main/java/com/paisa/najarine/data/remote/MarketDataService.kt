@@ -128,31 +128,37 @@ class MarketDataService {
     )
 
     /**
-     * Fetch all raw exchange rates relative to USD from the public API.
+     * Fetch all raw exchange rates relative to USD from the Exchange Rate API.
      */
     suspend fun fetchAllExchangeRates(): Map<String, Double> = withContext(Dispatchers.IO) {
-        try {
-            val request = Request.Builder()
-                .url("https://open.er-api.com/v6/latest/USD")
-                .build()
+        val urls = listOf(
+            "https://v6.exchangerate-api.com/v6/6fbcc332e26a51385645c390/latest/USD",
+            "https://open.er-api.com/v6/latest/USD"
+        )
+        for (apiUrl in urls) {
+            try {
+                val request = Request.Builder()
+                    .url(apiUrl)
+                    .build()
 
-            client.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    val body = response.body?.string() ?: ""
-                    val json = JSONObject(body)
-                    val ratesObj = json.optJSONObject("rates")
-                    if (ratesObj != null) {
-                        val map = mutableMapOf<String, Double>()
-                        val keys = ratesObj.keys()
-                        while (keys.hasNext()) {
-                            val key = keys.next()
-                            map[key] = ratesObj.optDouble(key, 1.0)
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: ""
+                        val json = JSONObject(body)
+                        val ratesObj = json.optJSONObject("conversion_rates") ?: json.optJSONObject("rates")
+                        if (ratesObj != null) {
+                            val map = mutableMapOf<String, Double>()
+                            val keys = ratesObj.keys()
+                            while (keys.hasNext()) {
+                                val key = keys.next()
+                                map[key] = ratesObj.optDouble(key, 1.0)
+                            }
+                            if (map.isNotEmpty()) return@withContext map
                         }
-                        return@withContext map
                     }
                 }
-            }
-        } catch (_: Exception) {}
+            } catch (_: Exception) {}
+        }
 
         defaultRatesAgainstUsd
     }

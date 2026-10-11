@@ -41,24 +41,20 @@ fun DuaScreen(
     val scope = rememberCoroutineScope()
 
     var duas by remember { mutableStateOf(viewModel.islamicRepo.categorizedDuas) }
-    var categories by remember { mutableStateOf(listOf("সকল", "প্রতিদিনের দোয়া", "আর্থিক মুক্তি", "রিজিক ও বরকত", "রমজান")) }
-    var selectedCategory by remember { mutableStateOf("সকল") }
+    var rawCategories by remember { mutableStateOf<List<com.paisa.najarine.data.remote.UmmahCategoryItem>>(emptyList()) }
+    var selectedCategoryObj by remember { mutableStateOf<com.paisa.najarine.data.remote.UmmahCategoryItem?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var isLoadingMore by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
 
-    // Fetch all categories once on startup (ensure "সকল" is only 1 time)
+    // Fetch all 27 categories once on startup
     LaunchedEffect(Unit) {
         isLoading = true
         val fetchedCategories = viewModel.islamicRepo.fetchDuaCategoriesFromApi()
         if (fetchedCategories.isNotEmpty()) {
-            val cleanedCategories = fetchedCategories.filter {
-                val lower = it.trim().lowercase()
-                lower != "সকল" && lower != "all" && lower != "everything" && lower != "sokol"
-            }.distinct()
-            categories = listOf("সকল") + cleanedCategories
+            rawCategories = fetchedCategories
         }
         val fetchedDuas = viewModel.islamicRepo.fetchDuasFromApi()
         if (fetchedDuas.isNotEmpty()) {
@@ -67,18 +63,26 @@ fun DuaScreen(
         isLoading = false
     }
 
-    // Lazy load duas when category changes
-    LaunchedEffect(selectedCategory) {
+    // Lazy load duas when category selection changes
+    LaunchedEffect(selectedCategoryObj) {
         isLoading = true
-        if (selectedCategory == "সকল") {
+        val cat = selectedCategoryObj
+        if (cat == null) {
             val fetchedDuas = viewModel.islamicRepo.fetchDuasFromApi()
             if (fetchedDuas.isNotEmpty()) {
                 duas = fetchedDuas
             }
         } else {
-            val categoryDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(selectedCategory)
+            val catId = cat.id ?: cat.name ?: ""
+            val categoryDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
             if (categoryDuas.isNotEmpty()) {
                 duas = categoryDuas
+            } else {
+                // Filter locally if endpoint returns empty
+                duas = viewModel.islamicRepo.fetchDuasFromApi().filter {
+                    it.category.contains(cat.name ?: "", ignoreCase = true) ||
+                    it.category.contains(catId, ignoreCase = true)
+                }
             }
         }
         isLoading = false
@@ -89,9 +93,20 @@ fun DuaScreen(
         if (isLoadingMore) return
         scope.launch {
             isLoadingMore = true
-            val moreDuas = viewModel.islamicRepo.fetchDuasFromApi()
-            if (moreDuas.isNotEmpty()) {
-                duas = duas + moreDuas
+            val cat = selectedCategoryObj
+            if (cat == null) {
+                val moreDuas = viewModel.islamicRepo.fetchDuasFromApi()
+                if (moreDuas.isNotEmpty()) {
+                    val newDuas = (duas + moreDuas).distinctBy { it.id + it.title }
+                    duas = newDuas
+                }
+            } else {
+                val catId = cat.id ?: cat.name ?: ""
+                val moreCatDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
+                if (moreCatDuas.isNotEmpty()) {
+                    val newDuas = (duas + moreCatDuas).distinctBy { it.id + it.title }
+                    duas = newDuas
+                }
             }
             isLoadingMore = false
         }
@@ -110,9 +125,11 @@ fun DuaScreen(
         }
     }
 
-    val filteredDuas = remember(duas, selectedCategory, searchQuery) {
+    val filteredDuas = remember(duas, selectedCategoryObj, searchQuery) {
         duas.filter { dua ->
-            val matchCategory = selectedCategory == "সকল" || dua.category.equals(selectedCategory, ignoreCase = true)
+            val matchCategory = selectedCategoryObj == null ||
+                    dua.category.contains(selectedCategoryObj?.name ?: "", ignoreCase = true) ||
+                    dua.category.contains(selectedCategoryObj?.id ?: "", ignoreCase = true)
             val matchSearch = searchQuery.isBlank() ||
                     dua.title.contains(searchQuery, ignoreCase = true) ||
                     dua.translation.contains(searchQuery, ignoreCase = true) ||
@@ -149,10 +166,12 @@ fun DuaScreen(
                     IconButton(onClick = {
                         scope.launch {
                             isLoading = true
-                            if (selectedCategory == "সকল") {
+                            val cat = selectedCategoryObj
+                            if (cat == null) {
                                 duas = viewModel.islamicRepo.fetchDuasFromApi()
                             } else {
-                                duas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(selectedCategory)
+                                val catId = cat.id ?: cat.name ?: ""
+                                duas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
                             }
                             isLoading = false
                             Toast.makeText(context, "দোয়া সফলভাবে সিঙ্ক করা হয়েছে!", Toast.LENGTH_SHORT).show()
@@ -197,7 +216,7 @@ fun DuaScreen(
                 singleLine = true
             )
 
-            // Category Chips Row (Unique "সকল")
+            // Category Chips Row (All 27 categories from Ummah API + "সকল")
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -205,12 +224,34 @@ fun DuaScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(categories) { cat ->
-                    val isSelected = cat == selectedCategory
+                // First chip: "সকল" (All)
+                item {
+                    val isSelected = selectedCategoryObj == null
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategory = cat },
-                        label = { Text(cat, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        onClick = { selectedCategoryObj = null },
+                        label = { Text("সকল", fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PaisaTealPrimary,
+                            selectedLabelColor = Color.White,
+                            containerColor = PaisaSurface,
+                            labelColor = PaisaTextPrimary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = if (isSelected) PaisaTealPrimary else PaisaBorder
+                        )
+                    )
+                }
+
+                items(rawCategories) { cat ->
+                    val isSelected = selectedCategoryObj?.id == cat.id
+                    val displayLabel = cat.name ?: cat.id ?: "ক্যাটাগরি"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedCategoryObj = cat },
+                        label = { Text(displayLabel, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = PaisaTealPrimary,
                             selectedLabelColor = Color.White,

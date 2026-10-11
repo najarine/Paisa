@@ -19,14 +19,33 @@ data class GoldPriceResponse(
 )
 
 interface GoldApiService {
+    @GET("api/XAU/USD")
+    suspend fun getGoldApiIoPrice(): GoldPriceResponse
+
     @GET("price/XAU")
-    suspend fun getGoldPrice(): GoldPriceResponse
+    suspend fun getPublicGoldPrice(): GoldPriceResponse
+
+    suspend fun getGoldPrice(): GoldPriceResponse {
+        return try {
+            getGoldApiIoPrice()
+        } catch (_: Exception) {
+            getPublicGoldPrice()
+        }
+    }
 
     companion object {
-        private const val BASE_URL = "https://api.gold-api.com/"
+        private const val BASE_URL = "https://www.goldapi.io/"
+        private const val GOLD_API_KEY = "goldapi-02a59596d3ba7f278c8a8c73efe3ad36-io"
 
         fun create(): GoldApiService {
             val okClient = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .header("x-access-token", GOLD_API_KEY)
+                        .header("Accept", "application/json")
+                        .build()
+                    chain.proceed(request)
+                }
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS)
                 .build()

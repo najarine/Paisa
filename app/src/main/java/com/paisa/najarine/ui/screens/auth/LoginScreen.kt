@@ -61,11 +61,12 @@ fun LoginScreen(
             )
 
             Text(
-                text = "আপনার আর্থিক ভবিষ্যৎ ও ইসলামিক সম্পদ ব্যবস্থাপনার নির্ভরযোগ্য সঙ্গী",
-                style = MaterialTheme.typography.bodyMedium,
-                color = PaisaTextSecondary,
+                text = "Your Deen. Your Money. Your Progress.",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = PaisaTealPrimary,
                 textAlign = TextAlign.Center,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 

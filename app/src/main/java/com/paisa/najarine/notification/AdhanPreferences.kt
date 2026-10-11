@@ -23,6 +23,8 @@ object AdhanPreferences {
     private const val KEY_LAST_LATITUDE = "key_last_latitude"
     private const val KEY_LAST_LONGITUDE = "key_last_longitude"
     private const val KEY_LAST_LOCATION_NAME = "key_last_location_name"
+    private const val KEY_SELECTED_CURRENCY = "key_selected_currency"
+    const val DEFAULT_CURRENCY = "BDT"
     private const val KEY_CLOCK_FORMAT_12H = "key_clock_format_12h"
     private const val KEY_HOURLY_QURAN_NOTIF_ENABLED = "key_hourly_quran_notif_enabled"
     private const val KEY_HOURLY_HADITH_NOTIF_ENABLED = "key_hourly_hadith_notif_enabled"
@@ -67,6 +69,9 @@ object AdhanPreferences {
     private val _isHourlyHadithNotificationEnabledState = MutableStateFlow(true)
     val isHourlyHadithNotificationEnabledState: StateFlow<Boolean> = _isHourlyHadithNotificationEnabledState.asStateFlow()
 
+    private val _selectedCurrencyState = MutableStateFlow(DEFAULT_CURRENCY)
+    val selectedCurrencyState: StateFlow<String> = _selectedCurrencyState.asStateFlow()
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _isAdhanEnabledState.value = prefs.getBoolean(KEY_ADHAN_ENABLED, true)
@@ -76,6 +81,20 @@ object AdhanPreferences {
         _is12HourFormatState.value = prefs.getBoolean(KEY_CLOCK_FORMAT_12H, true)
         _isHourlyQuranNotificationEnabledState.value = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)
         _isHourlyHadithNotificationEnabledState.value = prefs.getBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, true)
+        _selectedCurrencyState.value = prefs.getString(KEY_SELECTED_CURRENCY, DEFAULT_CURRENCY) ?: DEFAULT_CURRENCY
+    }
+
+    fun getSelectedCurrency(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val cur = prefs.getString(KEY_SELECTED_CURRENCY, DEFAULT_CURRENCY) ?: DEFAULT_CURRENCY
+        _selectedCurrencyState.value = cur
+        return cur
+    }
+
+    fun setSelectedCurrency(context: Context, currency: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putString(KEY_SELECTED_CURRENCY, currency) }
+        _selectedCurrencyState.value = currency
     }
 
     fun isHourlyQuranNotificationEnabled(context: Context): Boolean {

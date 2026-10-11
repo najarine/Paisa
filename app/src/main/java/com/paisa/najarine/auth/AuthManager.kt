@@ -208,38 +208,10 @@ class AuthManager(private val context: Context) {
             return
         }
 
-        val clientId = getWebClientId()
-        if (clientId.isBlank()) return
-
-        // Use single-account GetSignInWithGoogleOption and setPreferImmediatelyAvailableCredentials
-        // to prevent displaying 3 duplicate passkeys on app opening and only target the single primary account
-        val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(signInOption)
-            .setPreferImmediatelyAvailableCredentials(true)
-            .build()
-
-        scope.launch {
-            try {
-                val result = credentialManager.getCredential(context, request)
-                val credential = result.credential
-                if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
-                    val authCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-                    val authResult = auth.signInWithCredential(authCredential).await()
-                    val user = authResult.user
-                    if (user != null && user.uid.isNotBlank()) {
-                        CertificateDiagnostics.recordAuthSuccess(user.uid, user.email)
-                        _authState.value = AuthState.Success(user)
-                        onSuccess(user)
-                    }
-                }
-            } catch (_: NoCredentialException) {
-                // No stored credentials for auto sign-in
-            } catch (_: Exception) {
-                // Background silent auto sign-in was unable to resolve stored token
-            }
-        }
+        // If there is no saved Firebase user session, remain in AuthState.Idle.
+        // Do not invoke CredentialManager.getCredential on app opening,
+        // which prevents showing unwanted bottom sheet chooser or duplicate passkeys on startup.
+        _authState.value = AuthState.Idle
     }
 
     suspend fun signOut(): Result<Unit> {

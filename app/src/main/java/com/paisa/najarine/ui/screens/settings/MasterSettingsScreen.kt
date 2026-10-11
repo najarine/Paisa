@@ -64,7 +64,11 @@ fun MasterSettingsScreen(
     var is12Hour by remember { mutableStateOf(com.paisa.najarine.notification.AdhanPreferences.is12HourFormat(context)) }
     var showMadhabDialog by remember { mutableStateOf(false) }
 
-    val allSettings = remember(selectedMadhab, is12Hour) {
+    // Currency Selection State (BDT default, option to switch to USD)
+    var selectedCurrency by remember { mutableStateOf(com.paisa.najarine.notification.AdhanPreferences.getSelectedCurrency(context)) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+
+    val allSettings = remember(selectedMadhab, is12Hour, selectedCurrency) {
         listOf(
             BanglaSettingItem("ব্যবহারকারী প্রোফাইল", "গুগল আইডি ও ব্যক্তিগত তথ্য দেখুন বা যোগ করুন", "অ্যাকাউন্ট", Icons.Default.Person, onOpenProfile),
             BanglaSettingItem("গুগল অ্যাকাউন্ট", "লগইনকৃত: ${authUser?.email ?: "ব্যবহারকারী"}", "অ্যাকাউন্ট", Icons.Default.AccountCircle, onSwitchAccountClick),
@@ -76,8 +80,13 @@ fun MasterSettingsScreen(
                 Toast.makeText(context, "পিন সেটিংস সক্রিয়", Toast.LENGTH_SHORT).show()
             },
             BanglaSettingItem("সিঙ্ক ও ব্যাকআপ কেন্দ্র", "রুম এসকিউলাইট অফলাইন ডাটাবেস ও ক্লাউড অটো-সিঙ্ক", "সিঙ্ক", Icons.Default.Sync, onOpenSyncCenter),
-            BanglaSettingItem("ডিফল্ট মুদ্রা", "বাংলাদেশী টাকা: BDT (৳)", "অর্থব্যবস্থা", Icons.Default.Payments) {
-                Toast.makeText(context, "ডিফল্ট মুদ্রা: BDT (৳)", Toast.LENGTH_SHORT).show()
+            BanglaSettingItem(
+                "ডিফল্ট মুদ্রা",
+                if (selectedCurrency == "USD") "মার্কিন ডলার: USD ($)" else "বাংলাদেশী টাকা: BDT (৳)",
+                "অর্থব্যবস্থা",
+                Icons.Default.Payments
+            ) {
+                showCurrencyDialog = true
             },
             BanglaSettingItem("ঘড়ি ফরম্যাট (12/24 ঘণ্টা)", if (is12Hour) "বর্তমান: ১২ ঘণ্টা (AM/PM)" else "বর্তমান: ২৪ ঘণ্টা", "ইসলামিক", Icons.Default.AccessTime) {
                 is12Hour = !is12Hour
@@ -438,6 +447,97 @@ fun MasterSettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showMadhabDialog = false }) {
+                    Text("বন্ধ করুন")
+                }
+            }
+        )
+    }
+
+    if (showCurrencyDialog) {
+        val isBdt = selectedCurrency == "BDT"
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            icon = { Icon(Icons.Default.Payments, contentDescription = null, tint = PaisaTealPrimary) },
+            title = { Text("ডিফল্ট মুদ্রা পরিবর্তন করুন", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "অ্যাপে আপনার হিসাব ও লেনদেনের প্রাথমিক মুদ্রা নির্বাচন করুন। ডিফল্ট মুদ্রা BDT কিন্তু আপনি প্রয়োজনে USD নির্বাচন করতে পারবেন।",
+                        fontSize = 12.sp,
+                        color = PaisaTextSecondary
+                    )
+
+                    // BDT Option
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isBdt) PaisaTealContainer.copy(alpha = 0.5f) else PaisaSurfaceVariant.copy(alpha = 0.4f)
+                        ),
+                        border = if (isBdt && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
+                        onClick = {
+                            selectedCurrency = "BDT"
+                            com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(context, "BDT")
+                            showCurrencyDialog = false
+                            Toast.makeText(context, "ডিফল্ট মুদ্রা BDT (৳) নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("বাংলাদেশী টাকা (BDT ৳)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaTextPrimary)
+                                Text("ডিফল্ট মুদ্রা — স্থানীয় কারেন্সি", fontSize = 11.sp, color = PaisaTextSecondary)
+                            }
+                            RadioButton(
+                                selected = isBdt,
+                                onClick = null,
+                                colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
+                            )
+                        }
+                    }
+
+                    // USD Option
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (!isBdt) PaisaTealContainer.copy(alpha = 0.5f) else PaisaSurfaceVariant.copy(alpha = 0.4f)
+                        ),
+                        border = if (!isBdt && MaterialTheme.colorScheme.outline != Color.Transparent) androidx.compose.foundation.BorderStroke(1.5.dp, PaisaTealPrimary) else null,
+                        onClick = {
+                            selectedCurrency = "USD"
+                            com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(context, "USD")
+                            showCurrencyDialog = false
+                            Toast.makeText(context, "ডিফল্ট মুদ্রা USD ($) নির্ধারিত হয়েছে", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("মার্কিন ডলার (USD $)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaTextPrimary)
+                                Text("আন্তর্জাতিক বাণিজ্য ও মুদ্রা", fontSize = 11.sp, color = PaisaTextSecondary)
+                            }
+                            RadioButton(
+                                selected = !isBdt,
+                                onClick = null,
+                                colors = RadioButtonDefaults.colors(selectedColor = PaisaTealPrimary)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) {
                     Text("বন্ধ করুন")
                 }
             }

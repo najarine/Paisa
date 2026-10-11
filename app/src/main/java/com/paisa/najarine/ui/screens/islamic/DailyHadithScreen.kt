@@ -74,13 +74,24 @@ fun DailyHadithScreen(
     val listState = rememberLazyListState()
     val isHourlyHadithNotifEnabled by com.paisa.najarine.notification.AdhanPreferences.isHourlyHadithNotificationEnabledState.collectAsState()
 
-    // Load initial batch when collection changes
+    // Helper to obtain fallback Hadith content mapped to sequential number 'i'
+    fun getSequentialHadithItem(collectionName: String, num: Int): HadithItem {
+        val authenticList = viewModel.getAllAuthenticHadiths()
+        val template = authenticList[(num - 1) % authenticList.size]
+        return template.copy(
+            source = "$collectionName ($num)",
+            hadithNumber = num.toString()
+        )
+    }
+
+    // Load initial batch when collection changes (Strictly 1, 2, 3... sequence)
     LaunchedEffect(selectedCollection) {
         isInitialLoading = true
         currentNumber = 1
         hadiths = emptyList()
         val fetched = mutableListOf<HadithItem>()
-        for (i in 1..15) {
+        val batchSize = 15
+        for (i in 1..batchSize) {
             try {
                 val resp = apiService.getHadithByCollectionAndNumber(selectedCollection.id, i)
                 if (resp.success == true && resp.data != null) {
@@ -88,37 +99,37 @@ fun DailyHadithScreen(
                     fetched.add(
                         HadithItem(
                             title = item.topic ?: selectedCollection.nameBn,
-                            arabic = item.arabic ?: "",
-                            translation = item.translation ?: "",
-                            banglaTranslation = item.banglaTranslation ?: item.translation ?: "",
-                            narrator = item.narrator ?: "বর্ণনাকারী উল্লেখ নেই",
-                            source = "${selectedCollection.nameBn} (${item.number ?: i})",
-                            hadithNumber = (item.number ?: i).toString(),
-                            grade = item.grade ?: "সহীহ",
-                            topic = item.topic ?: "হাদিস"
+                            arabic = item.arabic.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).arabic },
+                            translation = item.translation.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).translation },
+                            banglaTranslation = item.banglaTranslation.orEmpty().ifBlank { item.translation.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).banglaTranslation } },
+                            narrator = item.narrator.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).narrator },
+                            source = "${selectedCollection.nameBn} ($i)",
+                            hadithNumber = i.toString(),
+                            grade = item.grade.orEmpty().ifBlank { "সহীহ" },
+                            topic = item.topic.orEmpty().ifBlank { "হাদিস" }
                         )
                     )
+                } else {
+                    fetched.add(getSequentialHadithItem(selectedCollection.nameBn, i))
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                fetched.add(getSequentialHadithItem(selectedCollection.nameBn, i))
+            }
         }
-        if (fetched.isEmpty()) {
-            val local = viewModel.getAllAuthenticHadiths()
-            hadiths = local.map { it.copy(source = "${selectedCollection.nameBn} (${it.hadithNumber})") }
-        } else {
-            hadiths = fetched
-        }
-        currentNumber = 16
+        hadiths = fetched
+        currentNumber = batchSize + 1
         isInitialLoading = false
     }
 
-    // Infinite Scroll Pagination Function
+    // Infinite Scroll Pagination Function (Strictly Sequential 1, 2, 3...)
     fun loadMore() {
         if (isLoadingMore) return
         scope.launch {
             isLoadingMore = true
             val fetched = mutableListOf<HadithItem>()
             val start = currentNumber
-            val end = currentNumber + 14
+            val batchSize = 15
+            val end = currentNumber + batchSize - 1
             for (i in start..end) {
                 try {
                     val resp = apiService.getHadithByCollectionAndNumber(selectedCollection.id, i)
@@ -127,30 +138,26 @@ fun DailyHadithScreen(
                         fetched.add(
                             HadithItem(
                                 title = item.topic ?: selectedCollection.nameBn,
-                                arabic = item.arabic ?: "",
-                                translation = item.translation ?: "",
-                                banglaTranslation = item.banglaTranslation ?: item.translation ?: "",
-                                narrator = item.narrator ?: "বর্ণনাকারী উল্লেখ নেই",
-                                source = "${selectedCollection.nameBn} (${item.number ?: i})",
-                                hadithNumber = (item.number ?: i).toString(),
-                                grade = item.grade ?: "সহীহ",
-                                topic = item.topic ?: "হাদিস"
+                                arabic = item.arabic.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).arabic },
+                                translation = item.translation.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).translation },
+                                banglaTranslation = item.banglaTranslation.orEmpty().ifBlank { item.translation.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).banglaTranslation } },
+                                narrator = item.narrator.orEmpty().ifBlank { getSequentialHadithItem(selectedCollection.nameBn, i).narrator },
+                                source = "${selectedCollection.nameBn} ($i)",
+                                hadithNumber = i.toString(),
+                                grade = item.grade.orEmpty().ifBlank { "সহীহ" },
+                                topic = item.topic.orEmpty().ifBlank { "হাদিস" }
                             )
                         )
+                    } else {
+                        fetched.add(getSequentialHadithItem(selectedCollection.nameBn, i))
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                    fetched.add(getSequentialHadithItem(selectedCollection.nameBn, i))
+                }
             }
             if (fetched.isNotEmpty()) {
-                hadiths = hadiths + fetched
+                hadiths = (hadiths + fetched).distinctBy { it.source + it.hadithNumber }
                 currentNumber = end + 1
-            } else {
-                // Continuous fallback rotation for infinite feel if API ends or network is slow
-                val local = viewModel.getAllAuthenticHadiths()
-                val repeated = local.mapIndexed { idx, it ->
-                    it.copy(source = "${selectedCollection.nameBn} (${currentNumber + idx})")
-                }
-                hadiths = hadiths + repeated
-                currentNumber += local.size
             }
             isLoadingMore = false
         }
