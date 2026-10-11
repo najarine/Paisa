@@ -125,14 +125,43 @@ object AdhanScheduler {
             )
 
             try {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    cal.timeInMillis,
-                    pendingIntent
+                val showIntent = Intent(context, com.paisa.najarine.MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("EXTRA_TARGET_TAB", 3)
+                    putExtra("EXTRA_TARGET_SCREEN", "ADHAN_PRAYER")
+                }
+                val showPendingIntent = PendingIntent.getActivity(
+                    context,
+                    eventId + 1,
+                    showIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-            } catch (_: SecurityException) {
-                // If exact alarms capability is missing, gracefully use standard wakeup
-                alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+
+                // AlarmClockInfo guarantees exact firing regardless of Doze mode or battery restrictions
+                val alarmClockInfo = AlarmManager.AlarmClockInfo(cal.timeInMillis, showPendingIntent)
+                alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+                Log.d("AdhanScheduler", "Scheduled exact AlarmClock for $name at ${cal.time} (millis=${cal.timeInMillis})")
+            } catch (e: SecurityException) {
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        cal.timeInMillis,
+                        pendingIntent
+                    )
+                } catch (_: Exception) {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+                }
+            } catch (e: Exception) {
+                Log.e("AdhanScheduler", "Error setting alarm clock: ${e.localizedMessage}")
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        cal.timeInMillis,
+                        pendingIntent
+                    )
+                } catch (_: Exception) {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+                }
             }
         }
     }

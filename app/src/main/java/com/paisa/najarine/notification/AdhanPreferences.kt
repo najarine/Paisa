@@ -14,11 +14,17 @@ object AdhanPreferences {
     private const val KEY_SELECTED_ADHAN_ID = "key_selected_adhan_id"
     private const val KEY_SELECTED_ADHAN_NAME = "key_selected_adhan_name"
     private const val KEY_SELECTED_ADHAN_URL = "key_selected_adhan_url"
+    private const val KEY_SELECTED_FAJR_ADHAN_ID = "key_selected_fajr_adhan_id"
+    private const val KEY_SELECTED_FAJR_ADHAN_NAME = "key_selected_fajr_adhan_name"
+    private const val KEY_SELECTED_FAJR_ADHAN_URL = "key_selected_fajr_adhan_url"
     private const val KEY_SELECTED_MADHAB = "key_selected_madhab"
 
     const val DEFAULT_ADHAN_ID = "makkah"
     const val DEFAULT_ADHAN_NAME = "মক্কা শরিফ (Makkah Al-Mukarramah)"
     const val DEFAULT_ADHAN_URL = "https://cdn.aladhan.com/audio/adhans/a1.mp3"
+    const val DEFAULT_FAJR_ADHAN_ID = "fajr_makkah"
+    const val DEFAULT_FAJR_ADHAN_NAME = "ফজর আজান — মক্কা শরিফ (الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ)"
+    const val DEFAULT_FAJR_ADHAN_URL = "https://cdn.aladhan.com/audio/adhans/a9.mp3"
     const val DEFAULT_MADHAB = "Hanafi"
     private const val KEY_LAST_LATITUDE = "key_last_latitude"
     private const val KEY_LAST_LONGITUDE = "key_last_longitude"
@@ -57,6 +63,9 @@ object AdhanPreferences {
     private val _selectedAdhanIdState = MutableStateFlow(DEFAULT_ADHAN_ID)
     val selectedAdhanIdState: StateFlow<String> = _selectedAdhanIdState.asStateFlow()
 
+    private val _selectedFajrAdhanIdState = MutableStateFlow(DEFAULT_FAJR_ADHAN_ID)
+    val selectedFajrAdhanIdState: StateFlow<String> = _selectedFajrAdhanIdState.asStateFlow()
+
     private val _selectedMadhabState = MutableStateFlow(DEFAULT_MADHAB)
     val selectedMadhabState: StateFlow<String> = _selectedMadhabState.asStateFlow()
 
@@ -77,6 +86,7 @@ object AdhanPreferences {
         _isAdhanEnabledState.value = prefs.getBoolean(KEY_ADHAN_ENABLED, true)
         _isPrayerNotificationsEnabledState.value = prefs.getBoolean(KEY_PRAYER_NOTIFICATIONS_ENABLED, true)
         _selectedAdhanIdState.value = prefs.getString(KEY_SELECTED_ADHAN_ID, DEFAULT_ADHAN_ID) ?: DEFAULT_ADHAN_ID
+        _selectedFajrAdhanIdState.value = prefs.getString(KEY_SELECTED_FAJR_ADHAN_ID, DEFAULT_FAJR_ADHAN_ID) ?: DEFAULT_FAJR_ADHAN_ID
         _selectedMadhabState.value = prefs.getString(KEY_SELECTED_MADHAB, DEFAULT_MADHAB) ?: DEFAULT_MADHAB
         _is12HourFormatState.value = prefs.getBoolean(KEY_CLOCK_FORMAT_12H, true)
         _isHourlyQuranNotificationEnabledState.value = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)
@@ -193,6 +203,33 @@ object AdhanPreferences {
             putString(KEY_SELECTED_ADHAN_URL, url)
         }
         _selectedAdhanIdState.value = id
+    }
+
+    fun getSelectedFajrAdhanId(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val id = prefs.getString(KEY_SELECTED_FAJR_ADHAN_ID, DEFAULT_FAJR_ADHAN_ID) ?: DEFAULT_FAJR_ADHAN_ID
+        _selectedFajrAdhanIdState.value = id
+        return id
+    }
+
+    fun getSelectedFajrAdhanUrl(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_SELECTED_FAJR_ADHAN_URL, DEFAULT_FAJR_ADHAN_URL) ?: DEFAULT_FAJR_ADHAN_URL
+    }
+
+    fun getSelectedFajrAdhanName(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_SELECTED_FAJR_ADHAN_NAME, DEFAULT_FAJR_ADHAN_NAME) ?: DEFAULT_FAJR_ADHAN_NAME
+    }
+
+    fun setSelectedFajrAdhan(context: Context, id: String, name: String, url: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit {
+            putString(KEY_SELECTED_FAJR_ADHAN_ID, id)
+            putString(KEY_SELECTED_FAJR_ADHAN_NAME, name)
+            putString(KEY_SELECTED_FAJR_ADHAN_URL, url)
+        }
+        _selectedFajrAdhanIdState.value = id
     }
 
     fun getSelectedMadhab(context: Context): String {

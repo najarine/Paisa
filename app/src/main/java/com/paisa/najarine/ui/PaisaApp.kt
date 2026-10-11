@@ -558,19 +558,20 @@ fun PaisaApp(
         }
     }
 
-    // In-App Adhan Incoming Call / Alarm Popup Alert
+    // In-App Adhan Incoming Call / Alarm Popup Alert (Reserved strictly for ACTUAL scheduled prayer alarms)
     val isAdhanAudioPlaying by com.paisa.najarine.notification.DefaultAdhanAudioProvider.isPlayingState.collectAsState()
+    val isActualAlarmActive by com.paisa.najarine.notification.DefaultAdhanAudioProvider.isActualAlarmActiveState.collectAsState()
     val activeAdhanName by com.paisa.najarine.notification.DefaultAdhanAudioProvider.activePrayerNameState.collectAsState()
 
-    LaunchedEffect(isAdhanAudioPlaying) {
-        if (isAdhanAudioPlaying) {
+    LaunchedEffect(isAdhanAudioPlaying, isActualAlarmActive) {
+        if (isAdhanAudioPlaying && isActualAlarmActive) {
             isAdhanCallModalMinimized = false
         }
     }
 
-    // 1. Full-Screen Incoming Call / Alarm Popup (In-tree Compose overlay with zero white flash)
+    // 1. Full-Screen Incoming Call / Alarm Popup (Shown ONLY on actual scheduled prayer times, never for test buttons)
     AnimatedVisibility(
-        visible = isAdhanAudioPlaying && !isAdhanCallModalMinimized,
+        visible = isAdhanAudioPlaying && isActualAlarmActive && !isAdhanCallModalMinimized,
         enter = fadeIn(animationSpec = tween(250)),
         exit = fadeOut(animationSpec = tween(200)),
         modifier = Modifier
@@ -593,9 +594,9 @@ fun PaisaApp(
         )
     }
 
-    // 2. Minimized Top Floating Banner (Available when user minimizes the call modal)
+    // 2. Minimized Top Floating Banner (Available when user minimizes the actual alarm modal)
     AnimatedVisibility(
-        visible = isAdhanAudioPlaying && isAdhanCallModalMinimized,
+        visible = isAdhanAudioPlaying && isActualAlarmActive && isAdhanCallModalMinimized,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         modifier = Modifier

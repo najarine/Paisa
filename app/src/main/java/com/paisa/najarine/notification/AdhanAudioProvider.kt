@@ -37,6 +37,10 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
     private val _isPlayingState = MutableStateFlow(false)
     val isPlayingState: StateFlow<Boolean> = _isPlayingState.asStateFlow()
 
+    // True ONLY when an actual scheduled prayer time triggers the alarm, NOT during in-screen testing or preview
+    private val _isActualAlarmActiveState = MutableStateFlow(false)
+    val isActualAlarmActiveState: StateFlow<Boolean> = _isActualAlarmActiveState.asStateFlow()
+
     private val _activePrayerNameState = MutableStateFlow<String?>("আজান")
     val activePrayerNameState: StateFlow<String?> = _activePrayerNameState.asStateFlow()
 
@@ -47,15 +51,58 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
         playSelectedAdhan(context, isFajr, if (isFajr) "ফজর" else "নামাজ")
     }
 
-    fun playSelectedAdhan(context: Context, isFajr: Boolean, prayerName: String = if (isFajr) "ফজর" else "নামাজ") {
+    fun playSelectedAdhan(
+        context: Context,
+        isFajr: Boolean,
+        prayerName: String = if (isFajr) "ফজর" else "নামাজ",
+        isActualAlarm: Boolean = false
+    ) {
+        _isActualAlarmActiveState.value = isActualAlarm
         _activePrayerNameState.value = prayerName
         val audioUrl = if (isFajr) {
-            ALADHAN_FAJR_ADHAN_URL
+            AdhanPreferences.getSelectedFajrAdhanUrl(context)
         } else {
             AdhanPreferences.getSelectedAdhanUrl(context)
         }
-        val cacheFileName = if (isFajr) "aladhan_fajr.mp3" else "aladhan_selected.mp3"
+        val selectedId = if (isFajr) AdhanPreferences.getSelectedFajrAdhanId(context) else AdhanPreferences.getSelectedAdhanId(context)
+        val cacheFileName = if (isFajr) "adhan_fajr_${selectedId}.mp3" else "adhan_regular_${selectedId}.mp3"
         playFromUrlOrCache(context, audioUrl, cacheFileName)
+    }
+
+    fun preCacheUserSelections(context: Context) {
+        scope.launch {
+            try {
+                val regularId = AdhanPreferences.getSelectedAdhanId(context)
+                val regularUrl = AdhanPreferences.getSelectedAdhanUrl(context)
+                val regularFile = File(context.cacheDir, "adhan_regular_${regularId}.mp3")
+                if (!regularFile.exists() || regularFile.length() < 50000) {
+                    cacheAdhanFile(regularUrl, regularFile)
+                }
+
+                val fajrId = AdhanPreferences.getSelectedFajrAdhanId(context)
+                val fajrUrl = AdhanPreferences.getSelectedFajrAdhanUrl(context)
+                val fajrFile = File(context.cacheDir, "adhan_fajr_${fajrId}.mp3")
+                if (!fajrFile.exists() || fajrFile.length() < 50000) {
+                    cacheAdhanFile(fajrUrl, fajrFile)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Pre-caching error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun preCacheAdhan(context: Context, id: String, url: String, isFajr: Boolean) {
+        scope.launch {
+            try {
+                val fileName = if (isFajr) "adhan_fajr_${id}.mp3" else "adhan_regular_${id}.mp3"
+                val file = File(context.cacheDir, fileName)
+                if (!file.exists() || file.length() < 50000) {
+                    cacheAdhanFile(url, file)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Pre-caching adhan $id failed: ${e.localizedMessage}")
+            }
+        }
     }
 
     fun previewAdhan(context: Context, audioUrl: String, label: String) {
@@ -172,6 +219,7 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
         } finally {
             mediaPlayer = null
             _isPlayingState.value = false
+            _isActualAlarmActiveState.value = false
             _currentPlayingUrlState.value = null
             _activePrayerNameState.value = null
         }

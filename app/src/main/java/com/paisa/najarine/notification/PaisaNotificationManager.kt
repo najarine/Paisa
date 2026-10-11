@@ -35,9 +35,10 @@ object PaisaNotificationManager {
             val quranChannel = NotificationChannel(
                 CHANNEL_QURAN_HADITH,
                 "Quran & Hadith Reminders",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Daily Quranic reflections, authentic Hadiths, and Duas"
+                description = "Hourly Quranic reflections, authentic Hadiths, and Duas"
+                enableVibration(true)
             }
 
             val financialChannel = NotificationChannel(

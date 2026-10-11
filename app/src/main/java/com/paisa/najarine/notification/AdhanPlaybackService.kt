@@ -39,8 +39,8 @@ class AdhanPlaybackService : Service() {
         val notification = createAdhanNotification(prayerName)
         startForeground(NOTIFICATION_ID, notification)
 
-        // Start playback with prayer name
-        DefaultAdhanAudioProvider.playSelectedAdhan(this, isFajr, prayerName)
+        // Start playback with prayer name and mark as actual alarm
+        DefaultAdhanAudioProvider.playSelectedAdhan(this, isFajr, prayerName, isActualAlarm = true)
 
         // Observe when playback finishes to stop service
         playbackObserveJob?.cancel()

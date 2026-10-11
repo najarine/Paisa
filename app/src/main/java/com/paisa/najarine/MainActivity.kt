@@ -30,6 +30,7 @@ class MainActivity : FragmentActivity() {
         com.paisa.najarine.notification.HourlyIslamicScheduler.triggerImmediateSync(this)
         com.paisa.najarine.notification.AutoZakatScheduler.schedulePeriodicZakatCheck(this)
         com.paisa.najarine.notification.PrayerNotificationWorker.scheduleDailyPrayerWork(this)
+        com.paisa.najarine.notification.DefaultAdhanAudioProvider.preCacheUserSelections(this)
 
         setContent {
             MyApplicationTheme {

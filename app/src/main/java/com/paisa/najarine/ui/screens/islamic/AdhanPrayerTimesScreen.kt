@@ -69,6 +69,7 @@ fun AdhanPrayerTimesScreen(
     var isPrayerNotificationsEnabled by remember { mutableStateOf(AdhanPreferences.isPrayerNotificationsEnabled(context)) }
     val isAudioPlaying by DefaultAdhanAudioProvider.isPlayingState.collectAsState()
     val selectedAdhanId by AdhanPreferences.selectedAdhanIdState.collectAsState()
+    val selectedFajrAdhanId by AdhanPreferences.selectedFajrAdhanIdState.collectAsState()
     val currentPlayingUrl by DefaultAdhanAudioProvider.currentPlayingUrlState.collectAsState()
 
     val selectedMadhab by AdhanPreferences.selectedMadhabState.collectAsState()
@@ -141,6 +142,7 @@ fun AdhanPrayerTimesScreen(
         }
 
         if (isAdhanEnabled) {
+            DefaultAdhanAudioProvider.preCacheUserSelections(context)
             AdhanScheduler.schedulePrayerAlarms(
                 context = context,
                 fajr = timings.fajr,
@@ -489,28 +491,50 @@ fun AdhanPrayerTimesScreen(
                                     onClick = {
                                         com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
                                         DefaultAdhanAudioProvider.stopPlayback()
+                                        Toast.makeText(context, "আজান বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                 ) {
-                                    Icon(Icons.Default.CallEnd, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("আজান বন্ধ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("বন্ধ করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
                             } else {
-                                OutlinedButton(
-                                    onClick = {
-                                        com.paisa.najarine.notification.AdhanPlaybackService.start(context, "টেস্ট আযান", false)
-                                    },
-                                    shape = RoundedCornerShape(10.dp),
+                                Row(
                                     modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("টেস্ট আজান", fontSize = 12.sp, color = PaisaTealPrimary)
+                                    OutlinedButton(
+                                        onClick = {
+                                            DefaultAdhanAudioProvider.playSelectedAdhan(context, false, "টেস্ট সাধারণ আযান")
+                                            Toast.makeText(context, "টেস্ট আজান বাজছে...", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(13.dp), tint = PaisaTealPrimary)
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("টেস্ট আজান", fontSize = 11.sp, color = PaisaTealPrimary)
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            DefaultAdhanAudioProvider.playSelectedAdhan(context, true, "টেস্ট ফজর আযান")
+                                            Toast.makeText(context, "টেস্ট ফজর আজান বাজছে...", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.NightsStay, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color.White)
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("টেস্ট ফজর", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }
@@ -1212,7 +1236,8 @@ fun AdhanPrayerTimesScreen(
                                                 OutlinedButton(
                                                     onClick = {
                                                         AdhanPreferences.setSelectedAdhan(context, id, name, url)
-                                                        Toast.makeText(context, "$name আজান হিসেবে নির্বাচিত হয়েছে", Toast.LENGTH_SHORT).show()
+                                                        DefaultAdhanAudioProvider.preCacheAdhan(context, id, url, false)
+                                                        Toast.makeText(context, "$name সাধারণ ওয়াক্তের আজান হিসেবে সংরক্ষিত ও প্রস্তুত হয়েছে", Toast.LENGTH_SHORT).show()
                                                     },
                                                     contentPadding = PaddingValues(0.dp),
                                                     shape = RoundedCornerShape(8.dp),
@@ -1221,6 +1246,203 @@ fun AdhanPrayerTimesScreen(
                                                         .height(34.dp)
                                                 ) {
                                                     Text("সিলেক্ট", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // =========================================================
+            // FAJR ADHAN (SEPARATE FAJR CALL TO PRAYER WITH الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ)
+            // =========================================================
+            item {
+                val fajrAdhanList = remember {
+                    listOf(
+                        Triple(
+                            "fajr_makkah",
+                            "ফজর আজান — মক্কা শরিফ (Makkah Al-Mukarramah)",
+                            "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ সহ মূল মক্কা শরিফ ফজর আযান" to "https://cdn.aladhan.com/audio/adhans/a9.mp3"
+                        ),
+                        Triple(
+                            "fajr_madinah",
+                            "ফজর আজান — মসজিদে নববী (Madinah)",
+                            "শেখ এশাম বুখারি — ফজরের বিশেষ তাতওয়ীব" to "https://cdn.aladhan.com/audio/adhans/a8.mp3"
+                        ),
+                        Triple(
+                            "fajr_alaqsa",
+                            "ফজর আজান — মসজিদুল আকসা (Al-Aqsa)",
+                            "জেরুজালেম পবিত্র হারামাইন ফজর ডাক" to "https://cdn.aladhan.com/audio/adhans/a10.mp3"
+                        ),
+                        Triple(
+                            "fajr_mishary",
+                            "ফজর আজান — কারী মিশারি রশিদ আল-আফাসি",
+                            "মিশারি রশিদ (الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ)" to "https://cdn.aladhan.com/audio/adhans/a9.mp3"
+                        )
+                    )
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = PaisaSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF6366F1).copy(alpha = 0.45f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF6366F1).copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.NightsStay,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6366F1),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "স্বতন্ত্র ফজর আজান নির্বাচন",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = PaisaTextPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0xFF6366F1))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text("ফজর স্পেশাল", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Text(
+                                    text = "ফজরের ওয়াক্তে আলাদাভাবে 'আস-সালাতু খাইরুম মিনান নাওম' সহ আযান বাজবে",
+                                    fontSize = 11.sp,
+                                    color = PaisaTextSecondary
+                                )
+                            }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            fajrAdhanList.forEach { (id, name, pair) ->
+                                val (subtitle, url) = pair
+                                val isSelected = selectedFajrAdhanId == id
+                                val isThisPlaying = isAudioPlaying && currentPlayingUrl == url
+
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) Color(0xFFEEF2FF) else PaisaSurfaceVariant.copy(alpha = 0.35f)
+                                    ),
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF6366F1)) else null
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isSelected) Color(0xFF6366F1) else Color(0xFF6366F1).copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.NightsStay,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color.White else Color(0xFF6366F1),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(10.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = name,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                fontSize = 13.sp,
+                                                color = PaisaTextPrimary,
+                                                maxLines = 1
+                                            )
+                                            Text(
+                                                text = subtitle,
+                                                fontSize = 11.sp,
+                                                color = PaisaTextSecondary,
+                                                maxLines = 1
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilledIconButton(
+                                                onClick = {
+                                                    if (isThisPlaying) {
+                                                        DefaultAdhanAudioProvider.stopPlayback()
+                                                    } else {
+                                                        DefaultAdhanAudioProvider.previewAdhan(context, url, id)
+                                                    }
+                                                },
+                                                modifier = Modifier.size(34.dp),
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = if (isThisPlaying) PaisaExpenseRed else Color(0xFF6366F1)
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isThisPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                                    contentDescription = "প্রিভিউ",
+                                                    modifier = Modifier.size(18.dp),
+                                                    tint = Color.White
+                                                )
+                                            }
+
+                                            if (isSelected) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .width(74.dp)
+                                                        .height(34.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(Color(0xFF6366F1)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text("নির্বাচিত", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            } else {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        AdhanPreferences.setSelectedFajrAdhan(context, id, name, url)
+                                                        DefaultAdhanAudioProvider.preCacheAdhan(context, id, url, true)
+                                                        Toast.makeText(context, "$name ফজর আজান হিসেবে সংরক্ষিত ও প্রস্তুত হয়েছে", Toast.LENGTH_SHORT).show()
+                                                    },
+                                                    contentPadding = PaddingValues(0.dp),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    modifier = Modifier
+                                                        .width(74.dp)
+                                                        .height(34.dp)
+                                                ) {
+                                                    Text("সিলেক্ট", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
                                                 }
                                             }
                                         }

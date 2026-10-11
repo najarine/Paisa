@@ -37,11 +37,17 @@ object HourlyIslamicScheduler {
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
 
-            // Trigger every hour on the top of the hour or +1 hour
-            val nextTriggerMillis = System.currentTimeMillis() + java.util.concurrent.TimeUnit.HOURS.toMillis(1)
+            // Align precisely to the next top of the hour (e.g. 10:00:00, 11:00:00)
+            val cal = java.util.Calendar.getInstance().apply {
+                add(java.util.Calendar.HOUR_OF_DAY, 1)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            val nextTriggerMillis = cal.timeInMillis
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                alarmManager.setAndAllowWhileIdle(
+                alarmManager.setExactAndAllowWhileIdle(
                     android.app.AlarmManager.RTC_WAKEUP,
                     nextTriggerMillis,
                     pendingIntent
@@ -53,6 +59,19 @@ object HourlyIslamicScheduler {
                     pendingIntent
                 )
             }
+        } catch (_: SecurityException) {
+            try {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+                val intent = android.content.Intent(context, HourlyIslamicAlarmReceiver::class.java)
+                val pendingIntent = android.app.PendingIntent.getBroadcast(
+                    context,
+                    8821,
+                    intent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                val nextTriggerMillis = System.currentTimeMillis() + java.util.concurrent.TimeUnit.HOURS.toMillis(1)
+                alarmManager.set(android.app.AlarmManager.RTC_WAKEUP, nextTriggerMillis, pendingIntent)
+            } catch (_: Exception) {}
         } catch (_: Exception) {}
     }
 
