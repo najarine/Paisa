@@ -306,7 +306,7 @@ fun ZakatCalculatorScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", zakatPayable)}",
+                            text = viewModel.formatCurrency(zakatPayable),
                             fontWeight = FontWeight.Black,
                             fontSize = 32.sp,
                             color = Color.White
@@ -324,11 +324,11 @@ fun ZakatCalculatorScreen(
                         ) {
                             Column {
                                 Text("যাকাতযোগ্য নিট সম্পদ:", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
-                                Text("$currencySymbol ${String.format(Locale.US, "%,.0f", netZakatPool)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(viewModel.formatCurrency(netZakatPool), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("রৌপ্য নেসাব (৫২.৫ তোলা):", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
-                                Text("$currencySymbol ${String.format(Locale.US, "%,.0f", nisabThreshold)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
+                                Text(viewModel.formatCurrency(nisabThreshold), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
                             }
                         }
                     }
@@ -393,8 +393,8 @@ fun ZakatCalculatorScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("মূল্যায়িত নিট সম্পদ: $currencySymbol ${String.format(Locale.US, "%,.0f", report.netWorth)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PaisaTextPrimary)
-                                Text("প্রদেয় যাকাত: $currencySymbol ${String.format(Locale.US, "%,.0f", report.zakatPayable)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealPrimary)
+                                Text("মূল্যায়িত নিট সম্পদ: ${viewModel.formatCurrency(report.netWorth)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PaisaTextPrimary)
+                                Text("প্রদেয় যাকাত: ${viewModel.formatCurrency(report.zakatPayable)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PaisaTealPrimary)
                             }
                         } else {
                             Text(
@@ -480,13 +480,13 @@ fun ZakatCalculatorScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // Asset items breakdown
-                            ZakatAssetRow("নগদ টাকা ও ব্যাংক/MFS ওয়ালেট", totalAssetSummary.liquidCashBank, isDeduction = false, currencySymbol = currencySymbol)
-                            ZakatAssetRow("স্বর্ণ ও মূল্যবান ধাতু (Gold/Silver)", totalAssetSummary.preciousMetals, isDeduction = false, currencySymbol = currencySymbol)
-                            ZakatAssetRow("শেয়ার বাজার ও ক্রিপ্টো সম্পদ", totalAssetSummary.stockInvestments + totalAssetSummary.cryptoDigital, isDeduction = false, currencySymbol = currencySymbol)
-                            ZakatAssetRow("ডিপিএস ও অন্যান্য সেভিংস স্কিম", totalAssetSummary.fdrDpsSavings, isDeduction = false, currencySymbol = currencySymbol)
-                            ZakatAssetRow("পাওনা ঋণ ও বাকি কাস্টমার লেজার", totalAssetSummary.loanReceivables + totalAssetSummary.customerReceivables, isDeduction = false, currencySymbol = currencySymbol)
-                            ZakatAssetRow("বাদ: সক্রিয় দেনা ও ক্রেডিট কার্ড দায়", totalAssetSummary.totalLiabilities, isDeduction = true, currencySymbol = currencySymbol)
+                            val fmtAmt: (Double) -> String = { viewModel.formatCurrency(it) }
+                            ZakatAssetRow("নগদ টাকা ও ব্যাংক/MFS ওয়ালেট", totalAssetSummary.liquidCashBank, isDeduction = false, formatAmount = fmtAmt)
+                            ZakatAssetRow("স্বর্ণ ও মূল্যবান ধাতু (Gold/Silver)", totalAssetSummary.preciousMetals, isDeduction = false, formatAmount = fmtAmt)
+                            ZakatAssetRow("শেয়ার বাজার ও ক্রিপ্টো সম্পদ", totalAssetSummary.stockInvestments + totalAssetSummary.cryptoDigital, isDeduction = false, formatAmount = fmtAmt)
+                            ZakatAssetRow("ডিপিএস ও অন্যান্য সেভিংস স্কিম", totalAssetSummary.fdrDpsSavings, isDeduction = false, formatAmount = fmtAmt)
+                            ZakatAssetRow("পাওনা ঋণ ও বাকি কাস্টমার লেজার", totalAssetSummary.loanReceivables + totalAssetSummary.customerReceivables, isDeduction = false, formatAmount = fmtAmt)
+                            ZakatAssetRow("বাদ: সক্রিয় দেনা ও ক্রেডিট কার্ড দায়", totalAssetSummary.totalLiabilities, isDeduction = true, formatAmount = fmtAmt)
 
                             Spacer(modifier = Modifier.height(10.dp))
                             HorizontalDivider(color = PaisaBorder)
@@ -728,7 +728,7 @@ private fun ZakatAssetRow(
     title: String,
     amount: Double,
     isDeduction: Boolean,
-    currencySymbol: String = "৳"
+    formatAmount: (Double) -> String
 ) {
     Row(
         modifier = Modifier
@@ -739,7 +739,7 @@ private fun ZakatAssetRow(
     ) {
         Text(text = title, fontSize = 12.sp, color = PaisaTextSecondary)
         Text(
-            text = "${if (isDeduction) "- " else ""}$currencySymbol ${String.format(Locale.US, "%,.0f", amount)}",
+            text = "${if (isDeduction) "- " else ""}${formatAmount(amount)}",
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (isDeduction) PaisaExpenseRed else PaisaTextPrimary

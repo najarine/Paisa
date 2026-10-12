@@ -129,15 +129,15 @@ fun BudgetPlanningScreen(
                     ) {
                         Column {
                             Text("মোট বাজেট", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalBudget)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(viewModel.formatCurrency(totalBudget), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
                         Column {
                             Text("মোট ব্যয়", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalSpent)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                            Text(viewModel.formatCurrency(totalSpent), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
                         }
                         Column {
                             Text("অবশিষ্ট", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalRemaining)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                            Text(viewModel.formatCurrency(totalRemaining), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                         }
                     }
 
@@ -220,8 +220,8 @@ fun BudgetPlanningScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("ব্যয় হয়েছে: $currencySymbol ${String.format(Locale.US, "%,.0f", spent)}", style = MaterialTheme.typography.bodySmall, color = if (isOver) Color.Red else Color.Gray)
-                                    Text("সীমা: $currencySymbol ${String.format(Locale.US, "%,.0f", budget.amountLimit)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                                    Text("ব্যয় হয়েছে: ${viewModel.formatCurrency(spent)}", style = MaterialTheme.typography.bodySmall, color = if (isOver) Color.Red else Color.Gray)
+                                    Text("সীমা: ${viewModel.formatCurrency(budget.amountLimit)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))

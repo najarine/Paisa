@@ -44,6 +44,8 @@ fun StockMarketScreen(
     val scope = rememberCoroutineScope()
     val assets by viewModel.assets.collectAsState()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol by viewModel.currencySymbol.collectAsState()
 
     val stockAssets = remember(assets) {
         assets.filter { it.category == "STOCK" }
@@ -193,7 +195,7 @@ fun StockMarketScreen(
                                     Text("মোট শেয়ার পোর্টফোলিও মূল্যায়ন (সম্পদ)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF1E40AF), fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "৳ ${String.format(Locale.US, "%,.0f", totalPortfolioValuation)}",
+                                        text = viewModel.formatCurrency(totalPortfolioValuation),
                                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                         color = Color(0xFF1D4ED8)
                                     )
@@ -204,12 +206,12 @@ fun StockMarketScreen(
                                     ) {
                                         Column {
                                             Text("মোট ক্রয়মূল্য", fontSize = 11.sp, color = Color.Gray)
-                                            Text("৳ ${String.format(Locale.US, "%,.0f", totalInvestmentCost)}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                            Text(viewModel.formatCurrency(totalInvestmentCost), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text("লাভ / ক্ষতি (P&L)", fontSize = 11.sp, color = Color.Gray)
                                             Text(
-                                                text = "${if (totalProfitLoss >= 0) "+" else ""}৳ ${String.format(Locale.US, "%,.0f", totalProfitLoss)}",
+                                                text = "${if (totalProfitLoss >= 0) "+" else ""}${viewModel.formatCurrency(totalProfitLoss)}",
                                                 fontSize = 14.sp,
                                                 color = if (totalProfitLoss >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
                                                 fontWeight = FontWeight.Bold
@@ -270,7 +272,7 @@ fun StockMarketScreen(
                                         ) {
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(item.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                                Text("শেয়ার: ${item.quantity.toInt()} টি | গড় ক্রয়: ৳ ${item.buyPrice} | বর্তমান: ৳ ${item.currentPrice}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                                Text("শেয়ার: ${item.quantity.toInt()} টি | গড় ক্রয়: ${viewModel.formatCurrency(item.buyPrice)} | বর্তমান: ${viewModel.formatCurrency(item.currentPrice)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                             }
                                             IconButton(onClick = {
                                                 viewModel.deleteAsset(item.id)
@@ -288,12 +290,12 @@ fun StockMarketScreen(
                                         ) {
                                             Column {
                                                 Text("বর্তমান মূল্যায়ন (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                                Text("৳ ${String.format(Locale.US, "%,.0f", value)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1D4ED8))
+                                                Text(viewModel.formatCurrency(value), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1D4ED8))
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text("লাভ / ক্ষতি", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                                                 Text(
-                                                    text = "${if (diff >= 0) "+" else ""}৳ ${String.format(Locale.US, "%,.0f", diff)}",
+                                                    text = "${if (diff >= 0) "+" else ""}${viewModel.formatCurrency(diff)}",
                                                     style = MaterialTheme.typography.bodyMedium,
                                                     fontWeight = FontWeight.Bold,
                                                     color = if (diff >= 0) Color(0xFF10B981) else Color(0xFFEF4444)
@@ -420,7 +422,7 @@ fun StockMarketScreen(
                                     }
 
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("৳ ${String.format(Locale.US, "%.2f", stock.ltp)}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
+                                        Text(viewModel.formatCurrency(stock.ltp), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PaisaTextPrimary)
                                         val isUp = stock.change >= 0
                                         Text(
                                             text = "${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f (%.2f%%)", stock.change, stock.changePercent)}",

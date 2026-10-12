@@ -297,7 +297,7 @@ fun DetailedFinancialAnalyticsScreen(
                             // Total Income
                             CashFlowPill(
                                 label = "মোট আয়",
-                                amount = "$currencySymbol${currencyFormat.format(totalIncome)}",
+                                amount = viewModel.formatCurrency(totalIncome),
                                 color = PaisaIncomeGreen,
                                 icon = Icons.Default.ArrowDownward,
                                 modifier = Modifier.weight(1f)
@@ -306,7 +306,7 @@ fun DetailedFinancialAnalyticsScreen(
                             // Total Expense
                             CashFlowPill(
                                 label = "মোট ব্যয়",
-                                amount = "$currencySymbol${currencyFormat.format(totalExpense)}",
+                                amount = viewModel.formatCurrency(totalExpense),
                                 color = PaisaExpenseRed,
                                 icon = Icons.Default.ArrowUpward,
                                 modifier = Modifier.weight(1f)
@@ -328,7 +328,7 @@ fun DetailedFinancialAnalyticsScreen(
                             Column {
                                 Text(text = "নিট সঞ্চয় (বা উদ্বৃত্ত)", fontSize = 11.sp, color = PaisaTextSecondary)
                                 Text(
-                                    text = "${if (netSavings >= 0) "+" else ""}$currencySymbol${currencyFormat.format(netSavings)}",
+                                    text = "${if (netSavings >= 0) "+" else ""}${viewModel.formatCurrency(netSavings)}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = if (netSavings >= 0) PaisaIncomeGreen else PaisaExpenseRed
@@ -351,18 +351,22 @@ fun DetailedFinancialAnalyticsScreen(
 
             // 3. MONTHLY SPENDING TRENDS (LINE CHART OVER PAST SIX MONTHS)
             item {
+                val currentRate by viewModel.usdToBdtRate.collectAsState()
                 MonthlySpendingTrendsSection(
                     transactions = transactions,
-                    currencySymbol = currencySymbol
+                    currencySymbol = currencySymbol,
+                    usdToBdtRate = currentRate
                 )
             }
 
             // 4. MONTHLY BREAKDOWN OF SPENDING BY CATEGORY (RECHARTS-INSPIRED VISUALIZATION)
             item {
+                val currentRate by viewModel.usdToBdtRate.collectAsState()
                 MonthlyCategoryBreakdownSection(
                     transactions = transactions,
                     categories = categories,
-                    currencySymbol = currencySymbol
+                    currencySymbol = currencySymbol,
+                    usdToBdtRate = currentRate
                 )
             }
 
@@ -395,8 +399,8 @@ fun DetailedFinancialAnalyticsScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             AnalyticsMetricBox(
                                 label = "মোট দেনা (ঋণ)",
-                                value = "$currencySymbol${currencyFormat.format(totalPayable)}",
-                                subtext = "পাওনা: $currencySymbol${currencyFormat.format(totalReceivable)}",
+                                value = viewModel.formatCurrency(totalPayable),
+                                subtext = "পাওনা: ${viewModel.formatCurrency(totalReceivable)}",
                                 icon = Icons.Default.Handshake,
                                 modifier = Modifier.weight(1f)
                             )

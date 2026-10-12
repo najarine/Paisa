@@ -35,6 +35,7 @@ fun CryptoAssetsScreen(
     val cryptoRates by viewModel.cryptoRates.collectAsState()
     val isFetchingRates by viewModel.isFetchingCryptoRates.collectAsState()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
+    val usdToBdtRate by viewModel.usdToBdtRate.collectAsState()
 
     val cryptoAssets = remember(assets) {
         assets.filter { it.category == "CRYPTO" }
@@ -113,7 +114,7 @@ fun CryptoAssetsScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "৳ ${String.format(Locale.US, "%,.0f", totalCryptoBdtValuation)}",
+                        text = viewModel.formatCurrency(totalCryptoBdtValuation),
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFFB45309)
                     )
@@ -185,7 +186,7 @@ fun CryptoAssetsScreen(
                         val sym = item.name.uppercase()
                         val liveRate = cryptoRates[sym]
                         val livePriceBdt = liveRate?.priceBdt ?: item.currentPrice
-                        val livePriceUsd = liveRate?.priceUsd ?: (item.currentPrice / 122.5)
+                        val livePriceUsd = liveRate?.priceUsd ?: (if (usdToBdtRate > 0) item.currentPrice / usdToBdtRate else item.currentPrice / 122.5)
                         val totalBdt = item.quantity * livePriceBdt
 
                         Card(
@@ -228,7 +229,7 @@ fun CryptoAssetsScreen(
                                 ) {
                                     Column {
                                         Text("বর্তমান মূল্যমান (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", totalBdt)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                        Text(viewModel.formatCurrency(totalBdt), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text("বর্তমান দর (Live)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)

@@ -57,6 +57,7 @@ fun SavingsGoalsScreen(
     val debts by viewModel.debts.collectAsState()
     val totalAssetSummary by viewModel.totalAssetSummary.collectAsState()
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val usdToBdtRate by viewModel.usdToBdtRate.collectAsState()
     val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
 
     var selectedTab by remember { mutableIntStateOf(initialTab) } // 0: Savings Goals, 1: Debt Payoff Goals
@@ -178,7 +179,7 @@ fun SavingsGoalsScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalSaved)}",
+                                    text = viewModel.formatCurrency(totalSaved),
                                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                     color = Color(0xFF047857)
                                 )
@@ -186,7 +187,7 @@ fun SavingsGoalsScreen(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = "টার্গেট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalTarget)}",
+                                    text = "টার্গেট: ${viewModel.formatCurrency(totalTarget)}",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = Color(0xFF065F46)
                                 )
@@ -232,6 +233,7 @@ fun SavingsGoalsScreen(
                                 goal = goal,
                                 isDebtGoal = false,
                                 currencySymbol = currencySymbol,
+                                usdToBdtRate = usdToBdtRate,
                                 onDepositClick = { contributingGoal = goal },
                                 onDeleteClick = {
                                     viewModel.deleteGoal(goal.id)
@@ -546,6 +548,7 @@ fun SavingsGoalsScreen(
                                 goal = goal,
                                 isDebtGoal = true,
                                 currencySymbol = currencySymbol,
+                                usdToBdtRate = usdToBdtRate,
                                 onDepositClick = { contributingGoal = goal },
                                 onDeleteClick = {
                                     viewModel.deleteGoal(goal.id)
@@ -860,6 +863,7 @@ private fun GoalCardItem(
     goal: GoalVaultEntity,
     isDebtGoal: Boolean,
     currencySymbol: String = "৳",
+    usdToBdtRate: Double = 122.50,
     onDepositClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -923,17 +927,23 @@ private fun GoalCardItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val rate = if (usdToBdtRate > 0) usdToBdtRate else 122.50
+            val convertedCurrent = if (currencySymbol == "$") goal.currentAmount / rate else goal.currentAmount
+            val convertedTarget = if (currencySymbol == "$") goal.targetAmount / rate else goal.targetAmount
+            val convertedRemaining = if (currencySymbol == "$") remaining / rate else remaining
+            val fmt = if (currencySymbol == "$") "%,.2f" else "%,.0f"
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = if (isDebtGoal) "পরিশোধিত: $currencySymbol ${String.format(Locale.US, "%,.0f", goal.currentAmount)}" else "জমা: $currencySymbol ${String.format(Locale.US, "%,.0f", goal.currentAmount)}",
+                    text = if (isDebtGoal) "পরিশোধিত: $currencySymbol ${String.format(Locale.US, fmt, convertedCurrent)}" else "জমা: $currencySymbol ${String.format(Locale.US, fmt, convertedCurrent)}",
                     fontWeight = FontWeight.Bold,
                     color = if (isDebtGoal) PaisaExpenseRed else Color(0xFF10B981)
                 )
                 Text(
-                    text = if (isDebtGoal) "অবশিষ্ট দেনা: $currencySymbol ${String.format(Locale.US, "%,.0f", remaining)}" else "টার্গেট: $currencySymbol ${String.format(Locale.US, "%,.0f", goal.targetAmount)}",
+                    text = if (isDebtGoal) "অবশিষ্ট দেনা: $currencySymbol ${String.format(Locale.US, fmt, convertedRemaining)}" else "টার্গেট: $currencySymbol ${String.format(Locale.US, fmt, convertedTarget)}",
                     fontWeight = FontWeight.SemiBold,
                     color = if (isDebtGoal) PaisaTextPrimary else Color.Gray
                 )

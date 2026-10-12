@@ -762,7 +762,7 @@ fun PaisaApp(
                         matchingTx.take(4).forEach { tx ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(tx.note.ifEmpty { tx.category }, style = MaterialTheme.typography.bodyMedium)
-                                Text("৳ ${tx.amount}", fontWeight = FontWeight.Bold, color = if (tx.type == "INCOME") PaisaIncomeGreen else PaisaExpenseRed)
+                                Text(viewModel.formatCurrency(tx.amount), fontWeight = FontWeight.Bold, color = if (tx.type == "INCOME") PaisaIncomeGreen else PaisaExpenseRed)
                             }
                         }
                     }

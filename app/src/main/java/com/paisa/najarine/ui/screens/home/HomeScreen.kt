@@ -152,7 +152,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(netTotalWorth)}",
+                        text = viewModel.formatCurrency(netTotalWorth),
                         fontWeight = FontWeight.Black,
                         fontSize = 28.sp,
                         color = if (netTotalWorth >= 0) Color(0xFF0F766E) else Color(0xFFB91C1C)
@@ -176,7 +176,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "$currencySymbol ${currencyFormat.format(liquidAssets)}",
+                                text = viewModel.formatCurrency(liquidAssets),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFF0F766E)
@@ -193,7 +193,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "$currencySymbol ${currencyFormat.format(totalReceivables)}",
+                                text = viewModel.formatCurrency(totalReceivables),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFF0284C7)
@@ -210,7 +210,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "$currencySymbol ${currencyFormat.format(totalInvestments)}",
+                                text = viewModel.formatCurrency(totalInvestments),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFFD97706)
@@ -227,7 +227,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "$currencySymbol ${currencyFormat.format(cardLiabilities)}",
+                                text = viewModel.formatCurrency(cardLiabilities),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = Color(0xFFB91C1C)
@@ -274,13 +274,15 @@ fun HomeScreen(
 
         // 2. Debt Payoff & Liabilities Progress Dashboard Widget
         item {
+            val currentRate by viewModel.usdToBdtRate.collectAsState()
             DebtPayoffWidget(
                 debts = debts,
                 goals = goals,
                 wallets = wallets,
                 transactions = transactions,
                 onNavigateToDebtGoals = onNavigateToSavingsGoals,
-                onNavigateToDenaPaona = onNavigateToDenaPaona
+                onNavigateToDenaPaona = onNavigateToDenaPaona,
+                usdToBdtRate = currentRate
             )
         }
 
@@ -450,7 +452,7 @@ fun HomeScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "$currencySymbol ${currencyFormat.format(wallet.balance)}",
+                                text = viewModel.formatCurrency(wallet.balance),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = if (wallet.balance < 0) Color(0xFFB91C1C) else Color(0xFF0F766E)

@@ -122,6 +122,9 @@ fun MessManagerScreen(
     var showAddEntryDialog by remember { mutableStateOf(false) }
     var dialogEntryType by remember { mutableStateOf("MEAL") } // "MEAL", "BAZAR", "DEPOSIT", "FIXED"
 
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val currencySymbol by viewModel.currencySymbol.collectAsState()
+
     val calculation = remember(messEntries) {
         MessCalculationEngine.calculate(messEntries)
     }
@@ -139,7 +142,7 @@ fun MessManagerScreen(
                     Column {
                         Text("মেস ও হোস্টেল মিল ম্যানেজার", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                         Text(
-                            text = "মিল রেট: ৳${String.format(Locale.US, "%.2f", calculation.mealRate)} • মোট মিল: ${if (calculation.totalMeals % 1.0 == 0.0) calculation.totalMeals.toInt() else calculation.totalMeals}",
+                            text = "মিল রেট: ${viewModel.formatCurrency(calculation.mealRate)} • মোট মিল: ${if (calculation.totalMeals % 1.0 == 0.0) calculation.totalMeals.toInt() else calculation.totalMeals}",
                             fontSize = 11.sp,
                             color = PaisaTextSecondary
                         )
@@ -160,15 +163,15 @@ fun MessManagerScreen(
                             appendLine("🏢 পয়সা (PAISA) মেস মিল ও হিসাব বিবরণী")
                             appendLine("====================================")
                             appendLine("মোট মিল: ${calculation.totalMeals}")
-                            appendLine("মোট বাজার খরচ: ৳${currencyFormat.format(calculation.totalBazar)}")
-                            appendLine("অন্যান্য ফিক্সড বিল: ৳${currencyFormat.format(calculation.totalFixedBills)}")
-                            appendLine("মোট মেস খরচ: ৳${currencyFormat.format(calculation.totalMessExpense)}")
-                            appendLine("হিসাবকৃত মিল রেট: ৳${String.format(Locale.US, "%.2f", calculation.mealRate)}")
+                            appendLine("মোট বাজার খরচ: ${viewModel.formatCurrency(calculation.totalBazar)}")
+                            appendLine("অন্যান্য ফিক্সড বিল: ${viewModel.formatCurrency(calculation.totalFixedBills)}")
+                            appendLine("মোট মেস খরচ: ${viewModel.formatCurrency(calculation.totalMessExpense)}")
+                            appendLine("হিসাবকৃত মিল রেট: ${viewModel.formatCurrency(calculation.mealRate)}")
                             appendLine("------------------------------------")
                             appendLine("সদস্যভিত্তিক চূড়ান্ত হিসাব:")
                             calculation.memberSummaries.forEach { mem ->
-                                val status = if (mem.netBalance >= 0) "পাবে (Refund): +৳${currencyFormat.format(mem.netBalance)}" else "দিতে হবে (Due): -৳${currencyFormat.format(-mem.netBalance)}"
-                                appendLine("👤 ${mem.memberName}: মিল=${mem.totalMeals}, জমা=৳${mem.totalDeposit.toInt()}, বাজার=৳${mem.totalBazarSpent.toInt()} => $status")
+                                val status = if (mem.netBalance >= 0) "পাবে (Refund): +${viewModel.formatCurrency(mem.netBalance)}" else "দিতে হবে (Due): -${viewModel.formatCurrency(-mem.netBalance)}"
+                                appendLine("👤 ${mem.memberName}: মিল=${mem.totalMeals}, জমা=${viewModel.formatCurrency(mem.totalDeposit)}, বাজার=${viewModel.formatCurrency(mem.totalBazarSpent)} => $status")
                             }
                             appendLine("====================================")
                         }
@@ -260,7 +263,7 @@ fun MessManagerScreen(
                                         Column {
                                             Text("বর্তমান মিল রেট (Meal Rate)", fontSize = 12.sp, color = PaisaTextSecondary)
                                             Text(
-                                                text = "৳ ${String.format(Locale.US, "%.2f", calculation.mealRate)}",
+                                                text = viewModel.formatCurrency(calculation.mealRate),
                                                 fontWeight = FontWeight.Black,
                                                 fontSize = 24.sp,
                                                 color = PaisaTealPrimary
@@ -291,15 +294,15 @@ fun MessManagerScreen(
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column {
                                             Text("মোট বাজার", fontSize = 11.sp, color = PaisaTextSecondary)
-                                            Text("৳ ${currencyFormat.format(calculation.totalBazar)}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(viewModel.formatCurrency(calculation.totalBazar), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                         }
                                         Column {
                                             Text("অন্যান্য বিল", fontSize = 11.sp, color = PaisaTextSecondary)
-                                            Text("৳ ${currencyFormat.format(calculation.totalFixedBills)}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(viewModel.formatCurrency(calculation.totalFixedBills), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text("মোট মেস খরচ", fontSize = 11.sp, color = PaisaTextSecondary)
-                                            Text("৳ ${currencyFormat.format(calculation.totalMessExpense)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaExpenseRed)
+                                            Text(viewModel.formatCurrency(calculation.totalMessExpense), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaExpenseRed)
                                         }
                                     }
                                 }
@@ -388,9 +391,9 @@ fun MessManagerScreen(
                                                 }
                                             }
 
-                                            Column(horizontalAlignment = Alignment.End) {
+                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text(
-                                                    text = if (mem.netBalance >= 0) "+ ৳ ${currencyFormat.format(mem.netBalance)}" else "- ৳ ${currencyFormat.format(-mem.netBalance)}",
+                                                    text = if (mem.netBalance >= 0) "+ ${viewModel.formatCurrency(mem.netBalance)}" else "- ${viewModel.formatCurrency(-mem.netBalance)}",
                                                     fontWeight = FontWeight.Black,
                                                     fontSize = 15.sp,
                                                     color = if (mem.netBalance >= 0) PaisaIncomeGreen else PaisaExpenseRed
@@ -410,10 +413,10 @@ fun MessManagerScreen(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Text("জমা: ৳${currencyFormat.format(mem.totalDeposit)}", fontSize = 10.sp, color = PaisaTextSecondary)
-                                            Text("বাজার খরচ: ৳${currencyFormat.format(mem.totalBazarSpent)}", fontSize = 10.sp, color = PaisaTextSecondary)
-                                            Text("মিল খরচ: ৳${currencyFormat.format(mem.mealCost)}", fontSize = 10.sp, color = PaisaTextSecondary)
-                                            Text("ফিক্সড বিল: ৳${currencyFormat.format(mem.totalFixedShare)}", fontSize = 10.sp, color = PaisaTextSecondary)
+                                            Text("জমা: ${viewModel.formatCurrency(mem.totalDeposit)}", fontSize = 10.sp, color = PaisaTextSecondary)
+                                            Text("বাজার খরচ: ${viewModel.formatCurrency(mem.totalBazarSpent)}", fontSize = 10.sp, color = PaisaTextSecondary)
+                                            Text("মিল খরচ: ${viewModel.formatCurrency(mem.mealCost)}", fontSize = 10.sp, color = PaisaTextSecondary)
+                                            Text("ফিক্সড বিল: ${viewModel.formatCurrency(mem.totalFixedShare)}", fontSize = 10.sp, color = PaisaTextSecondary)
                                         }
                                     }
                                 }
@@ -473,7 +476,8 @@ fun MessManagerScreen(
                                 MessEntryCard(
                                     entry = entry,
                                     type = "BAZAR",
-                                    onDelete = { viewModel.deleteMessEntry(entry.id) }
+                                    onDelete = { viewModel.deleteMessEntry(entry.id) },
+                                    formatAmount = { viewModel.formatCurrency(it) }
                                 )
                             }
                         }
@@ -502,7 +506,8 @@ fun MessManagerScreen(
                                 MessEntryCard(
                                     entry = entry,
                                     type = if (entry.depositAmount > 0) "DEPOSIT" else "FIXED",
-                                    onDelete = { viewModel.deleteMessEntry(entry.id) }
+                                    onDelete = { viewModel.deleteMessEntry(entry.id) },
+                                    formatAmount = { viewModel.formatCurrency(it) }
                                 )
                             }
                         }
@@ -557,7 +562,8 @@ private fun EmptyMessSection(
 private fun MessEntryCard(
     entry: MessEntryEntity,
     type: String,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    formatAmount: (Double) -> String = { "৳ ${it.toInt()}" }
 ) {
     val dateStr = remember(entry.dateMillis) {
         SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.forLanguageTag("bn-BD")).format(Date(entry.dateMillis))
@@ -625,13 +631,13 @@ private fun MessEntryCard(
                             Text("${entry.mealsCount} টি মিল", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF0284C7))
                         }
                         "BAZAR" -> {
-                            Text("৳ ${entry.bazarExpense.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaExpenseRed)
+                            Text(formatAmount(entry.bazarExpense), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaExpenseRed)
                         }
                         "DEPOSIT" -> {
-                            Text("৳ ${entry.depositAmount.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaIncomeGreen)
+                            Text(formatAmount(entry.depositAmount), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PaisaIncomeGreen)
                         }
                         else -> {
-                            Text("৳ ${entry.fixedExpenseShare.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF7E22CE))
+                            Text(formatAmount(entry.fixedExpenseShare), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF7E22CE))
                         }
                     }
                 }
@@ -708,9 +714,9 @@ private fun AddMessEntryDialog(
                         Text(
                             when (type) {
                                 "MEAL" -> "মিলের সংখ্যা (যেমন ১, ২, ২.৫)"
-                                "BAZAR" -> "বাজারের মোট খরচ (৳)"
-                                "DEPOSIT" -> "জমার পরিমাণ (৳)"
-                                else -> "ফিক্সড বিলের পরিমাণ (৳)"
+                                "BAZAR" -> "বাজারের মোট খরচ"
+                                "DEPOSIT" -> "জমার পরিমাণ"
+                                else -> "ফিক্সড বিলের পরিমাণ"
                             }
                         )
                     },

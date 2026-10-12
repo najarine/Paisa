@@ -94,7 +94,7 @@ fun CreditCardEmiScreen(
                         Text("মোট ক্রেডিট কার্ড বকেয়া / দায় (Liability)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF991B1B))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "-৳ ${String.format(Locale.US, "%,.0f", totalOutstandingDebt)}",
+                            text = "-${viewModel.formatCurrency(totalOutstandingDebt)}",
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFFDC2626)
                         )
@@ -179,15 +179,15 @@ fun CreditCardEmiScreen(
                                 ) {
                                     Column {
                                         Text("বর্তমান বকেয়া (দেনা)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", outstanding)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                                        Text(viewModel.formatCurrency(outstanding), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
                                     }
                                     Column {
                                         Text("ক্রেডিট লিমিট", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", limit)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Text(viewModel.formatCurrency(limit), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     }
                                     Column {
                                         Text("অবশিষ্ট লিমিট", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", available)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                        Text(viewModel.formatCurrency(available), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                                     }
                                 }
 

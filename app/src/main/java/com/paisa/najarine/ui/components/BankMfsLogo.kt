@@ -194,7 +194,7 @@ fun BankMfsLogo(
                     modifier = Modifier.size(size * 0.55f)
                 )
             }
-            "cash" -> {
+            "cash", "pettycash", "locker" -> {
                 Icon(
                     imageVector = Icons.Default.Payments,
                     contentDescription = "Cash",
@@ -202,7 +202,7 @@ fun BankMfsLogo(
                     modifier = Modifier.size(size * 0.55f)
                 )
             }
-            "creditcard", "visa", "mastercard" -> {
+            "creditcard", "debitcard", "visa", "mastercard", "amex" -> {
                 Icon(
                     imageVector = Icons.Default.CreditCard,
                     contentDescription = "Card",

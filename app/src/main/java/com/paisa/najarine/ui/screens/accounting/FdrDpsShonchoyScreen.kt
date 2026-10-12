@@ -94,7 +94,7 @@ fun FdrDpsShonchoyScreen(
                         Text("মোট স্থায়ী বিনিয়োগ সম্পদ (Total Assets এ যুক্ত)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "৳ ${String.format(Locale.US, "%,.0f", totalInvestmentValuation)}",
+                            text = viewModel.formatCurrency(totalInvestmentValuation),
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFF15803D)
                         )
@@ -180,11 +180,11 @@ fun FdrDpsShonchoyScreen(
                                 ) {
                                     Column {
                                         Text("বর্তমান মূল্যমান (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", value)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                        Text(viewModel.formatCurrency(value), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text("প্রারম্ভিক বিনিয়োগ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", item.buyPrice)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(viewModel.formatCurrency(item.buyPrice), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }

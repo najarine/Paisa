@@ -90,7 +90,7 @@ fun GoldSilverScreen(
                     Text("মোট মূল্যবান ধাতু সম্পদ (Total Assets এ যুক্ত)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF92400E))
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalMetalsValuation)}",
+                        text = viewModel.formatCurrency(totalMetalsValuation),
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFFB45309)
                     )
@@ -99,8 +99,8 @@ fun GoldSilverScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("স্বর্ণ মোট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalGoldValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
-                        Text("রৌপ্য মোট: $currencySymbol ${String.format(Locale.US, "%,.0f", totalSilverValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
+                        Text("স্বর্ণ মোট: ${viewModel.formatCurrency(totalGoldValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
+                        Text("রৌপ্য মোট: ${viewModel.formatCurrency(totalSilverValuation)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -190,11 +190,11 @@ fun GoldSilverScreen(
                                 ) {
                                     Column {
                                         Text("বর্তমান বাজার মূল্য (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("$currencySymbol ${String.format(Locale.US, "%,.0f", value)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                                        Text(viewModel.formatCurrency(value), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text("প্রতি ${item.unit} দর", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("$currencySymbol ${String.format(Locale.US, "%,.0f", item.currentPrice)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(viewModel.formatCurrency(item.currentPrice), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }

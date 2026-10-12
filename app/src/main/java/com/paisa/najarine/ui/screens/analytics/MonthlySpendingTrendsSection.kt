@@ -170,7 +170,8 @@ object MonthlySpendingTrendsCalculator {
 fun MonthlySpendingTrendsSection(
     transactions: List<TransactionEntity>,
     currencySymbol: String = "৳",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    usdToBdtRate: Double = 122.50
 ) {
     val currencyFormat = remember(currencySymbol) {
         if (currencySymbol == "$") {
@@ -183,6 +184,12 @@ fun MonthlySpendingTrendsSection(
                 maximumFractionDigits = 0
             }
         }
+    }
+
+    val formatAmount: (Double) -> String = { amountInBdt ->
+        val rate = if (usdToBdtRate > 0) usdToBdtRate else 122.50
+        val converted = if (currencySymbol == "$") amountInBdt / rate else amountInBdt
+        "$currencySymbol${currencyFormat.format(converted)}"
     }
 
     val summary = remember(transactions) {
@@ -294,7 +301,7 @@ fun MonthlySpendingTrendsSection(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = "$currencySymbol${currencyFormat.format(selectedPoint.totalExpense)}",
+                                    text = formatAmount(selectedPoint.totalExpense),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Black,
                                     color = if (selectedPoint.totalExpense > 0) PaisaExpenseRed else PaisaTextPrimary
@@ -429,7 +436,7 @@ fun MonthlySpendingTrendsSection(
                 // Monthly Average
                 TrendStatPill(
                     title = "মাসিক গড় ব্যয়",
-                    value = "$currencySymbol${currencyFormat.format(summary.averageMonthlySpend)}",
+                    value = formatAmount(summary.averageMonthlySpend),
                     accentColor = PaisaTealPrimary,
                     modifier = Modifier.weight(1f)
                 )
@@ -439,7 +446,7 @@ fun MonthlySpendingTrendsSection(
                 val peakVal = summary.highestMonth?.totalExpense ?: 0.0
                 TrendStatPill(
                     title = "সর্বোচ্চ ব্যয় ($peakName)",
-                    value = "$currencySymbol${currencyFormat.format(peakVal)}",
+                    value = formatAmount(peakVal),
                     accentColor = PaisaExpenseRed,
                     modifier = Modifier.weight(1f)
                 )
@@ -447,7 +454,7 @@ fun MonthlySpendingTrendsSection(
                 // Total 6-Month Spend
                 TrendStatPill(
                     title = "৬ মাসের মোট",
-                    value = "$currencySymbol${currencyFormat.format(summary.totalSpend)}",
+                    value = formatAmount(summary.totalSpend),
                     accentColor = PaisaTextPrimary,
                     modifier = Modifier.weight(1f)
                 )

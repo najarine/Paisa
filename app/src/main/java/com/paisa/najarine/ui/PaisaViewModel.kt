@@ -60,6 +60,9 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     private val cryptoService = CryptoRateService()
     private val hadithService = HadithApiService()
 
+    private val marketDataService = com.paisa.najarine.data.remote.MarketDataService()
+    val usdToBdtRate = MutableStateFlow(122.50)
+
     val authState: StateFlow<AuthState> = authManager.authState
     val selectedCurrency: StateFlow<String> = com.paisa.najarine.notification.AdhanPreferences.selectedCurrencyState
     val currencySymbol: StateFlow<String> = selectedCurrency.map {
@@ -70,12 +73,55 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         if (com.paisa.najarine.notification.AdhanPreferences.getSelectedCurrency(application).equals("USD", ignoreCase = true)) "$" else "৳"
     )
 
-    fun formatCurrency(amount: Double): String {
-        val sym = currencySymbol.value
-        val formatted = if (selectedCurrency.value.equals("USD", ignoreCase = true)) {
-            String.format(java.util.Locale.US, "%,.2f", amount)
+    init {
+        fetchLatestExchangeRate()
+    }
+
+    fun fetchLatestExchangeRate() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val rates = marketDataService.fetchAllExchangeRates()
+                val bdtRate = rates["BDT"]
+                if (bdtRate != null && bdtRate > 0) {
+                    usdToBdtRate.value = bdtRate
+                }
+            } catch (_: Exception) {
+                // Keep default fallback
+            }
+        }
+    }
+
+    /**
+     * Converts an amount stored in base currency (BDT) into active currency (USD or BDT).
+     */
+    fun convertAmount(amountInBdt: Double): Double {
+        return if (selectedCurrency.value.equals("USD", ignoreCase = true)) {
+            val rate = usdToBdtRate.value
+            if (rate > 0) amountInBdt / rate else amountInBdt / 122.50
         } else {
-            String.format(java.util.Locale.US, "%,.0f", amount)
+            amountInBdt
+        }
+    }
+
+    /**
+     * Converts an input amount typed in active currency (USD or BDT) into base currency (BDT) for storage.
+     */
+    fun convertInputToBdt(inputAmount: Double): Double {
+        return if (selectedCurrency.value.equals("USD", ignoreCase = true)) {
+            val rate = usdToBdtRate.value
+            inputAmount * (if (rate > 0) rate else 122.50)
+        } else {
+            inputAmount
+        }
+    }
+
+    fun formatCurrency(amountInBdt: Double): String {
+        val sym = currencySymbol.value
+        val converted = convertAmount(amountInBdt)
+        val formatted = if (selectedCurrency.value.equals("USD", ignoreCase = true)) {
+            String.format(java.util.Locale.US, "%,.2f", converted)
+        } else {
+            String.format(java.util.Locale.US, "%,.0f", converted)
         }
         return "$sym $formatted"
     }
@@ -86,6 +132,7 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
     fun updateDefaultCurrency(currencyCode: String) {
         val sym = if (currencyCode.equals("USD", ignoreCase = true)) "$" else "৳"
         com.paisa.najarine.notification.AdhanPreferences.setSelectedCurrency(getApplication(), currencyCode)
+        fetchLatestExchangeRate()
         viewModelScope.launch(Dispatchers.IO) {
             val ws = database.workspaceDao().getWorkspaceById(activeWorkspaceId.value)
             if (ws != null) {
@@ -319,20 +366,23 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                 walletId
             }
 
+            val baseAmount = convertInputToBdt(amount)
+            val baseFee = convertInputToBdt(fee)
+
             when (type) {
                 "INCOME" -> transactionRepo.recordIncome(
                     workspaceId = activeWorkspaceId.value,
                     walletId = targetWalletId,
-                    amount = amount,
+                    amount = baseAmount,
                     category = category,
                     note = note
                 )
                 "EXPENSE" -> transactionRepo.recordExpense(
                     workspaceId = activeWorkspaceId.value,
                     walletId = targetWalletId,
-                    amount = amount,
+                    amount = baseAmount,
                     category = category,
-                    fee = fee,
+                    fee = baseFee,
                     note = note
                 )
                 "TRANSFER" -> {
@@ -341,8 +391,8 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                         workspaceId = activeWorkspaceId.value,
                         sourceWalletId = targetWalletId,
                         destinationWalletId = destId,
-                        amount = amount,
-                        fee = fee,
+                        amount = baseAmount,
+                        fee = baseFee,
                         note = note
                     )
                 }
@@ -373,7 +423,9 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         isExcludedFromTotal: Boolean = false,
         initialBalance: Double = balance
     ) {
-        val finalBalance = if (balance != 0.0) balance else initialBalance
+        val rawBal = if (balance != 0.0) balance else initialBalance
+        val finalBalance = convertInputToBdt(rawBal)
+        val finalCreditLimit = convertInputToBdt(creditLimit)
         viewModelScope.launch(Dispatchers.IO) {
             walletRepo.createWallet(
                 workspaceId = activeWorkspaceId.value,
@@ -382,7 +434,7 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                 institutionId = institutionId,
                 accountNumber = accountNumber,
                 initialBalance = finalBalance,
-                creditLimit = creditLimit,
+                creditLimit = finalCreditLimit,
                 isExcludedFromTotal = isExcludedFromTotal
             )
             syncManager.triggerImmediateSync()
@@ -424,16 +476,17 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         val dedupKey = "goal_dep_${goalId}_${walletId}_${amount}"
         if (isDuplicateSubmission(dedupKey)) return
 
+        val baseAmount = convertInputToBdt(amount)
         viewModelScope.launch(Dispatchers.IO) {
-            database.walletDao().adjustBalance(walletId, -amount)
-            database.goalVaultDao().contributeToGoal(goalId, amount)
+            database.walletDao().adjustBalance(walletId, -baseAmount)
+            database.goalVaultDao().contributeToGoal(goalId, baseAmount)
 
             val tx = TransactionEntity(
                 id = UUID.randomUUID().toString(),
                 workspaceId = activeWorkspaceId.value,
                 walletId = walletId,
                 type = "EXPENSE",
-                amount = amount,
+                amount = baseAmount,
                 category = "Savings & Investments",
                 note = "সঞ্চয় লক্ষ্য তহবিলে জমা",
                 dateMillis = System.currentTimeMillis()
@@ -554,10 +607,11 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
         val dedupKey = "pay_card_${cardWalletId}_${fromWalletId}_${amount}"
         if (isDuplicateSubmission(dedupKey)) return
 
+        val baseAmount = convertInputToBdt(amount)
         viewModelScope.launch(Dispatchers.IO) {
             // Card balance is stored as -debt, so adding amount brings it towards 0
-            database.walletDao().adjustBalance(cardWalletId, amount)
-            database.walletDao().adjustBalance(fromWalletId, -amount)
+            database.walletDao().adjustBalance(cardWalletId, baseAmount)
+            database.walletDao().adjustBalance(fromWalletId, -baseAmount)
 
             val tx = TransactionEntity(
                 id = UUID.randomUUID().toString(),
@@ -565,7 +619,7 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                 walletId = fromWalletId,
                 toWalletId = cardWalletId,
                 type = "TRANSFER",
-                amount = amount,
+                amount = baseAmount,
                 category = "Card Payment",
                 note = "ক্রেডিট কার্ড বিল পরিশোধ",
                 dateMillis = System.currentTimeMillis()

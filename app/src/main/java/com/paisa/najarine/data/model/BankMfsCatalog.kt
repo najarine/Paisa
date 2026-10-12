@@ -118,16 +118,27 @@ object BankMfsCatalog {
         InstitutionItem("citi", "Citibank N.A. Bangladesh", "সিটিব্যাংক এন.এ.", "Citi", FinancialInstitutionType.BANK, BankClassification.FOREIGN, false, Color(0xFF003B70), "বিদেশি ব্যাংক", "আন্তর্জাতিক বিনিয়োগ ও করপোরেট", "https://www.citigroup.com")
     )
 
-    val OTHER_LIST = listOf(
-        InstitutionItem("cash", "Physical Cash Wallet", "নগদ টাকা (ক্যাশ)", "ক্যাশ", FinancialInstitutionType.CASH, BankClassification.OTHER, true, Color(0xFF0D9488), "নগদ", "হাতের নগদ বা পকেট ক্যাশ"),
-        InstitutionItem("creditcard", "Credit Card (Liability)", "ক্রেডিট কার্ড (দায়)", "কার্ড", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF6366F1), "দায় কার্ড", "ক্রেডিট লিমিট ও বকেয়া হিসাব"),
-        InstitutionItem("visa", "Visa Card / Account", "ভিসা কার্ড অ্যাকাউন্ট", "Visa", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF1A1F71), "কার্ড", "ডেবিট বা ক্রেডিট কার্ড"),
-        InstitutionItem("mastercard", "MasterCard Account", "মাস্টারকার্ড অ্যাকাউন্ট", "MasterCard", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFFEB001B), "কার্ড", "আন্তর্জাতিক কার্ড সেবা"),
-        InstitutionItem("paypal", "PayPal Balance", "পেপ্যাল ব্যালেন্স", "PayPal", FinancialInstitutionType.MFS, BankClassification.OTHER, false, Color(0xFF003087), "আন্তর্জাতিক ওয়ালেট", "ইউএসডি ও ফ্রিল্যান্স আয়"),
-        InstitutionItem("binance", "Binance / Crypto Wallet", "ক্রিপ্টো ওয়ালেট", "Crypto", FinancialInstitutionType.CRYPTO, BankClassification.OTHER, false, Color(0xFFF3BA2F), "ডিজিটাল সম্পদ", "বিটকয়েন, ইথেরিয়াম, ইত্যাদি")
+    val CASH_LIST = listOf(
+        InstitutionItem("cash", "Physical Cash Wallet", "হাতের নগদ টাকা (ক্যাশ)", "ক্যাশ", FinancialInstitutionType.CASH, BankClassification.OTHER, true, Color(0xFF0D9488), "নগদ", "পকেট ক্যাশ ও ওয়ালেট"),
+        InstitutionItem("pettycash", "Petty Cash Drawer", "পেটি ক্যাশ / ড্রয়ার", "পেটি ক্যাশ", FinancialInstitutionType.CASH, BankClassification.OTHER, true, Color(0xFF059669), "নগদ", "দৈনন্দিন কাজের ছোট তহবিল"),
+        InstitutionItem("locker", "Emergency Cash Locker", "জরুরি ক্যাশ ফন্ড ও লকার", "লকার", FinancialInstitutionType.CASH, BankClassification.OTHER, true, Color(0xFF047857), "নগদ", "জরুরি প্রয়োজনে রাখা নগদ টাকা")
     )
 
-    val ALL_INSTITUTIONS: List<InstitutionItem> = MFS_LIST + BANK_LIST + OTHER_LIST
+    val CARD_LIST = listOf(
+        InstitutionItem("creditcard", "Credit Card (Visa/Mastercard/Amex)", "ক্রেডিট কার্ড (দায়)", "কার্ড", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF6366F1), "ক্রেডিট কার্ড", "ক্রেডিট লিমিট ও বিল পরিশোধ"),
+        InstitutionItem("debitcard", "Bank Debit Card", "ব্যাংক ডেবিট কার্ড", "ডেবিট কার্ড", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF2563EB), "ডেবিট কার্ড", "অ্যাকাউন্ট লিংকড ডেবিট কার্ড"),
+        InstitutionItem("visa", "Visa Card Account", "ভিসা কার্ড অ্যাকাউন্ট", "Visa", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF1A1F71), "কার্ড", "আন্তর্জাতিক বা লোকাল ভিসা কার্ড"),
+        InstitutionItem("mastercard", "MasterCard Account", "মাস্টারকার্ড অ্যাকাউন্ট", "MasterCard", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFFEB001B), "কার্ড", "মাস্টারকার্ড গ্লোবাল পেমেন্ট"),
+        InstitutionItem("amex", "American Express (Amex)", "অ্যামেক্স কার্ড", "Amex", FinancialInstitutionType.CARD, BankClassification.OTHER, false, Color(0xFF006FCF), "অ্যামেক্স", "অ্যামেক্স ক্রেডিট কার্ড")
+    )
+
+    val OTHER_LIST = listOf(
+        InstitutionItem("paypal", "PayPal Balance", "পেপ্যাল ব্যালেন্স", "PayPal", FinancialInstitutionType.MFS, BankClassification.OTHER, false, Color(0xFF003087), "আন্তর্জাতিক ওয়ালেট", "ইউএসডি ও ফ্রিল্যান্স আয়"),
+        InstitutionItem("binance", "Binance / Crypto Wallet", "বাইন্যান্স ও ক্রিপ্টো ওয়ালেট", "Crypto", FinancialInstitutionType.CRYPTO, BankClassification.OTHER, false, Color(0xFFF3BA2F), "ডিজিটাল সম্পদ", "বিটকয়েন, ইথেরিয়াম, ইউএসডিটি"),
+        InstitutionItem("custom", "Custom Wallet / Account", "অন্যান্য কাস্টম ওয়ালেট", "কাস্টম", FinancialInstitutionType.BANK, BankClassification.OTHER, false, Color(0xFF6B7280), "অন্যান্য", "নিজস্ব বা অন্যান্য ক্যাটাগরি")
+    )
+
+    val ALL_INSTITUTIONS: List<InstitutionItem> = MFS_LIST + BANK_LIST + CARD_LIST + CASH_LIST + OTHER_LIST
 
     fun findById(id: String): InstitutionItem {
         return ALL_INSTITUTIONS.find { it.id.equals(id, ignoreCase = true) }

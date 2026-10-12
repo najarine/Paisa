@@ -94,7 +94,7 @@ fun CustomerLedgerScreen(
                         Text("কাস্টমারদের মোট বাকি (পাওনা সম্পদ)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", netDueReceivable)}",
+                            text = viewModel.formatCurrency(netDueReceivable),
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFF15803D)
                         )
@@ -162,7 +162,7 @@ fun CustomerLedgerScreen(
 
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
-                                        text = "${if (isBaki) "+" else "-"}$currencySymbol ${String.format(Locale.US, "%,.0f", entry.amount)}",
+                                        text = "${if (isBaki) "+" else "-"}${viewModel.formatCurrency(entry.amount)}",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isBaki) Color(0xFFEF4444) else Color(0xFF10B981)

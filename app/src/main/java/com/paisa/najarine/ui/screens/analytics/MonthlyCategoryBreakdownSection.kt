@@ -219,7 +219,8 @@ fun MonthlyCategoryBreakdownSection(
     transactions: List<TransactionEntity>,
     categories: List<CategoryEntity>,
     currencySymbol: String = "৳",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    usdToBdtRate: Double = 122.50
 ) {
     val currencyFormat = remember(currencySymbol) {
         if (currencySymbol == "$") {
@@ -232,6 +233,12 @@ fun MonthlyCategoryBreakdownSection(
                 maximumFractionDigits = 0
             }
         }
+    }
+
+    val formatAmount: (Double) -> String = { amountInBdt ->
+        val rate = if (usdToBdtRate > 0) usdToBdtRate else 122.50
+        val converted = if (currencySymbol == "$") amountInBdt / rate else amountInBdt
+        "$currencySymbol${currencyFormat.format(converted)}"
     }
 
     val monthOptions = remember { MonthlyCategoryBreakdownHelper.getRecentMonthOptions() }
@@ -404,7 +411,7 @@ fun MonthlyCategoryBreakdownSection(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "$currencySymbol${currencyFormat.format(activeCategory?.totalAmount ?: totalMonthExpense)}",
+                                text = formatAmount(activeCategory?.totalAmount ?: totalMonthExpense),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Black,
                                 color = activeCategory?.color ?: PaisaTextPrimary
@@ -513,7 +520,7 @@ fun MonthlyCategoryBreakdownSection(
                                 }
 
                                 Text(
-                                    text = "$currencySymbol${currencyFormat.format(activeCategory.totalAmount)}",
+                                    text = formatAmount(activeCategory.totalAmount),
                                     fontWeight = FontWeight.Black,
                                     fontSize = 16.sp,
                                     color = activeCategory.color
@@ -605,7 +612,7 @@ fun MonthlyCategoryBreakdownSection(
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "$currencySymbol${currencyFormat.format(item.totalAmount)}",
+                                    text = formatAmount(item.totalAmount),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PaisaTextPrimary

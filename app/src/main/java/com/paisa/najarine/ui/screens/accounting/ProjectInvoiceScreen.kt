@@ -100,15 +100,15 @@ fun ProjectInvoiceScreen(
                     ) {
                         Column {
                             Text("মোট ইনভয়েস", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("৳ ${String.format(Locale.US, "%,.0f", totalBilled)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(viewModel.formatCurrency(totalBilled), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
                         Column {
                             Text("আদায়কৃত", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("৳ ${String.format(Locale.US, "%,.0f", totalCollected)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                            Text(viewModel.formatCurrency(totalCollected), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                         }
                         Column {
                             Text("অপেক্ষমাণ (পাওনা)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("৳ ${String.format(Locale.US, "%,.0f", totalPending)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                            Text(viewModel.formatCurrency(totalPending), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
                         }
                     }
                 }
@@ -182,13 +182,13 @@ fun ProjectInvoiceScreen(
                                 ) {
                                     Column {
                                         Text("বিল পরিমাণ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                        Text("৳ ${String.format(Locale.US, "%,.0f", inv.totalAmount)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        Text(viewModel.formatCurrency(inv.totalAmount), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
 
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         OutlinedButton(
                                             onClick = {
-                                                val shareText = "ইনভয়েস #${inv.invoiceNo}\nপ্রজেক্ট: ${inv.projectName}\nক্লায়েন্ট: ${inv.clientName}\nমোট বিল: ৳ ${inv.totalAmount}\nপরিশোধের মেয়াদ: $dueStr\nস্ট্যাটাস: ${if (isPaid) "পরিশোধিত" else "বকেয়া"}\n\nPaisa অ্যাপ থেকে প্রেরিত।"
+                                                val shareText = "ইনভয়েস #${inv.invoiceNo}\nপ্রজেক্ট: ${inv.projectName}\nক্লায়েন্ট: ${inv.clientName}\nমোট বিল: ${viewModel.formatCurrency(inv.totalAmount)}\nপরিশোধের মেয়াদ: $dueStr\nস্ট্যাটাস: ${if (isPaid) "পরিশোধিত" else "বকেয়া"}\n\nPaisa অ্যাপ থেকে প্রেরিত।"
                                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                                     type = "text/plain"
                                                     putExtra(Intent.EXTRA_SUBJECT, "ইনভয়েস #${inv.invoiceNo}")

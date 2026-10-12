@@ -99,16 +99,16 @@ fun DenaPaonaScreen(
                     ) {
                         Column {
                             Text("মোট পাওনা (সম্পদ)", style = MaterialTheme.typography.labelSmall, color = Color(0xFF047857))
-                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalPaona)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                            Text(viewModel.formatCurrency(totalPaona), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                         }
                         Column {
                             Text("মোট দেনা (দায়)", style = MaterialTheme.typography.labelSmall, color = Color(0xFF991B1B))
-                            Text("$currencySymbol ${String.format(Locale.US, "%,.0f", totalDena)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                            Text(viewModel.formatCurrency(totalDena), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
                         }
                         Column {
                             Text("নিট প্রভাব", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             Text(
-                                text = "${if (netDebtBalance >= 0) "+" else ""}$currencySymbol ${String.format(Locale.US, "%,.0f", netDebtBalance)}",
+                                text = "${if (netDebtBalance >= 0) "+" else ""}${viewModel.formatCurrency(netDebtBalance)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = if (netDebtBalance >= 0) Color(0xFF10B981) else Color(0xFFEF4444)
@@ -174,7 +174,7 @@ fun DenaPaonaScreen(
 
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
-                                            text = "${if (isPaona) "+" else "-"}$currencySymbol ${String.format(Locale.US, "%,.0f", debt.amount)}",
+                                            text = "${if (isPaona) "+" else "-"}${viewModel.formatCurrency(debt.amount)}",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = if (isPaona) Color(0xFF10B981) else Color(0xFFEF4444)

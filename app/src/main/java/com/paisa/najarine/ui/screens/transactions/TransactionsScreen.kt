@@ -277,6 +277,7 @@ fun TransactionsScreen(
                         sourceWallet = sourceWallet,
                         destWallet = destWallet,
                         currencySymbol = currencySymbol,
+                        formatAmount = { viewModel.formatCurrency(it) },
                         onClick = { selectedTxForDetail = tx }
                     )
                 }
@@ -390,6 +391,7 @@ fun TransactionsScreen(
             sourceWallet = wallets.find { it.id == tx.walletId },
             destWallet = wallets.find { it.id == tx.toWalletId },
             currencySymbol = currencySymbol,
+            formatAmount = { viewModel.formatCurrency(it) },
             onDismiss = { selectedTxForDetail = null },
             onDelete = {
                 viewModel.deleteTransaction(tx)
@@ -405,6 +407,7 @@ fun TransactionCard(
     sourceWallet: WalletEntity?,
     destWallet: WalletEntity?,
     currencySymbol: String = "৳",
+    formatAmount: (Double) -> String = { "$currencySymbol ${String.format(Locale.US, "%,.0f", it)}" },
     onClick: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
@@ -478,12 +481,12 @@ fun TransactionCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 val prefix = when {
-                    isIncome -> "+$currencySymbol "
-                    isTransfer -> "$currencySymbol "
-                    else -> "-$currencySymbol "
+                    isIncome -> "+"
+                    isTransfer -> ""
+                    else -> "-"
                 }
                 Text(
-                    text = "$prefix${String.format(Locale.US, "%,.0f", tx.amount)}",
+                    text = "$prefix${formatAmount(tx.amount)}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = color
@@ -1396,6 +1399,7 @@ fun TransactionDetailDialog(
     sourceWallet: WalletEntity?,
     destWallet: WalletEntity?,
     currencySymbol: String = "৳",
+    formatAmount: (Double) -> String = { "$currencySymbol ${String.format(Locale.US, "%,.2f", it)}" },
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -1418,7 +1422,7 @@ fun TransactionDetailDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("পরিমাণ", color = PaisaTextSecondary)
-                    Text("$currencySymbol ${String.format(Locale.US, "%,.2f", tx.amount)}", fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
+                    Text(formatAmount(tx.amount), fontWeight = FontWeight.Bold, color = PaisaTextPrimary)
                 }
                 if (tx.fee > 0) {
                     Row(
@@ -1426,7 +1430,7 @@ fun TransactionDetailDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("ফি", color = PaisaTextSecondary)
-                        Text("$currencySymbol ${String.format(Locale.US, "%,.2f", tx.fee)}", fontWeight = FontWeight.Medium)
+                        Text(formatAmount(tx.fee), fontWeight = FontWeight.Medium)
                     }
                 }
                 Row(

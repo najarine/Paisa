@@ -91,13 +91,13 @@ fun BillsSubscriptionsScreen(
                         Text("আসন্ন নিয়মিত বিল (বকেয়া)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalMonthlyBills)}",
+                            text = viewModel.formatCurrency(totalMonthlyBills),
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFFEF4444)
                         )
                         if (totalPaidBills > 0) {
                             Text(
-                                text = "এই মাসে পরিশোধিত: $currencySymbol ${String.format(Locale.US, "%,.0f", totalPaidBills)}",
+                                text = "এই মাসে পরিশোধিত: ${viewModel.formatCurrency(totalPaidBills)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF10B981)
                             )
@@ -157,7 +157,7 @@ fun BillsSubscriptionsScreen(
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
-                                            text = "$currencySymbol ${String.format(Locale.US, "%,.0f", bill.amount)}",
+                                            text = viewModel.formatCurrency(bill.amount),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = if (bill.isPaid) Color(0xFF10B981) else Color(0xFFEF4444)

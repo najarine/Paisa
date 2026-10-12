@@ -90,13 +90,13 @@ fun WalletsScreen(
                     ) {
                         WalletStatChip(
                             title = "লিকুইড সম্পদ",
-                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalAssets)}",
+                            amount = viewModel.formatCurrency(totalAssets),
                             tint = PaisaIncomeGreen,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
                             title = "দায় ও দেনা",
-                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", totalLiabilities)}",
+                            amount = viewModel.formatCurrency(totalLiabilities),
                             tint = PaisaExpenseRed,
                             modifier = Modifier.weight(1f)
                         )
@@ -110,13 +110,13 @@ fun WalletsScreen(
                     ) {
                         WalletStatChip(
                             title = "ব্যাংক ব্যালেন্স",
-                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", bankTotal)}",
+                            amount = viewModel.formatCurrency(bankTotal),
                             tint = PaisaTransferBlue,
                             modifier = Modifier.weight(1f)
                         )
                         WalletStatChip(
                             title = "MFS",
-                            amount = "$currencySymbol ${String.format(Locale.US, "%,.0f", mfsTotal)}",
+                            amount = viewModel.formatCurrency(mfsTotal),
                             tint = Color(0xFFE2136E), // bKash magenta accent
                             modifier = Modifier.weight(1f)
                         )
@@ -173,6 +173,7 @@ fun WalletsScreen(
                     WalletDetailRow(
                         wallet = wallet,
                         currencySymbol = currencySymbol,
+                        formatAmount = { viewModel.formatCurrency(it) },
                         onClick = { selectedWalletForDetail = wallet },
                         onDelete = { viewModel.deleteWallet(wallet.id) }
                     )
@@ -247,6 +248,7 @@ fun WalletStatChip(
 fun WalletDetailRow(
     wallet: WalletEntity,
     currencySymbol: String = "৳",
+    formatAmount: (Double) -> String = { "$currencySymbol ${String.format(Locale.US, "%,.0f", it)}" },
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -314,7 +316,7 @@ fun WalletDetailRow(
 
                     if (wallet.type == "CREDIT_CARD" && wallet.creditLimit > 0) {
                         Text(
-                            text = "Limit: $currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit)} • Available: $currencySymbol ${String.format(Locale.US, "%,.0f", wallet.creditLimit + wallet.balance)}",
+                            text = "Limit: ${formatAmount(wallet.creditLimit)} • Available: ${formatAmount(wallet.creditLimit + wallet.balance)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = PaisaTextTertiary
                         )
@@ -324,7 +326,7 @@ fun WalletDetailRow(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "$currencySymbol ${String.format(Locale.US, "%,.0f", wallet.balance)}",
+                    text = formatAmount(wallet.balance),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (wallet.balance < 0) PaisaExpenseRed else PaisaTealPrimary
@@ -366,6 +368,8 @@ fun AddWalletDialog(
     val institutionOptions = when (selectedCategory) {
         FinancialInstitutionType.MFS -> BankMfsCatalog.MFS_LIST
         FinancialInstitutionType.BANK -> BankMfsCatalog.BANK_LIST
+        FinancialInstitutionType.CARD -> BankMfsCatalog.CARD_LIST
+        FinancialInstitutionType.CASH -> BankMfsCatalog.CASH_LIST
         else -> BankMfsCatalog.OTHER_LIST
     }
 
@@ -410,6 +414,8 @@ fun AddWalletDialog(
                                     val newOptions = when (cat) {
                                         FinancialInstitutionType.MFS -> BankMfsCatalog.MFS_LIST
                                         FinancialInstitutionType.BANK -> BankMfsCatalog.BANK_LIST
+                                        FinancialInstitutionType.CARD -> BankMfsCatalog.CARD_LIST
+                                        FinancialInstitutionType.CASH -> BankMfsCatalog.CASH_LIST
                                         else -> BankMfsCatalog.OTHER_LIST
                                     }
                                     selectedInstitution = newOptions.first()

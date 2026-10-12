@@ -205,7 +205,8 @@ fun DebtPayoffWidget(
     transactions: List<TransactionEntity>,
     onNavigateToDebtGoals: () -> Unit,
     onNavigateToDenaPaona: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    usdToBdtRate: Double = 122.50
 ) {
     val selectedCurrency by com.paisa.najarine.notification.AdhanPreferences.selectedCurrencyState.collectAsState()
     val currencySymbol = if (selectedCurrency.equals("USD", ignoreCase = true)) "$" else "৳"
@@ -222,6 +223,8 @@ fun DebtPayoffWidget(
             }
         }
     }
+
+    val convertAmt: (Double) -> Double = { if (selectedCurrency.equals("USD", ignoreCase = true)) it / (if (usdToBdtRate > 0) usdToBdtRate else 122.50) else it }
 
     val projection = remember(debts, goals, wallets, transactions) {
         DebtPayoffCalculator.calculateProjection(debts, goals, wallets, transactions)
@@ -382,7 +385,7 @@ fun DebtPayoffWidget(
                         color = PaisaTextSecondary
                     )
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(projection.totalOriginalLiability)}",
+                        text = "$currencySymbol ${currencyFormat.format(convertAmt(projection.totalOriginalLiability))}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = PaisaExpenseRed
@@ -396,7 +399,7 @@ fun DebtPayoffWidget(
                         color = PaisaTextSecondary
                     )
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(projection.totalPaidSoFar)}",
+                        text = "$currencySymbol ${currencyFormat.format(convertAmt(projection.totalPaidSoFar))}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = PaisaIncomeGreen
@@ -410,7 +413,7 @@ fun DebtPayoffWidget(
                         color = PaisaTextSecondary
                     )
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(projection.totalRemainingLiability)}",
+                        text = "$currencySymbol ${currencyFormat.format(convertAmt(projection.totalRemainingLiability))}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black,
                         color = PaisaTextPrimary
@@ -532,6 +535,7 @@ fun DebtPayoffWidget(
                             item = item,
                             currencyFormat = currencyFormat,
                             currencySymbol = currencySymbol,
+                            usdToBdtRate = usdToBdtRate,
                             onItemClick = onNavigateToDebtGoals,
                             modifier = Modifier.width(220.dp)
                         )
@@ -544,6 +548,7 @@ fun DebtPayoffWidget(
                             item = item,
                             currencyFormat = currencyFormat,
                             currencySymbol = currencySymbol,
+                            usdToBdtRate = usdToBdtRate,
                             onItemClick = onNavigateToDebtGoals,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -588,6 +593,7 @@ private fun IndividualLiabilityCard(
     item: IndividualLiabilityItem,
     currencyFormat: NumberFormat,
     currencySymbol: String = "৳",
+    usdToBdtRate: Double = 122.50,
     onItemClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -658,6 +664,8 @@ private fun IndividualLiabilityCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val convertCardAmt: (Double) -> Double = { if (currencySymbol == "$") it / (if (usdToBdtRate > 0) usdToBdtRate else 122.50) else it }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -665,7 +673,7 @@ private fun IndividualLiabilityCard(
                 Column {
                     Text("অবশিষ্ট ব্যালেন্স", fontSize = 10.sp, color = PaisaTextSecondary)
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(item.remainingAmount)}",
+                        text = "$currencySymbol ${currencyFormat.format(convertCardAmt(item.remainingAmount))}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = PaisaExpenseRed
@@ -675,7 +683,7 @@ private fun IndividualLiabilityCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text("মোট দায়", fontSize = 10.sp, color = PaisaTextSecondary)
                     Text(
-                        text = "$currencySymbol ${currencyFormat.format(item.totalAmount)}",
+                        text = "$currencySymbol ${currencyFormat.format(convertCardAmt(item.totalAmount))}",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,
                         color = PaisaTextSecondary
