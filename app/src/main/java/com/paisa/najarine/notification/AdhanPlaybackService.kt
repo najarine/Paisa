@@ -36,8 +36,14 @@ class AdhanPlaybackService : Service() {
         val isFajr = intent?.getBooleanExtra(EXTRA_IS_FAJR, false) ?: false
 
         acquireWakeLock()
-        val notification = createAdhanNotification(prayerName)
+        val notification = createAdhanNotification(prayerName, isFajr)
         startForeground(NOTIFICATION_ID, notification)
+
+        // Launch full-screen incoming call style alarm activity
+        try {
+            val alarmIntent = com.paisa.najarine.ui.AdhanAlarmActivity.createIntent(this, prayerName, isFajr)
+            startActivity(alarmIntent)
+        } catch (_: Exception) {}
 
         // Start playback with prayer name and mark as actual alarm
         DefaultAdhanAudioProvider.playSelectedAdhan(this, isFajr, prayerName, isActualAlarm = true)
@@ -74,7 +80,7 @@ class AdhanPlaybackService : Service() {
         }
     }
 
-    private fun createAdhanNotification(prayerName: String): Notification {
+    private fun createAdhanNotification(prayerName: String, isFajr: Boolean): Notification {
         PaisaNotificationManager.createNotificationChannels(this)
 
         val stopIntent = Intent(this, AdhanActionReceiver::class.java).apply {
@@ -87,15 +93,21 @@ class AdhanPlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("EXTRA_TARGET_TAB", 3)
-            putExtra("EXTRA_TARGET_SCREEN", "ADHAN_PRAYER")
+        val muteIntent = Intent(this, AdhanActionReceiver::class.java).apply {
+            action = ACTION_MUTE_ADHAN
         }
-        val openAppPendingIntent = PendingIntent.getActivity(
+        val mutePendingIntent = PendingIntent.getBroadcast(
+            this,
+            201,
+            muteIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val callActivityIntent = com.paisa.najarine.ui.AdhanAlarmActivity.createIntent(this, prayerName, isFajr)
+        val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
             200,
-            openAppIntent,
+            callActivityIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -103,17 +115,22 @@ class AdhanPlaybackService : Service() {
             .setSmallIcon(R.drawable.ic_notification_p)
             .setColor(0xFF0D9488.toInt())
             .setContentTitle("🔊 $prayerName আযান চলছে...")
-            .setContentText("ওয়াক্ত হয়েছে। আযান বন্ধ করতে 'আযান বন্ধ করুন' চাপুন।")
+            .setContentText("ওয়াক্ত হয়েছে। আযান বন্ধ করতে 'আজান বন্ধ' চাপুন।")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setContentIntent(openAppPendingIntent)
-            .setFullScreenIntent(openAppPendingIntent, true)
+            .setContentIntent(fullScreenPendingIntent)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
             .addAction(
                 android.R.drawable.ic_media_pause,
-                "⛔ আযান বন্ধ করুন",
+                "⛔ আজান বন্ধ",
                 stopPendingIntent
+            )
+            .addAction(
+                android.R.drawable.ic_lock_silent_mode,
+                "🔇 মিউট",
+                mutePendingIntent
             )
             .build()
     }
@@ -141,6 +158,7 @@ class AdhanPlaybackService : Service() {
         const val NOTIFICATION_ID = 9001
         const val ACTION_START_ADHAN = "com.paisa.najarine.ACTION_START_ADHAN"
         const val ACTION_STOP_ADHAN = "com.paisa.najarine.ACTION_STOP_ADHAN"
+        const val ACTION_MUTE_ADHAN = "com.paisa.najarine.ACTION_MUTE_ADHAN"
         const val EXTRA_PRAYER_NAME = "extra_prayer_name"
         const val EXTRA_IS_FAJR = "extra_is_fajr"
 
@@ -158,7 +176,7 @@ class AdhanPlaybackService : Service() {
                 }
             } catch (e: Exception) {
                 // In case of restriction, fallback to direct audio provider
-                DefaultAdhanAudioProvider.playSelectedAdhan(context, isFajr, prayerName)
+                DefaultAdhanAudioProvider.playSelectedAdhan(context, isFajr, prayerName, isActualAlarm = true)
             }
         }
 
@@ -171,13 +189,28 @@ class AdhanPlaybackService : Service() {
             } catch (_: Exception) {}
             DefaultAdhanAudioProvider.stopPlayback()
         }
+
+        fun mute(context: Context) {
+            val intent = Intent(context, AdhanPlaybackService::class.java).apply {
+                action = ACTION_MUTE_ADHAN
+            }
+            try {
+                context.startService(intent)
+            } catch (_: Exception) {}
+            DefaultAdhanAudioProvider.mutePlayback()
+        }
     }
 }
 
 class AdhanActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
-        if (intent?.action == AdhanPlaybackService.ACTION_STOP_ADHAN) {
-            AdhanPlaybackService.stop(context)
+        when (intent?.action) {
+            AdhanPlaybackService.ACTION_STOP_ADHAN -> {
+                AdhanPlaybackService.stop(context)
+            }
+            AdhanPlaybackService.ACTION_MUTE_ADHAN -> {
+                AdhanPlaybackService.mute(context)
+            }
         }
     }
 }

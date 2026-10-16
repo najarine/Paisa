@@ -1,10 +1,15 @@
 package com.paisa.najarine.ui.screens.islamic
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,101 +46,88 @@ fun DuaScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var duas by remember { mutableStateOf(viewModel.islamicRepo.categorizedDuas) }
-    var rawCategories by remember { mutableStateOf<List<com.paisa.najarine.data.remote.UmmahCategoryItem>>(emptyList()) }
+    var duas by remember { mutableStateOf(viewModel.islamicRepo.loadDuasFromDiskCache(context)) }
+    var rawCategories by remember { mutableStateOf(viewModel.islamicRepo.canonicalDuaCategories) }
     var selectedCategoryObj by remember { mutableStateOf<com.paisa.najarine.data.remote.UmmahCategoryItem?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var isLoadingMore by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var isSyncingSequentially by remember { mutableStateOf(false) }
+    var syncStatusText by remember { mutableStateOf<String?>(null) }
 
     val listState = rememberLazyListState()
 
-    // Fetch all 27 categories once on startup
+    // 1. Initial startup: load categories and start sequential background sync
     LaunchedEffect(Unit) {
-        isLoading = true
+        val cached = viewModel.islamicRepo.loadDuasFromDiskCache(context)
+        if (cached.isNotEmpty()) {
+            duas = cached
+        }
         val fetchedCategories = viewModel.islamicRepo.fetchDuaCategoriesFromApi()
         if (fetchedCategories.isNotEmpty()) {
             rawCategories = fetchedCategories
         }
-        val fetchedDuas = viewModel.islamicRepo.fetchDuasFromApi()
-        if (fetchedDuas.isNotEmpty()) {
-            duas = fetchedDuas
-        }
-        isLoading = false
-    }
 
-    // Lazy load duas when category selection changes
-    LaunchedEffect(selectedCategoryObj) {
-        isLoading = true
-        val cat = selectedCategoryObj
-        if (cat == null) {
-            val fetchedDuas = viewModel.islamicRepo.fetchDuasFromApi()
-            if (fetchedDuas.isNotEmpty()) {
-                duas = fetchedDuas
-            }
-        } else {
-            val catId = cat.id ?: cat.name ?: ""
-            val categoryDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
-            if (categoryDuas.isNotEmpty()) {
-                duas = categoryDuas
-            } else {
-                // Filter locally if endpoint returns empty
-                duas = viewModel.islamicRepo.fetchDuasFromApi().filter {
-                    it.category.contains(cat.name ?: "", ignoreCase = true) ||
-                    it.category.contains(catId, ignoreCase = true)
-                }
-            }
-        }
-        isLoading = false
-    }
-
-    // Infinite scroll pagination for Duas
-    fun loadMoreDuas() {
-        if (isLoadingMore) return
+        // Sequential category-wise API fetch across all 27 categories
+        isSyncingSequentially = true
         scope.launch {
-            isLoadingMore = true
-            val cat = selectedCategoryObj
-            if (cat == null) {
-                val moreDuas = viewModel.islamicRepo.fetchDuasFromApi()
-                if (moreDuas.isNotEmpty()) {
-                    val newDuas = (duas + moreDuas).distinctBy { it.id + it.title }
-                    duas = newDuas
+            try {
+                viewModel.islamicRepo.fetchAllDuasSequentially(
+                    context = context,
+                    categories = rawCategories
+                ) { catName, count, totalSoFar ->
+                    syncStatusText = "সিঙ্ক হচ্ছে: $catName ($totalSoFar টি দোয়া)"
+                    val fresh = viewModel.islamicRepo.loadDuasFromDiskCache(context)
+                    if (fresh.size > duas.size) {
+                        duas = fresh
+                    }
                 }
-            } else {
-                val catId = cat.id ?: cat.name ?: ""
-                val moreCatDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
-                if (moreCatDuas.isNotEmpty()) {
-                    val newDuas = (duas + moreCatDuas).distinctBy { it.id + it.title }
-                    duas = newDuas
+                val finalFresh = viewModel.islamicRepo.loadDuasFromDiskCache(context)
+                if (finalFresh.isNotEmpty()) {
+                    duas = finalFresh
+                }
+            } catch (_: Exception) {
+            } finally {
+                isSyncingSequentially = false
+                syncStatusText = null
+            }
+        }
+    }
+
+    // 2. Immediate fetch when a user explicitly taps a category chip
+    fun onSelectCategory(cat: com.paisa.najarine.data.remote.UmmahCategoryItem?) {
+        selectedCategoryObj = cat
+        if (cat != null) {
+            scope.launch {
+                val catId = cat.id ?: ""
+                val catDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
+                if (catDuas.isNotEmpty()) {
+                    val combined = (duas + catDuas).distinctBy { (it.arabic.take(15) + it.title).trim() }
+                    duas = combined
+                    viewModel.islamicRepo.saveDuasToDiskCache(context, combined)
                 }
             }
-            isLoadingMore = false
-        }
-    }
-
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisibleItemIndex >= duas.size - 3
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value && !isLoading && !isLoadingMore) {
-            loadMoreDuas()
         }
     }
 
     val filteredDuas = remember(duas, selectedCategoryObj, searchQuery) {
         duas.filter { dua ->
-            val matchCategory = selectedCategoryObj == null ||
-                    dua.category.contains(selectedCategoryObj?.name ?: "", ignoreCase = true) ||
-                    dua.category.contains(selectedCategoryObj?.id ?: "", ignoreCase = true)
+            val matchCategory = if (selectedCategoryObj == null) {
+                true
+            } else {
+                val catId = selectedCategoryObj?.id ?: ""
+                val catName = selectedCategoryObj?.name ?: ""
+                dua.category.equals(catName, ignoreCase = true) ||
+                        dua.category.equals(catId, ignoreCase = true) ||
+                        dua.category.contains(catName, ignoreCase = true) ||
+                        dua.category.contains(catId, ignoreCase = true)
+            }
             val matchSearch = searchQuery.isBlank() ||
                     dua.title.contains(searchQuery, ignoreCase = true) ||
                     dua.translation.contains(searchQuery, ignoreCase = true) ||
                     dua.arabic.contains(searchQuery, ignoreCase = true) ||
-                    dua.reference.contains(searchQuery, ignoreCase = true)
+                    dua.transliteration.contains(searchQuery, ignoreCase = true) ||
+                    dua.reference.contains(searchQuery, ignoreCase = true) ||
+                    dua.category.contains(searchQuery, ignoreCase = true)
             matchCategory && matchSearch
         }
     }
@@ -150,33 +143,59 @@ fun DuaScreen(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "উম্মা এপিআই (Ummah API) • ইনফিনিট স্ক্রোল",
+                            text = if (isSyncingSequentially && syncStatusText != null) {
+                                syncStatusText ?: "উম্মা এপিআই থেকে লোড হচ্ছে..."
+                            } else {
+                                "${duas.size}টি বিশুদ্ধ দোয়া • ২৭টি বিষয়ভিত্তিক অধ্যায়"
+                            },
                             style = MaterialTheme.typography.bodySmall,
-                            color = PaisaTextSecondary,
+                            color = if (isSyncingSequentially) PaisaTealPrimary else PaisaTextSecondary,
                             fontSize = 11.sp
                         )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.testTag("dua_back_button")
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ফিরে যান")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            isLoading = true
-                            val cat = selectedCategoryObj
-                            if (cat == null) {
-                                duas = viewModel.islamicRepo.fetchDuasFromApi()
-                            } else {
-                                val catId = cat.id ?: cat.name ?: ""
-                                duas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                isLoading = true
+                                isSyncingSequentially = true
+                                try {
+                                    val cat = selectedCategoryObj
+                                    if (cat != null) {
+                                        val catId = cat.id ?: ""
+                                        val catDuas = viewModel.islamicRepo.fetchDuasByCategoryFromApi(catId)
+                                        if (catDuas.isNotEmpty()) {
+                                            duas = (duas + catDuas).distinctBy { (it.arabic.take(15) + it.title).trim() }
+                                        }
+                                    } else {
+                                        val fresh = viewModel.islamicRepo.fetchAllDuasSequentially(
+                                            context = context,
+                                            categories = rawCategories
+                                        ) { catName, _, total ->
+                                            syncStatusText = "সিঙ্ক হচ্ছে: $catName ($total টি)"
+                                        }
+                                        duas = fresh
+                                    }
+                                    Toast.makeText(context, "দোয়া সফলভাবে সিঙ্ক করা হয়েছে!", Toast.LENGTH_SHORT).show()
+                                } catch (_: Exception) {
+                                } finally {
+                                    isLoading = false
+                                    isSyncingSequentially = false
+                                    syncStatusText = null
+                                }
                             }
-                            isLoading = false
-                            Toast.makeText(context, "দোয়া সফলভাবে সিঙ্ক করা হয়েছে!", Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
+                        },
+                        modifier = Modifier.testTag("dua_refresh_button")
+                    ) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = PaisaTealPrimary)
                     }
                 },
@@ -194,7 +213,7 @@ fun DuaScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("দোয়া খুঁজুন (আরবি, বাংলা বা বিষয়)...", fontSize = 13.sp) },
+                placeholder = { Text("দোয়া খুঁজুন (আরবি, বাংলা, উচ্চারণ বা বিষয়)...", fontSize = 13.sp) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PaisaTealPrimary) },
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
@@ -205,7 +224,8 @@ fun DuaScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .testTag("dua_search_input"),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = PaisaTealPrimary,
@@ -215,6 +235,39 @@ fun DuaScreen(
                 ),
                 singleLine = true
             )
+
+            // Sync progress banner if sequentially fetching in background
+            AnimatedVisibility(
+                visible = isSyncingSequentially && syncStatusText != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Surface(
+                    color = PaisaTealContainer,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            color = PaisaTealDark,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = syncStatusText ?: "ক্যাটাগরিভিত্তিক দোয়া ক্রমানুসারে সিঙ্ক হচ্ছে...",
+                            fontSize = 11.sp,
+                            color = PaisaTealDark,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
 
             // Category Chips Row (All 27 categories from Ummah API + "সকল")
             LazyRow(
@@ -229,8 +282,14 @@ fun DuaScreen(
                     val isSelected = selectedCategoryObj == null
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategoryObj = null },
-                        label = { Text("সকল", fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        onClick = { onSelectCategory(null) },
+                        label = {
+                            Text(
+                                text = "সকল (${duas.size})",
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = PaisaTealPrimary,
                             selectedLabelColor = Color.White,
@@ -241,7 +300,8 @@ fun DuaScreen(
                             enabled = true,
                             selected = isSelected,
                             borderColor = if (isSelected) PaisaTealPrimary else PaisaBorder
-                        )
+                        ),
+                        modifier = Modifier.testTag("dua_category_all")
                     )
                 }
 
@@ -250,8 +310,14 @@ fun DuaScreen(
                     val displayLabel = cat.name ?: cat.id ?: "ক্যাটাগরি"
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategoryObj = cat },
-                        label = { Text(displayLabel, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        onClick = { onSelectCategory(cat) },
+                        label = {
+                            Text(
+                                text = displayLabel,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = PaisaTealPrimary,
                             selectedLabelColor = Color.White,
@@ -262,7 +328,8 @@ fun DuaScreen(
                             enabled = true,
                             selected = isSelected,
                             borderColor = if (isSelected) PaisaTealPrimary else PaisaBorder
-                        )
+                        ),
+                        modifier = Modifier.testTag("dua_category_${cat.id}")
                     )
                 }
             }
@@ -286,9 +353,18 @@ fun DuaScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.SearchOff, contentDescription = null, modifier = Modifier.size(48.dp), tint = PaisaTextSecondary)
+                        Icon(
+                            imageVector = Icons.Default.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = PaisaTextSecondary
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("এই ক্যাটাগরিতে কোনো দোয়া পাওয়া যায়নি", color = PaisaTextSecondary, fontSize = 14.sp)
+                        Text(
+                            text = "এই ক্যাটাগরিতে কোনো দোয়া পাওয়া যায়নি",
+                            color = PaisaTextSecondary,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             } else {
@@ -300,25 +376,8 @@ fun DuaScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(filteredDuas) { dua ->
+                    items(filteredDuas, key = { it.id + it.arabic.take(15) }) { dua ->
                         DuaCardItem(dua = dua)
-                    }
-
-                    if (isLoadingMore) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = PaisaTealPrimary, strokeWidth = 2.dp)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("আরও দোয়া আসছে...", fontSize = 12.sp, color = PaisaTextSecondary)
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -330,7 +389,9 @@ fun DuaScreen(
 fun DuaCardItem(dua: DuaItem) {
     val context = LocalContext.current
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("dua_card_${dua.id}"),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = PaisaSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -349,6 +410,7 @@ fun DuaCardItem(dua: DuaItem) {
                     color = PaisaTextPrimary,
                     modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
@@ -398,35 +460,67 @@ fun DuaCardItem(dua: DuaItem) {
                 fontWeight = FontWeight.Medium
             )
 
-            if (dua.reference.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "সূত্র: ${dua.reference}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PaisaTealPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp
-                    )
+            Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(
-                            onClick = {
-                                val sendIntent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, "${dua.title}\n\n${dua.arabic}\n\nঅর্থ: ${dua.translation}\nসূত্র: ${dua.reference}")
-                                    type = "text/plain"
-                                }
-                                context.startActivity(Intent.createChooser(sendIntent, "শেয়ার করুন"))
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = "Share", tint = PaisaTextSecondary, modifier = Modifier.size(16.dp))
-                        }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (dua.reference.isNotBlank()) "সূত্র: ${dua.reference}" else "সূত্র: সহীহ হাদিস ও সুন্নাহ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = PaisaTealPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Copy to clipboard action
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clipText = "${dua.title}\n\n${dua.arabic}\n\nউচ্চারণ: ${dua.transliteration}\nঅর্থ: ${dua.translation}\nসূত্র: ${dua.reference}"
+                            val clip = ClipData.newPlainText("দোয়া", clipText)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "দোয়া ক্লিপবোর্ডে কপি করা হয়েছে!", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("dua_copy_button_${dua.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy Dua",
+                            tint = PaisaTextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    // Share action
+                    IconButton(
+                        onClick = {
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "${dua.title}\n\n${dua.arabic}\n\nউচ্চারণ: ${dua.transliteration}\nঅর্থ: ${dua.translation}\nসূত্র: ${dua.reference}\n\n— পয়সা অ্যাপ (Paisa) থেকে প্রেরিত"
+                                )
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, "দোয়া শেয়ার করুন"))
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("dua_share_button_${dua.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share Dua",
+                            tint = PaisaTextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }

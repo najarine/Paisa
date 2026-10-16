@@ -276,13 +276,13 @@ fun DailyHadithScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "প্রতি ঘণ্টার হাদিস নোটিফিকেশন",
+                                    text = "দৈনিক হাদিস নোটিফিকেশন",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     color = PaisaTextPrimary
                                 )
                                 Text(
-                                    text = if (isHourlyHadithNotifEnabled) "প্রতি ঘণ্টায় উম্মা এপিআই থেকে বিশুদ্ধ হাদিস আসবে" else "ঘণ্টার হাদিস নোটিফিকেশন বন্ধ",
+                                    text = if (isHourlyHadithNotifEnabled) "ইশার পর রাতে দৈনিক ১টি নির্বাচিত হাদিস আসবে" else "দৈনিক হাদিস নোটিফিকেশন বন্ধ",
                                     fontSize = 11.sp,
                                     color = if (isHourlyHadithNotifEnabled) PaisaTealDark else PaisaTextSecondary
                                 )
@@ -292,12 +292,12 @@ fun DailyHadithScreen(
                         Switch(
                             checked = isHourlyHadithNotifEnabled,
                             onCheckedChange = { enabled ->
-                                com.paisa.najarine.notification.AdhanPreferences.setHourlyHadithNotificationEnabled(context, enabled)
+                                com.paisa.najarine.notification.AdhanPreferences.setDailyHadithNotificationEnabled(context, enabled)
                                 if (enabled) {
-                                    com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(context)
-                                    Toast.makeText(context, "ঘণ্টার হাদিস নোটিফিকেশন চালু হয়েছে", Toast.LENGTH_SHORT).show()
+                                    com.paisa.najarine.notification.DailyIslamicScheduler.scheduleDailyEveningHadith(context)
+                                    Toast.makeText(context, "দৈনিক হাদিস নোটিফিকেশন চালু হয়েছে (ইশার পর)", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    Toast.makeText(context, "ঘণ্টার হাদিস নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "দৈনিক হাদিস নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = SwitchDefaults.colors(

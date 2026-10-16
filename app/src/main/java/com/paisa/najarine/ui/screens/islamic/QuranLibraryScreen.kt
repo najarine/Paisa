@@ -236,13 +236,13 @@ fun QuranLibraryScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "প্রতি ঘণ্টার কুরআন আয়াত নোটিফিকেশন",
+                                        text = "দৈনিক কুরআন আয়াত নোটিফিকেশন",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = PaisaTextPrimary
                                     )
                                     Text(
-                                        text = if (isHourlyQuranNotifEnabled) "প্রতি ঘণ্টায় নতুন আয়াত ও অর্থ নোটিফিকেশন আসবে" else "ঘণ্টার আয়াত নোটিফিকেশন বন্ধ",
+                                        text = if (isHourlyQuranNotifEnabled) "ফজরের পর সকালে দৈনিক ১টি নির্বাচিত আয়াত আসবে" else "দৈনিক আয়াত নোটিফিকেশন বন্ধ",
                                         fontSize = 11.sp,
                                         color = if (isHourlyQuranNotifEnabled) PaisaTealDark else PaisaTextSecondary
                                     )
@@ -252,12 +252,12 @@ fun QuranLibraryScreen(
                             Switch(
                                 checked = isHourlyQuranNotifEnabled,
                                 onCheckedChange = { enabled ->
-                                    com.paisa.najarine.notification.AdhanPreferences.setHourlyQuranNotificationEnabled(context, enabled)
+                                    com.paisa.najarine.notification.AdhanPreferences.setDailyQuranNotificationEnabled(context, enabled)
                                     if (enabled) {
-                                        com.paisa.najarine.notification.HourlyIslamicScheduler.scheduleHourlySync(context)
-                                        Toast.makeText(context, "ঘণ্টার কুরআন নোটিফিকেশন চালু হয়েছে", Toast.LENGTH_SHORT).show()
+                                        com.paisa.najarine.notification.DailyIslamicScheduler.scheduleDailyMorningQuran(context)
+                                        Toast.makeText(context, "দৈনিক কুরআন নোটিফিকেশন চালু হয়েছে (ফজরের পর)", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "ঘণ্টার কুরআন নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "দৈনিক কুরআন নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 colors = SwitchDefaults.colors(

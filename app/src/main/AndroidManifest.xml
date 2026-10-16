@@ -39,6 +39,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.AdhanAlarmActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MyApplication" />
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5571621417978572~3962229992" />
@@ -64,11 +73,20 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.paisa.najarine.ACTION_STOP_ADHAN" />
+                <action android:name="com.paisa.najarine.ACTION_MUTE_ADHAN" />
             </intent-filter>
         </receiver>
 
         <receiver
             android:name=".notification.HourlyIslamicAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".notification.DailyQuranAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".notification.DailyHadithAlarmReceiver"
             android:exported="false" />
 
         <service

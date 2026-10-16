@@ -787,58 +787,239 @@ class IslamicRepository(
         }
     }
 
-    suspend fun fetchDuaCategoriesFromApi(): List<com.paisa.najarine.data.remote.UmmahCategoryItem> {
-        return try {
-            val response = apiService.getDuaCategories()
-            response.data?.categories ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
+    private val categoryDuaCache = java.util.concurrent.ConcurrentHashMap<String, List<DuaItem>>()
+    private val allDuasCache = java.util.concurrent.CopyOnWriteArrayList<DuaItem>()
+
+    val canonicalDuaCategories = listOf(
+        com.paisa.najarine.data.remote.UmmahCategoryItem("morning", "সকালের যিকির", "Supplications for the morning", 7),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("evening", "সন্ধ্যার যিকির", "Supplications for the evening", 5),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("wudu", "অযু ও পবিত্রতা", "Supplications for ablution and purification", 5),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("prayer", "নামাযের মধ্যে", "Supplications said during salah", 8),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("after_prayer", "নামাযের পরের দোয়া", "Supplications after prayer", 8),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("sleep", "ঘুমানো ও জাগ্রত", "Supplications before and after sleep", 6),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("food", "খাবার ও পানীয়", "Supplications for eating and drinking", 6),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("travel", "সফর ও যাত্রা", "Supplications for journey and travel", 6),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("home", "ঘরে প্রবেশ ও বাহির", "Supplications for home", 2),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("masjid", "মসজিদে দোয়া", "Supplications for entering and leaving mosque", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("distress", "বিপদ ও দুশ্চিন্তা মুক্তি", "Supplications for grief, distress and hardship", 7),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("forgiveness", "তওবা ও ক্ষমা প্রার্থনা", "Supplications seeking forgiveness", 5),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("illness", "রোগ-ব্যাধি ও আরোগ্য", "Supplications for illness and recovery", 5),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("weather", "আবহাওয়া ও বৃষ্টি", "Supplications for wind, rain and thunder", 3),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("knowledge", "ইলম ও জ্ঞান বৃদ্ধি", "Supplications for beneficial knowledge", 3),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("parents", "পিতা-মাতার জন্য দোয়া", "Supplications for parents", 3),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("guidance", "হেদায়েত ও সুপথ", "Supplications for steadfastness and guidance", 3),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("gratitude", "শুকরিয়া ও কৃতজ্ঞতা", "Supplications of thanks and gratitude", 3),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("protection", "হেফাজত ও সুরক্ষা", "Supplications for protection from evil", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("dhikr", "তাসবীহ ও সাধারণ যিকির", "General remembrance of Allah", 6),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("marriage", "পরিবার ও বিবাহ", "Supplications for marriage and spouse", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("hajj", "হজ্ব ও ওমরাহ", "Supplications for pilgrimage", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("grief", "শোক ও সান্ত্বনা", "Supplications during loss and grief", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("children", "সন্তান ও পরিবার", "Supplications for pious children and family", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("business", "হালাল রিজিক ও ব্যবসা", "Supplications for provision, debt and wealth", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("night_prayer", "তাহাজ্জুদ ও রাতের সালাত", "Supplications for Qiyam al-Layl", 4),
+        com.paisa.najarine.data.remote.UmmahCategoryItem("quran_recitation", "কুরআন তিলাওয়াত", "Supplications before and after Quran recitation", 3)
+    )
+
+    fun getCategoryBanglaName(catId: String?, defaultName: String? = null): String {
+        return when (catId?.lowercase()?.trim()) {
+            "morning" -> "সকালের যিকির"
+            "evening" -> "সন্ধ্যার যিকির"
+            "wudu" -> "অযু ও পবিত্রতা"
+            "prayer" -> "নামাযের মধ্যে"
+            "after_prayer" -> "নামায পরবর্তী"
+            "sleep" -> "ঘুমানো ও জাগ্রত"
+            "food" -> "খাবার ও পানীয়"
+            "travel" -> "সফর ও যাত্রা"
+            "home" -> "ঘর সংক্রান্ত"
+            "masjid" -> "মসজিদে দোয়া"
+            "distress" -> "বিপদ ও দুশ্চিন্তা মুক্তি"
+            "forgiveness" -> "তওবা ও ক্ষমা"
+            "illness" -> "রোগ-ব্যাধি ও আরোগ্য"
+            "weather" -> "আবহাওয়া ও বৃষ্টি"
+            "knowledge" -> "ইলম ও জ্ঞান বৃদ্ধি"
+            "parents" -> "পিতা-মাতার জন্য"
+            "guidance" -> "হেদায়েত ও সুপথ"
+            "gratitude" -> "শুকরিয়া ও নিয়ামত"
+            "protection" -> "হেফাজত ও সুরক্ষা"
+            "dhikr" -> "তাসবীহ ও যিকির"
+            "marriage" -> "বিবাহ ও পরিবার"
+            "hajj" -> "হজ্ব ও ওমরাহ"
+            "grief" -> "শোক ও সান্ত্বনা"
+            "children" -> "সন্তান ও বংশধর"
+            "business" -> "হালাল রিজিক ও ব্যবসা"
+            "night_prayer" -> "তাহাজ্জুদ ও রাতের সালাত"
+            "quran_recitation" -> "কুরআন তিলাওয়াত"
+            else -> defaultName ?: catId ?: "সাধারণ"
         }
     }
 
-    suspend fun fetchDuasFromApi(): List<DuaItem> {
+    suspend fun fetchDuaCategoriesFromApi(): List<com.paisa.najarine.data.remote.UmmahCategoryItem> {
         return try {
-            val response = apiService.getAllDuas()
-            if (response.success == true && !response.data.isNullOrEmpty()) {
-                response.data.mapIndexed { index, item ->
-                    DuaItem(
-                        id = item.id?.toString() ?: "dua_$index",
-                        title = item.title ?: "দোয়া #${index + 1}",
-                        category = item.category ?: "সাধারণ",
-                        arabic = item.arabic ?: "",
-                        transliteration = item.transliteration ?: "",
-                        translation = item.translation ?: "",
-                        reference = item.reference ?: ""
+            val response = apiService.getDuaCategories()
+            val list = response.data?.categories
+            if (!list.isNullOrEmpty()) {
+                list.map { cat ->
+                    val banglaName = getCategoryBanglaName(cat.id, cat.name)
+                    com.paisa.najarine.data.remote.UmmahCategoryItem(
+                        id = cat.id,
+                        name = banglaName,
+                        description = cat.description,
+                        count = cat.count
                     )
                 }
             } else {
-                categorizedDuas
+                canonicalDuaCategories
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
+            canonicalDuaCategories
+        }
+    }
+
+    fun loadDuasFromDiskCache(context: android.content.Context): List<DuaItem> {
+        if (allDuasCache.isNotEmpty()) return allDuasCache.toList()
+        return try {
+            val file = java.io.File(context.filesDir, "ummah_duas_cache_v2.json")
+            if (file.exists()) {
+                val jsonStr = file.readText()
+                val jsonArr = org.json.JSONArray(jsonStr)
+                val list = mutableListOf<DuaItem>()
+                for (i in 0 until jsonArr.length()) {
+                    val obj = jsonArr.getJSONObject(i)
+                    val item = DuaItem(
+                        id = obj.optString("id", "dua_$i"),
+                        title = obj.optString("title", "দোয়া"),
+                        category = obj.optString("category", "সাধারণ"),
+                        arabic = obj.optString("arabic", ""),
+                        transliteration = obj.optString("transliteration", ""),
+                        translation = obj.optString("translation", ""),
+                        reference = obj.optString("reference", "")
+                    )
+                    list.add(item)
+                }
+                if (list.isNotEmpty()) {
+                    allDuasCache.clear()
+                    allDuasCache.addAll(list)
+                    list.groupBy { it.category.lowercase() }.forEach { (key, items) ->
+                        categoryDuaCache[key] = items
+                    }
+                    return list
+                }
+            }
+            categorizedDuas
+        } catch (_: Exception) {
             categorizedDuas
         }
     }
 
+    fun saveDuasToDiskCache(context: android.content.Context, list: List<DuaItem>) {
+        try {
+            val file = java.io.File(context.filesDir, "ummah_duas_cache_v2.json")
+            val jsonArr = org.json.JSONArray()
+            for (item in list) {
+                val obj = org.json.JSONObject().apply {
+                    put("id", item.id)
+                    put("title", item.title)
+                    put("category", item.category)
+                    put("arabic", item.arabic)
+                    put("transliteration", item.transliteration)
+                    put("translation", item.translation)
+                    put("reference", item.reference)
+                }
+                jsonArr.put(obj)
+            }
+            file.writeText(jsonArr.toString())
+        } catch (_: Exception) {}
+    }
+
     suspend fun fetchDuasByCategoryFromApi(category: String): List<DuaItem> {
+        val cleanKey = category.trim().lowercase()
+        categoryDuaCache[cleanKey]?.let { return it }
+
         return try {
             val response = apiService.getDuasByCategory(category)
-            if (response.success == true && !response.data.isNullOrEmpty()) {
-                response.data.mapIndexed { index, item ->
+            val duaItems = response.data?.duas
+            if (response.success == true && !duaItems.isNullOrEmpty()) {
+                val banglaCatName = getCategoryBanglaName(category, category)
+                val list = duaItems.mapIndexed { index, item ->
                     DuaItem(
                         id = item.id?.toString() ?: "dua_${category}_$index",
-                        title = item.title ?: "দোয়া #${index + 1}",
-                        category = item.category ?: category,
+                        title = item.title ?: "${banglaCatName} #${index + 1}",
+                        category = banglaCatName,
                         arabic = item.arabic ?: "",
                         transliteration = item.transliteration ?: "",
                         translation = item.translation ?: "",
-                        reference = item.reference ?: ""
+                        reference = item.source ?: item.reference ?: "হাদিস গ্রন্থ"
                     )
                 }
+                categoryDuaCache[cleanKey] = list
+                list
             } else {
-                emptyList()
+                val matches = allDuasCache.filter { it.category.contains(category, ignoreCase = true) }
+                if (matches.isNotEmpty()) {
+                    categoryDuaCache[cleanKey] = matches
+                    matches
+                } else {
+                    categorizedDuas.filter { it.category.contains(category, ignoreCase = true) }
+                }
             }
-        } catch (e: Exception) {
-            emptyList()
+        } catch (_: Exception) {
+            val matches = allDuasCache.filter { it.category.contains(category, ignoreCase = true) }
+            matches.ifEmpty {
+                categorizedDuas.filter { it.category.contains(category, ignoreCase = true) }
+            }
         }
     }
+
+    suspend fun fetchAllDuasSequentially(
+        context: android.content.Context? = null,
+        categories: List<com.paisa.najarine.data.remote.UmmahCategoryItem>,
+        onCategoryProgress: ((categoryName: String, count: Int, totalSoFar: Int) -> Unit)? = null
+    ): List<DuaItem> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val aggregated = mutableListOf<DuaItem>()
+
+        // 1. Load from disk cache first if available for zero-latency instant rendering
+        if (context != null && allDuasCache.isEmpty()) {
+            val cached = loadDuasFromDiskCache(context)
+            if (cached.isNotEmpty()) {
+                aggregated.addAll(cached)
+            }
+        } else if (allDuasCache.isNotEmpty()) {
+            aggregated.addAll(allDuasCache)
+        }
+
+        val targetCategories = categories.ifEmpty { canonicalDuaCategories }
+
+        // 2. Sequentially fetch each category from Ummah API
+        for (catItem in targetCategories) {
+            val catId = catItem.id ?: continue
+            val cleanKey = catId.trim().lowercase()
+            val existing = categoryDuaCache[cleanKey]
+            val catDisplayName = catItem.name ?: getCategoryBanglaName(catId, catId)
+
+            if (existing.isNullOrEmpty()) {
+                val catDuas = fetchDuasByCategoryFromApi(catId)
+                if (catDuas.isNotEmpty()) {
+                    aggregated.addAll(catDuas)
+                    onCategoryProgress?.invoke(catDisplayName, catDuas.size, aggregated.size)
+                }
+                kotlinx.coroutines.delay(40) // sequential polite delay
+            } else {
+                onCategoryProgress?.invoke(catDisplayName, existing.size, aggregated.size)
+            }
+        }
+
+        val combined = (aggregated + categorizedDuas).distinctBy { 
+            (it.arabic.take(15) + it.title).trim() 
+        }
+        allDuasCache.clear()
+        allDuasCache.addAll(combined)
+
+        // Save fresh full copy to disk cache
+        if (context != null && combined.size >= 10) {
+            saveDuasToDiskCache(context, combined)
+        }
+
+        combined
+    }
 }
+

@@ -6,8 +6,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import com.paisa.najarine.notification.AdhanPreferences
 import com.paisa.najarine.notification.AdhanScheduler
 import com.paisa.najarine.notification.DefaultAdhanAudioProvider
 import com.paisa.najarine.notification.PrayerNotificationWorker
+import com.paisa.najarine.ui.AdhanAlarmActivity
 import com.paisa.najarine.ui.PaisaViewModel
 import com.paisa.najarine.ui.theme.*
 import java.util.Locale
@@ -68,6 +71,7 @@ fun AdhanPrayerTimesScreen(
     var isAdhanEnabled by remember { mutableStateOf(AdhanPreferences.isAdhanEnabled(context)) }
     var isPrayerNotificationsEnabled by remember { mutableStateOf(AdhanPreferences.isPrayerNotificationsEnabled(context)) }
     val isAudioPlaying by DefaultAdhanAudioProvider.isPlayingState.collectAsState()
+    val isPreviewPlaying by DefaultAdhanAudioProvider.isPreviewPlayingState.collectAsState()
     val selectedAdhanId by AdhanPreferences.selectedAdhanIdState.collectAsState()
     val selectedFajrAdhanId by AdhanPreferences.selectedFajrAdhanIdState.collectAsState()
     val currentPlayingUrl by DefaultAdhanAudioProvider.currentPlayingUrlState.collectAsState()
@@ -221,7 +225,10 @@ fun AdhanPrayerTimesScreen(
             )
         }
     ) { padding ->
+        val listState = rememberLazyListState()
+
         LazyColumn(
+            state = listState,
             modifier = modifier
                 .fillMaxSize()
                 .background(PaisaBackground)
@@ -462,78 +469,204 @@ fun AdhanPrayerTimesScreen(
                             )
                         }
 
-                        // 3. Action Buttons: Test Notification + Test Adhan
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // 3. Action Buttons: Unified Test Push Notification & Fullscreen Adhan Previews
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(PaisaSurface)
+                                .border(1.dp, PaisaTealPrimary.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            OutlinedButton(
-                                onClick = {
-                                    PrayerNotificationWorker.triggerTestAlertViaWorkManager(
-                                        context = context,
-                                        prayerName = "আসরের নামাজ (Asr)",
-                                        scheduledTime = formatTime("16:25")
-                                    )
-                                    Toast.makeText(context, "টেস্ট নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(14.dp), tint = PaisaTealPrimary)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("টেস্ট অ্যালার্ট", fontSize = 12.sp, color = PaisaTealPrimary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        tint = PaisaTealPrimary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "আযান ও নোটিফিকেশন প্রিভিউ",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = PaisaTextPrimary
+                                    )
+                                }
+                                Surface(
+                                    color = PaisaTealPrimary.copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = "টেস্ট ও ডেমো",
+                                        color = PaisaTealPrimary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
 
-                            if (isAudioPlaying) {
+                            Text(
+                                text = "ওয়াক্তের সময়ে নোটিফিকেশন ও ফুলস্ক্রিন কল অ্যালার্ট কীভাবে আসবে তা পরীক্ষা করুন। নির্বাচিত ক্যাশ আযানটি বাজবে।",
+                                fontSize = 11.sp,
+                                color = PaisaTextSecondary,
+                                lineHeight = 15.sp
+                            )
+
+                            if (isPreviewPlaying) {
                                 Button(
                                     onClick = {
-                                        com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
                                         DefaultAdhanAudioProvider.stopPlayback()
-                                        Toast.makeText(context, "আজান বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                        com.paisa.najarine.notification.AdhanPlaybackService.stop(context)
+                                        Toast.makeText(context, "টেস্ট আযান বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = PaisaExpenseRed),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(vertical = 10.dp)
                                 ) {
-                                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("বন্ধ করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Icon(
+                                        imageVector = Icons.Default.CallEnd,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "চলমান আযান বন্ধ করুন (Stop Adhan)",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
                                 }
                             } else {
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                // 1. Push Alert Test Button
+                                OutlinedButton(
+                                    onClick = {
+                                        PrayerNotificationWorker.triggerTestAlertViaWorkManager(
+                                            context = context,
+                                            prayerName = "আসরের নামাজ (Asr)",
+                                            scheduledTime = formatTime("16:25")
+                                        )
+                                        Toast.makeText(context, "টেস্ট নোটিফিকেশন পাঠানো হয়েছে", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PaisaTealPrimary.copy(alpha = 0.45f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PaisaTealPrimary),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp)
                                 ) {
-                                    OutlinedButton(
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = PaisaTealPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "টেস্ট পুশ নোটিফিকেশন পাঠান",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = PaisaTealPrimary
+                                    )
+                                }
+
+                                // 2. Adhan Fullscreen Call Previews (Regular & Fajr)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
                                         onClick = {
-                                            DefaultAdhanAudioProvider.playSelectedAdhan(context, false, "টেস্ট সাধারণ আযান")
-                                            Toast.makeText(context, "টেস্ট আজান বাজছে...", Toast.LENGTH_SHORT).show()
+                                            try {
+                                                val intent = AdhanAlarmActivity.createIntent(
+                                                    context = context,
+                                                    prayerName = "আসরের নামাজ",
+                                                    isFajr = false,
+                                                    isTest = true
+                                                )
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                // Fallback to in-screen preview
+                                                DefaultAdhanAudioProvider.playSelectedAdhan(
+                                                    context = context,
+                                                    isFajr = false,
+                                                    prayerName = "আসরের নামাজ",
+                                                    isActualAlarm = false
+                                                )
+                                            }
                                         },
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.weight(1f),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = PaisaTealPrimary,
+                                            contentColor = Color.White
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 9.dp)
                                     ) {
-                                        Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(13.dp), tint = PaisaTealPrimary)
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text("টেস্ট আজান", fontSize = 11.sp, color = PaisaTealPrimary)
+                                        Icon(
+                                            imageVector = Icons.Default.VolumeUp,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "সাধারণ আযান টেস্ট",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
                                     }
 
                                     Button(
                                         onClick = {
-                                            DefaultAdhanAudioProvider.playSelectedAdhan(context, true, "টেস্ট ফজর আযান")
-                                            Toast.makeText(context, "টেস্ট ফজর আজান বাজছে...", Toast.LENGTH_SHORT).show()
+                                            try {
+                                                val intent = AdhanAlarmActivity.createIntent(
+                                                    context = context,
+                                                    prayerName = "ফজর নামাজ",
+                                                    isFajr = true,
+                                                    isTest = true
+                                                )
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                // Fallback to in-screen preview
+                                                DefaultAdhanAudioProvider.playSelectedAdhan(
+                                                    context = context,
+                                                    isFajr = true,
+                                                    prayerName = "ফজর নামাজ",
+                                                    isActualAlarm = false
+                                                )
+                                            }
                                         },
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF0F766E), // Deep Teal
+                                            contentColor = Color.White
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 9.dp)
                                     ) {
-                                        Icon(Icons.Default.NightsStay, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color.White)
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text("টেস্ট ফজর", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                        Icon(
+                                            imageVector = Icons.Default.NightsStay,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "ফজর আযান টেস্ট",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
                                     }
                                 }
                             }
@@ -1145,7 +1278,7 @@ fun AdhanPrayerTimesScreen(
                             adhanList.forEach { (id, name, pair) ->
                                 val (subtitle, url) = pair
                                 val isSelected = selectedAdhanId == id
-                                val isThisPlaying = isAudioPlaying && currentPlayingUrl == url
+                                val isThisPlaying = isPreviewPlaying && currentPlayingUrl == url
 
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -1342,7 +1475,7 @@ fun AdhanPrayerTimesScreen(
                             fajrAdhanList.forEach { (id, name, pair) ->
                                 val (subtitle, url) = pair
                                 val isSelected = selectedFajrAdhanId == id
-                                val isThisPlaying = isAudioPlaying && currentPlayingUrl == url
+                                val isThisPlaying = isPreviewPlaying && currentPlayingUrl == url
 
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),

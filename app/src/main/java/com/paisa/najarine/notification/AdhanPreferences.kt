@@ -125,31 +125,37 @@ object AdhanPreferences {
         return "$symbol $formatted"
     }
 
-    fun isHourlyQuranNotificationEnabled(context: Context): Boolean {
+    fun isDailyQuranNotificationEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val enabled = prefs.getBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, true)
         _isHourlyQuranNotificationEnabledState.value = enabled
         return enabled
     }
 
-    fun setHourlyQuranNotificationEnabled(context: Context, enabled: Boolean) {
+    fun setDailyQuranNotificationEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_HOURLY_QURAN_NOTIF_ENABLED, enabled) }
         _isHourlyQuranNotificationEnabledState.value = enabled
     }
 
-    fun isHourlyHadithNotificationEnabled(context: Context): Boolean {
+    fun isDailyHadithNotificationEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val enabled = prefs.getBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, true)
         _isHourlyHadithNotificationEnabledState.value = enabled
         return enabled
     }
 
-    fun setHourlyHadithNotificationEnabled(context: Context, enabled: Boolean) {
+    fun setDailyHadithNotificationEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_HOURLY_HADITH_NOTIF_ENABLED, enabled) }
         _isHourlyHadithNotificationEnabledState.value = enabled
     }
+
+    // Backwards compatibility aliases
+    fun isHourlyQuranNotificationEnabled(context: Context): Boolean = isDailyQuranNotificationEnabled(context)
+    fun setHourlyQuranNotificationEnabled(context: Context, enabled: Boolean) = setDailyQuranNotificationEnabled(context, enabled)
+    fun isHourlyHadithNotificationEnabled(context: Context): Boolean = isDailyHadithNotificationEnabled(context)
+    fun setHourlyHadithNotificationEnabled(context: Context, enabled: Boolean) = setDailyHadithNotificationEnabled(context, enabled)
 
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {

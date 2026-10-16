@@ -20,6 +20,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val prayerName = intent?.getStringExtra("PRAYER_NAME") ?: "Prayer"
         val isFajr = intent?.getBooleanExtra("IS_FAJR", false) ?: false
+        val scheduledTime = intent?.getLongExtra("SCHEDULED_TIME", 0L) ?: 0L
+
+        // Discard stale alarms delayed by more than 15 minutes (e.g. from device sleep/reboot)
+        val now = System.currentTimeMillis()
+        if (scheduledTime > 0L && (now - scheduledTime > 15 * 60 * 1000L)) {
+            Log.w("PrayerAlarmReceiver", "Stale alarm for $prayerName received (${(now - scheduledTime) / 1000}s late). Discarding to prevent audio overlap.")
+            return
+        }
+
+        // Respect Total Silence / DND None mode
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && notificationManager != null) {
+            val filter = notificationManager.currentInterruptionFilter
+            if (filter == android.app.NotificationManager.INTERRUPTION_FILTER_NONE) {
+                Log.d("PrayerAlarmReceiver", "Device in Total Silence (DND None). Suppressing audio.")
+                return
+            }
+        }
 
         val title = if (isFajr) "Fajr Adhan — الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ" else "$prayerName Adhan — حي على الصلاة"
         val message = if (isFajr) {
@@ -94,6 +112,9 @@ object AdhanScheduler {
 
         val dateKey = SimpleDateFormat("yyyyMMdd", Locale.US).format(Calendar.getInstance().time)
 
+        // Pre-cache active Adhans to local storage so playback works instantly even offline
+        DefaultAdhanAudioProvider.preCacheUserSelections(context)
+
         timings.forEach { (name, timeStr, isFajr) ->
             val parts = timeStr.split(":")
             val hour = parts.getOrNull(0)?.toIntOrNull() ?: return@forEach
@@ -112,6 +133,7 @@ object AdhanScheduler {
             val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
                 putExtra("PRAYER_NAME", name)
                 putExtra("IS_FAJR", isFajr)
+                putExtra("SCHEDULED_TIME", cal.timeInMillis)
             }
 
             // Unique scheduled-event ID per date + prayer to prevent duplicates
@@ -125,11 +147,7 @@ object AdhanScheduler {
             )
 
             try {
-                val showIntent = Intent(context, com.paisa.najarine.MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    putExtra("EXTRA_TARGET_TAB", 3)
-                    putExtra("EXTRA_TARGET_SCREEN", "ADHAN_PRAYER")
-                }
+                val showIntent = com.paisa.najarine.ui.AdhanAlarmActivity.createIntent(context, name, isFajr)
                 val showPendingIntent = PendingIntent.getActivity(
                     context,
                     eventId + 1,

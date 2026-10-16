@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,6 +103,7 @@ fun PaisaApp(
     // Proper LIFO Navigation BackStack (fixes back button jumping straight to home)
     val backStack = remember { mutableStateListOf(AppScreen.HOME) }
     val currentScreen = backStack.lastOrNull() ?: AppScreen.HOME
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     fun navigateTo(screen: AppScreen) {
         if (screen in listOf(AppScreen.HOME, AppScreen.WALLETS, AppScreen.TRANSACTIONS, AppScreen.ISLAMIC, AppScreen.TOOLS)) {
@@ -356,8 +358,9 @@ fun PaisaApp(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (currentScreen) {
-                AppScreen.HOME -> HomeScreen(
+            saveableStateHolder.SaveableStateProvider(currentScreen.name) {
+                when (currentScreen) {
+                    AppScreen.HOME -> HomeScreen(
                     viewModel = viewModel,
                     onNavigateToWallets = { navigateTo(AppScreen.WALLETS) },
                     onNavigateToTransactions = { navigateTo(AppScreen.TRANSACTIONS) },
@@ -554,8 +557,8 @@ fun PaisaApp(
                     onBackClick = { goBack() }
                 )
             }
-
         }
+    }
     }
 
     // In-App Adhan Incoming Call / Alarm Popup Alert (Reserved strictly for ACTUAL scheduled prayer alarms)

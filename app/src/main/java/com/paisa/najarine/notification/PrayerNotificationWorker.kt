@@ -85,10 +85,8 @@ class PrayerNotificationWorker(
             targetScreen = "ADHAN_PRAYER"
         )
 
-        // Play dedicated Adhan sound via Foreground Service if enabled by user
-        if (AdhanPreferences.isAdhanEnabled(context)) {
-            AdhanPlaybackService.start(context, prayerName, isFajr)
-        }
+        // Audio alarms are strictly handled by exact AlarmManager (PrayerAlarmReceiver) to prevent duplicate runs
+        Log.d(TAG, "Notification delivered for $prayerName via WorkManager. Exact audio reserved for AlarmManager.")
     }
 
     companion object {
@@ -172,6 +170,15 @@ class PrayerNotificationWorker(
                     asr = timings.asr,
                     maghrib = timings.maghrib,
                     isha = timings.isha
+                )
+            } catch (_: Exception) {}
+
+            // 5. Align daily Quran (morning after Fajr) and daily Hadith (evening after Isha)
+            try {
+                DailyIslamicScheduler.scheduleDailySync(
+                    context = context,
+                    fajrTimeStr = timings.fajr,
+                    ishaTimeStr = timings.isha
                 )
             } catch (_: Exception) {}
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -82,7 +83,10 @@ fun IslamicScreen(
         }
     }
 
+    val listState = rememberLazyListState()
+
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .background(PaisaBackground),
@@ -410,8 +414,8 @@ fun IslamicScreen(
             val quranTranslation = quranEntity?.banglaTranslation ?: repo.canonicalDailyAyah.banglaText
 
             IslamicFeaturedCard(
-                title = "প্রতি ঘণ্টার কুরআনী আয়াত",
-                badgeText = "উম্মা এপিআই সিঙ্কড",
+                title = "দৈনিক নির্বাচিত আয়াত",
+                badgeText = "ফজরের পর রিফ্রেশ",
                 badgeColor = Color(0xFFD97706),
                 badgeBg = Color(0xFFFEF3C7),
                 subtitle = ayahRef,
@@ -430,8 +434,8 @@ fun IslamicScreen(
             val hadithBangla = hadithEntity?.banglaTranslation ?: canonicalDailyHadithState.banglaTranslation
 
             IslamicFeaturedCard(
-                title = "প্রতি ঘণ্টার হাদিস",
-                badgeText = "উম্মা এপিআই সিঙ্কড",
+                title = "দৈনিক নির্বাচিত হাদিস",
+                badgeText = "ইশার পর রিফ্রেশ",
                 badgeColor = Color(0xFF047857),
                 badgeBg = Color(0xFFD1FAE5),
                 subtitle = if (hadithNarrator.isNotBlank()) "$hadithSource — $hadithNarrator" else hadithSource,

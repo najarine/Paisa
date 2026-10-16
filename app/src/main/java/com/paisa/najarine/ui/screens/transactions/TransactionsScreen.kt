@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -104,7 +105,10 @@ fun TransactionsScreen(
             }
         }
     ) { padding ->
+        val listState = rememberLazyListState()
+
         LazyColumn(
+            state = listState,
             modifier = modifier
                 .fillMaxSize()
                 .background(PaisaBackground)

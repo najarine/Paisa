@@ -921,10 +921,8 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun testHourlyHadithNotification(context: android.content.Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            com.paisa.najarine.notification.HourlyIslamicScheduler.triggerImmediateSync(context)
-            // Also directly update in-memory currentHadith for immediate UI response
             try {
-                val hadith = hadithService.fetchHourlyHadith()
+                val hadith = hadithService.fetchHourlyHadith(forceNext = true)
                 currentHadith.value = hadith
                 val entity = com.paisa.najarine.data.local.HourlyHadithEntity(
                     id = "latest_hourly_hadith",
@@ -944,8 +942,8 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                     context = context,
                     channelId = com.paisa.najarine.notification.PaisaNotificationManager.CHANNEL_QURAN_HADITH,
                     notificationId = 1001,
-                    title = "ঘণ্টার নির্বাচিত হাদিস — ${hadith.title}",
-                    body = "${hadith.banglaTranslation}\n(${hadith.source})",
+                    title = "আজকের নির্বাচিত বিশুদ্ধ হাদিস",
+                    body = "${hadith.title}\n${hadith.banglaTranslation}\n(${hadith.source})",
                     targetTab = 3,
                     targetScreen = "HADITH"
                 )
@@ -955,7 +953,6 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun testHourlyQuranNotification(context: android.content.Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            com.paisa.najarine.notification.HourlyIslamicScheduler.triggerImmediateSync(context)
             try {
                 val entity = com.paisa.najarine.data.local.HourlyQuranEntity(
                     id = "latest_hourly_ayah",
@@ -974,8 +971,8 @@ class PaisaViewModel(application: Application) : AndroidViewModel(application) {
                     context = context,
                     channelId = com.paisa.najarine.notification.PaisaNotificationManager.CHANNEL_QURAN_HADITH,
                     notificationId = 1002,
-                    title = "ঘণ্টার কুরআন আয়াত — সূরা ${entity.surahNameBangla} (${entity.surahNumber}:${entity.ayahNumber})",
-                    body = "${entity.banglaTranslation}\n\"${entity.arabicText}\"",
+                    title = "আজকের নির্বাচিত পবিত্র কুরআন আয়াত",
+                    body = "সূরা ${entity.surahNameBangla} [${entity.surahNumber}:${entity.ayahNumber}]\n${entity.banglaTranslation}",
                     targetTab = 3,
                     targetScreen = "QURAN"
                 )

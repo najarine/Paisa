@@ -64,12 +64,27 @@ data class UmmahDuaItem(
     val arabic: String?,
     val transliteration: String?,
     val translation: String?,
-    val reference: String?
+    val source: String? = null,
+    val reference: String? = null,
+    val repeat: Int? = null
 )
 
 data class UmmahDuasResponse(
     val success: Boolean?,
     val data: List<UmmahDuaItem>?
+)
+
+data class UmmahCategoryDuasData(
+    val category: UmmahCategoryItem?,
+    val total: Int?,
+    val count: Int?,
+    val duas: List<UmmahDuaItem>?
+)
+
+data class UmmahCategoryDuasResponse(
+    val success: Boolean?,
+    val service: String?,
+    val data: UmmahCategoryDuasData?
 )
 
 data class UmmahSingleDuaResponse(
@@ -141,10 +156,10 @@ interface UmmahApiService {
     @GET("api/duas/category/{category}")
     suspend fun getDuasByCategory(
         @retrofit2.http.Path("category") category: String
-    ): UmmahDuasResponse
+    ): UmmahCategoryDuasResponse
 
     @GET("api/duas")
-    suspend fun getAllDuas(): UmmahDuasResponse
+    suspend fun getAllDuas(): UmmahDuaCategoriesResponse
 
     @GET("api/duas/random")
     suspend fun getRandomDua(): UmmahSingleDuaResponse

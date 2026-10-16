@@ -1,10 +1,13 @@
 package com.paisa.najarine.notification
 
+import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +34,7 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
     const val ALADHAN_MADINAH_URL = "https://cdn.aladhan.com/audio/adhans/a2.mp3"       // Madinah
     const val ALADHAN_ALAQSA_URL = "https://cdn.aladhan.com/audio/adhans/a3.mp3"        // Al-Aqsa
 
+    private val playbackLock = Any()
     private var mediaPlayer: MediaPlayer? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -41,14 +45,29 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
     private val _isActualAlarmActiveState = MutableStateFlow(false)
     val isActualAlarmActiveState: StateFlow<Boolean> = _isActualAlarmActiveState.asStateFlow()
 
+    // True when user is previewing audio inside settings (isolated from alarm notifications and call dialog)
+    private val _isPreviewPlayingState = MutableStateFlow(false)
+    val isPreviewPlayingState: StateFlow<Boolean> = _isPreviewPlayingState.asStateFlow()
+
     private val _activePrayerNameState = MutableStateFlow<String?>("আজান")
     val activePrayerNameState: StateFlow<String?> = _activePrayerNameState.asStateFlow()
 
     private val _currentPlayingUrlState = MutableStateFlow<String?>(null)
     val currentPlayingUrlState: StateFlow<String?> = _currentPlayingUrlState.asStateFlow()
 
+    private val _isMutedState = MutableStateFlow(false)
+    val isMutedState: StateFlow<Boolean> = _isMutedState.asStateFlow()
+
+    private fun getAdhanStorageDir(context: Context): File {
+        val dir = File(context.filesDir, "adhans")
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir
+    }
+
     override fun playAdhan(context: Context, isFajr: Boolean) {
-        playSelectedAdhan(context, isFajr, if (isFajr) "ফজর" else "নামাজ")
+        playSelectedAdhan(context, isFajr, if (isFajr) "ফজর" else "নামাজ", isActualAlarm = true)
     }
 
     fun playSelectedAdhan(
@@ -57,16 +76,26 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
         prayerName: String = if (isFajr) "ফজর" else "নামাজ",
         isActualAlarm: Boolean = false
     ) {
-        _isActualAlarmActiveState.value = isActualAlarm
-        _activePrayerNameState.value = prayerName
-        val audioUrl = if (isFajr) {
-            AdhanPreferences.getSelectedFajrAdhanUrl(context)
-        } else {
-            AdhanPreferences.getSelectedAdhanUrl(context)
+        synchronized(playbackLock) {
+            _isActualAlarmActiveState.value = isActualAlarm
+            _isPreviewPlayingState.value = !isActualAlarm
+            _activePrayerNameState.value = prayerName
+            _isMutedState.value = false
+
+            val audioUrl = if (isFajr) {
+                AdhanPreferences.getSelectedFajrAdhanUrl(context)
+            } else {
+                AdhanPreferences.getSelectedAdhanUrl(context)
+            }
+            val selectedId = if (isFajr) {
+                AdhanPreferences.getSelectedFajrAdhanId(context)
+            } else {
+                AdhanPreferences.getSelectedAdhanId(context)
+            }
+            val fileName = if (isFajr) "adhan_fajr_${selectedId}.mp3" else "adhan_regular_${selectedId}.mp3"
+
+            playFromUrlOrCacheInternal(context, audioUrl, fileName, isAlarmUsage = isActualAlarm)
         }
-        val selectedId = if (isFajr) AdhanPreferences.getSelectedFajrAdhanId(context) else AdhanPreferences.getSelectedAdhanId(context)
-        val cacheFileName = if (isFajr) "adhan_fajr_${selectedId}.mp3" else "adhan_regular_${selectedId}.mp3"
-        playFromUrlOrCache(context, audioUrl, cacheFileName)
     }
 
     fun preCacheUserSelections(context: Context) {
@@ -74,14 +103,14 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
             try {
                 val regularId = AdhanPreferences.getSelectedAdhanId(context)
                 val regularUrl = AdhanPreferences.getSelectedAdhanUrl(context)
-                val regularFile = File(context.cacheDir, "adhan_regular_${regularId}.mp3")
+                val regularFile = File(getAdhanStorageDir(context), "adhan_regular_${regularId}.mp3")
                 if (!regularFile.exists() || regularFile.length() < 50000) {
                     cacheAdhanFile(regularUrl, regularFile)
                 }
 
                 val fajrId = AdhanPreferences.getSelectedFajrAdhanId(context)
                 val fajrUrl = AdhanPreferences.getSelectedFajrAdhanUrl(context)
-                val fajrFile = File(context.cacheDir, "adhan_fajr_${fajrId}.mp3")
+                val fajrFile = File(getAdhanStorageDir(context), "adhan_fajr_${fajrId}.mp3")
                 if (!fajrFile.exists() || fajrFile.length() < 50000) {
                     cacheAdhanFile(fajrUrl, fajrFile)
                 }
@@ -95,7 +124,7 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
         scope.launch {
             try {
                 val fileName = if (isFajr) "adhan_fajr_${id}.mp3" else "adhan_regular_${id}.mp3"
-                val file = File(context.cacheDir, fileName)
+                val file = File(getAdhanStorageDir(context), fileName)
                 if (!file.exists() || file.length() < 50000) {
                     cacheAdhanFile(url, file)
                 }
@@ -106,31 +135,67 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
     }
 
     fun previewAdhan(context: Context, audioUrl: String, label: String) {
-        val cacheFileName = "aladhan_${label.lowercase().replace(" ", "_").replace("/", "_")}.mp3"
-        playFromUrlOrCache(context, audioUrl, cacheFileName)
+        synchronized(playbackLock) {
+            _isActualAlarmActiveState.value = false
+            _isPreviewPlayingState.value = true
+            _activePrayerNameState.value = label
+            _isMutedState.value = false
+
+            val fileName = "aladhan_${label.lowercase().replace(" ", "_").replace("/", "_")}.mp3"
+            playFromUrlOrCacheInternal(context, audioUrl, fileName, isAlarmUsage = false)
+        }
     }
 
     fun playCustomAdhan(context: Context, audioUrl: String, label: String) {
-        val cacheFileName = "aladhan_${label.lowercase().replace(" ", "_")}.mp3"
-        playFromUrlOrCache(context, audioUrl, cacheFileName)
+        previewAdhan(context, audioUrl, label)
     }
 
-    private fun playFromUrlOrCache(context: Context, urlString: String, cacheFileName: String) {
-        stopPlayback()
+    fun mutePlayback() {
+        synchronized(playbackLock) {
+            try {
+                mediaPlayer?.setVolume(0f, 0f)
+                _isMutedState.value = true
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to mute MediaPlayer: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    private fun playFromUrlOrCacheInternal(
+        context: Context,
+        urlString: String,
+        fileName: String,
+        isAlarmUsage: Boolean
+    ) {
+        stopPlaybackInternal()
         _currentPlayingUrlState.value = urlString
-        val cachedFile = File(context.cacheDir, cacheFileName)
+
+        // Priority 1: Persistent internal storage (filesDir/adhans)
+        val persistentFile = File(getAdhanStorageDir(context), fileName)
+        // Priority 2: Cache directory fallback (cacheDir)
+        val legacyCacheFile = File(context.cacheDir, fileName)
+
+        val targetLocalFile = when {
+            persistentFile.exists() && persistentFile.length() > 50000 -> persistentFile
+            legacyCacheFile.exists() && legacyCacheFile.length() > 50000 -> legacyCacheFile
+            else -> null
+        }
 
         try {
+            val audioUsage = if (isAlarmUsage) AudioAttributes.USAGE_ALARM else AudioAttributes.USAGE_MEDIA
+            val contentType = AudioAttributes.CONTENT_TYPE_MUSIC
+
             val player = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(contentType)
+                        .setUsage(audioUsage)
                         .build()
                 )
-                if (cachedFile.exists() && cachedFile.length() > 50000) {
-                    Log.d(TAG, "Playing Adhan from local cache: ${cachedFile.absolutePath}")
-                    setDataSource(context, Uri.fromFile(cachedFile))
+
+                if (targetLocalFile != null) {
+                    Log.d(TAG, "Playing Adhan from local storage: ${targetLocalFile.absolutePath} (${targetLocalFile.length()} bytes)")
+                    setDataSource(context, Uri.fromFile(targetLocalFile))
                     prepare()
                     start()
                     _isPlayingState.value = true
@@ -138,31 +203,42 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
                     Log.d(TAG, "Streaming Adhan from Aladhan API: $urlString")
                     setDataSource(urlString)
                     setOnPreparedListener { mp ->
-                        mp.start()
-                        _isPlayingState.value = true
+                        synchronized(playbackLock) {
+                            if (mediaPlayer === mp) {
+                                mp.start()
+                                _isPlayingState.value = true
+                            }
+                        }
                     }
                     prepareAsync()
 
-                    // Asynchronously cache for offline and zero-latency future playback
+                    // Asynchronously cache into persistent storage for offline usage
                     scope.launch {
-                        cacheAdhanFile(urlString, cachedFile)
+                        cacheAdhanFile(urlString, persistentFile)
                     }
                 }
 
                 setOnCompletionListener {
                     stopPlayback()
                 }
+
                 setOnErrorListener { _, what, extra ->
                     Log.e(TAG, "MediaPlayer error: what=$what extra=$extra")
                     stopPlayback()
-                    fallbackPlay(context)
+                    if (isAlarmUsage) {
+                        fallbackPlay(context)
+                    }
                     true
                 }
             }
             mediaPlayer = player
         } catch (e: Exception) {
-            Log.e(TAG, "Error playing Adhan from API: ${e.localizedMessage}", e)
-            fallbackPlay(context)
+            Log.e(TAG, "Error playing Adhan: ${e.localizedMessage}", e)
+            if (isAlarmUsage) {
+                fallbackPlay(context)
+            } else {
+                stopPlayback()
+            }
         }
     }
 
@@ -182,37 +258,57 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
                     }
                 }
                 if (tempFile.length() > 50000) {
+                    if (destination.exists()) {
+                        destination.delete()
+                    }
                     tempFile.renameTo(destination)
-                    Log.d(TAG, "Cached Adhan audio successfully (${destination.length()} bytes)")
+                    Log.d(TAG, "Cached Adhan audio successfully to persistent store (${destination.length()} bytes)")
                 } else {
                     tempFile.delete()
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Background Adhan caching skipped: ${e.localizedMessage}")
+            Log.w(TAG, "Background Adhan caching failed: ${e.localizedMessage}")
         }
     }
 
     private fun fallbackPlay(context: Context) {
-        try {
-            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-            mediaPlayer = MediaPlayer.create(context, ringtoneUri)?.apply {
-                start()
-                _isPlayingState.value = true
-                setOnCompletionListener { stopPlayback() }
+        synchronized(playbackLock) {
+            try {
+                val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+
+                mediaPlayer = MediaPlayer.create(context, ringtoneUri)?.apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .build()
+                    )
+                    start()
+                    _isPlayingState.value = true
+                    setOnCompletionListener { stopPlayback() }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Fallback tone failed: ${e.localizedMessage}")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Fallback tone failed: ${e.localizedMessage}")
         }
     }
 
     override fun stopPlayback() {
+        synchronized(playbackLock) {
+            stopPlaybackInternal()
+        }
+    }
+
+    private fun stopPlaybackInternal() {
         try {
             mediaPlayer?.let {
                 if (it.isPlaying) {
                     it.stop()
                 }
+                it.reset()
                 it.release()
             }
         } catch (_: Exception) {
@@ -220,16 +316,20 @@ object DefaultAdhanAudioProvider : AdhanAudioProvider {
             mediaPlayer = null
             _isPlayingState.value = false
             _isActualAlarmActiveState.value = false
+            _isPreviewPlayingState.value = false
             _currentPlayingUrlState.value = null
             _activePrayerNameState.value = null
+            _isMutedState.value = false
         }
     }
 
     override fun isPlaying(): Boolean {
-        return try {
-            mediaPlayer?.isPlaying == true
-        } catch (_: Exception) {
-            false
+        synchronized(playbackLock) {
+            return try {
+                mediaPlayer?.isPlaying == true
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 }

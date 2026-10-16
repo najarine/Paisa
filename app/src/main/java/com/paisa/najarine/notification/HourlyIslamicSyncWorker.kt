@@ -131,51 +131,11 @@ class HourlyIslamicSyncWorker(
             )
             database.hourlyHadithDao().insertHadith(hadithEntity)
 
-            // Deliver notification when enabled by user toggle
-            val isHadithNotifEnabled = AdhanPreferences.isHourlyHadithNotificationEnabled(applicationContext)
-            if (isHadithNotifEnabled) {
-                PaisaNotificationManager.showNotification(
-                    context = applicationContext,
-                    channelId = PaisaNotificationManager.CHANNEL_QURAN_HADITH,
-                    notificationId = 1001,
-                    title = "ঘণ্টার নির্বাচিত হাদিস — ${hadithItem.title}",
-                    body = "${hadithItem.banglaTranslation}\n(${hadithItem.source})",
-                    targetTab = 3,
-                    targetScreen = "HADITH"
-                )
-            }
+            // Legacy hourly worker migration: cancel repeating periodic work and trigger daily schedule
+            DailyIslamicScheduler.cancelOldHourlyWorkers(applicationContext)
+            DailyIslamicScheduler.scheduleDailySync(applicationContext)
 
-            // 2. Quran Ayah (Frequency: 1 Ayah every 1 hour)
-            val ayahItem = fetchLiveHourlyAyah()
-            val quranEntity = HourlyQuranEntity(
-                id = "latest_hourly_ayah",
-                surahNumber = ayahItem.surahNumber,
-                surahNameArabic = ayahItem.surahNameArabic,
-                surahNameEnglish = ayahItem.surahNameEnglish,
-                surahNameBangla = ayahItem.surahNameBangla,
-                ayahNumber = ayahItem.ayahNumber,
-                arabicText = ayahItem.arabicText,
-                englishTranslation = ayahItem.englishTranslation,
-                banglaTranslation = ayahItem.banglaTranslation,
-                fetchedAtMillis = now
-            )
-            database.hourlyQuranDao().insertAyah(quranEntity)
-
-            val isQuranNotifEnabled = AdhanPreferences.isHourlyQuranNotificationEnabled(applicationContext)
-            if (isQuranNotifEnabled) {
-                PaisaNotificationManager.showNotification(
-                    context = applicationContext,
-                    channelId = PaisaNotificationManager.CHANNEL_QURAN_HADITH,
-                    notificationId = 1002,
-                    title = "ঘণ্টার পবিত্র কুরআন আয়াত — সূরা ${ayahItem.surahNameBangla} (${ayahItem.surahNumber}:${ayahItem.ayahNumber})",
-                    body = "${ayahItem.banglaTranslation}\n\"${ayahItem.arabicText}\"",
-                    targetTab = 3,
-                    targetScreen = "QURAN"
-                )
-                sharedPrefs.edit { putLong("last_ayah_notification_time", now) }
-            }
-
-            Log.d("HourlyIslamicSyncWorker", "Hourly Hadith (1 hr) & Quran Ayah (1 hr) successfully processed and notified.")
+            Log.d("HourlyIslamicSyncWorker", "Legacy worker migrated to DailyIslamicScheduler. Hourly notification spam stopped.")
             Result.success()
         } catch (e: Exception) {
             Log.e("HourlyIslamicSyncWorker", "Error in HourlyIslamicSyncWorker: ${e.localizedMessage}", e)
